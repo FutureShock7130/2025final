@@ -1,0 +1,55 @@
+{
+  "version": "2025.0",
+  "command": {
+    "type": "sequential",
+    "data": {
+      "commands": [
+        {
+          "type": "path",
+          "data": {
+            "pathName": "Left-I"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "I-CSL"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "CSL-K"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "K-CSL"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "CSL-L"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "L-CSL"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "CSL-A"
+          }
+        }
+      ]
+    }
+  },
+  "resetOdom": true,
+  "folder": null,
+  "choreoAuto": false
+}
