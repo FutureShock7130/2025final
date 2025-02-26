@@ -8,7 +8,7 @@ package frc.robot.subsystems;
 public class StateMachine {
     private static StateMachine instance = null;
 
-    private SuperStructState commandedState = SuperStructState.TRAVEL;
+    private SuperStructState commandedState = SuperStructState.DEFAULT;
 
     public StateMachine() {}
 

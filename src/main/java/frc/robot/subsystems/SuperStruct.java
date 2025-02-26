@@ -11,16 +11,17 @@ import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.SuperStructState;
 import frc.robot.subsystems.superstructure.Elevator;
 import frc.robot.subsystems.superstructure.Grabber;
-import frc.robot.subsystems.superstructure.Intake;
+// import frc.robot.subsystems.superstructure.Intake;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 
 
 public class SuperStruct extends SubsystemBase {
   Elevator mElevator;
   Grabber mGrabber;
-  Intake mIntake;
+//   Intake mIntake;
   StateMachine mStateMachine;
   SuperStructState mCommandedState;
   
@@ -39,7 +40,7 @@ public class SuperStruct extends SubsystemBase {
   public SuperStruct() {
     mElevator = Elevator.getInstance();
     mGrabber = Grabber.getInstance();
-    mIntake = Intake.getInstance();
+    // mIntake = Intake.getInstance();
     mStateMachine = StateMachine.getInstance();
     mCommandedState = SuperStructState.DEFAULT;
     buttonBoard1 = new Joystick(1);  // First port
@@ -83,33 +84,51 @@ public class SuperStruct extends SubsystemBase {
             () -> setState(SuperStructState.DEFAULT),
             this
         ));
+
+    new JoystickButton(buttonBoard1, 8)
+        .onTrue(Commands.runOnce(
+            () -> setState(SuperStructState.ALGAE_INTAKE),
+            this
+        ));
+
+    new JoystickButton(buttonBoard1, 9)
+        .onTrue(Commands.runOnce(
+            () -> setState(SuperStructState.ALGAE_STOWAGE),
+            this
+        ));
+
+    new JoystickButton(buttonBoard1, 10)
+        .onTrue(Commands.runOnce(
+            () -> setState(SuperStructState.ALGAE_PLACEMENT),
+            this
+        ));
   }
 
   public void L1() {
-    mElevator.setPosition(-0.001); //gorund / L1 (it just works
+    mElevator.setPosition(-0.001);
     if (mElevator.atTargetPosition()) {
-        mGrabber.setPosition(-0.18); 
-    } 
+        mGrabber.setPosition(-0.1884);
+    }
   }
 
   public void L2() {
-    mElevator.setPosition(17.5); //L2
+    mElevator.setPosition(17.5);
     if (mElevator.atTargetPosition()) {
-       mGrabber.setPosition(-0.1884); 
-    } 
+        mGrabber.setPosition(-0.1884);
+    }
   }
   public void L3() {
-    mElevator.setPosition(63.54888916015625); //L3
+    mElevator.setPosition(63.54888916015625);
     if (mElevator.atTargetPosition()) {
-        mGrabber.setPosition(-0.1884); 
-    } 
+        mGrabber.setPosition(-0.1884);
+    }
   }
 
   public void L4() {
-    mElevator.setPosition(159); //L4
+    mElevator.setPosition(165);
     if (mElevator.atTargetPosition()) {
-        mGrabber.setPosition(-0.1284); 
-    } 
+        mGrabber.setPosition(-0.12);
+    }
   }
 
   public void TRAVEL() {
@@ -119,12 +138,12 @@ public class SuperStruct extends SubsystemBase {
 
   public void CS() {
     mElevator.setPosition(-0.001);
-    mIntake.setAngle(0.338623);
-    mIntake.setIntake(-0.5);
-    if (mElevator.atTargetPosition()) {
-        mGrabber.setPosition(0.21630859375);  
+    // mIntake.setAngle(0.340436);
+    // mIntake.setIntake(-0.7);
+    // if (mElevator.atTargetPosition()) {
+        mGrabber.setPosition(-0.329834);  
         mGrabber.intake();
-    }
+    // }
   }
 
   public void PLACEMENT() {
@@ -132,22 +151,29 @@ public class SuperStruct extends SubsystemBase {
   }
 
   public void DEFAULT() {
-    mElevator.setPosition(-0.2);
-    mGrabber.setPosition(-0.0432); //default
+    mGrabber.setPosition(-0.034180);
+    if (mGrabber.atPosition()) {
+        mElevator.setPosition(-0.2);
+    }
     mGrabber.stop();
-    mIntake.setIntake(0);
+    // mIntake.setIntake(0);
+    // mIntake.setAngle(0.338623);
+    mGrabber.resetcounter();
   }
 
   public void ALGAE_STOWAGE() {
-
+    // mIntake.setAngle(0.469727);
+    // mIntake.setIntake(0.0);
   }
 
   public void ALGAE_INTAKE() {
-
+    // mIntake.setAngle(0.469727);
+    // mIntake.setIntake(0.4);
   }
 
   public void ALGAE_PLACEMENT() {
-
+    // mIntake.setAngle(0.469727);
+    // mIntake.setIntake(-0.4);
   }
 
   public void updateState() {

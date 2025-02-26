@@ -36,7 +36,7 @@ import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.superstructure.Elevator;
 import frc.robot.subsystems.superstructure.Grabber;
-import frc.robot.subsystems.superstructure.Intake;
+// import frc.robot.subsystems.superstructure.Intake;
 import frc.robot.Vision;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
@@ -56,7 +56,7 @@ public class RobotContainer {
   private final Vision vision = new Vision();
   private final Elevator m_elevator;
   private final Grabber m_grabber;
-  private final Intake m_intake;
+  // private final Intake m_intake;
   private final SuperStruct m_SuperStruct;
 
   // Controller
@@ -70,7 +70,7 @@ public class RobotContainer {
   public RobotContainer() {
     m_elevator = Elevator.getInstance();
     m_grabber = Grabber.getInstance();
-    m_intake = Intake.getInstance();
+    // m_intake = Intake.getInstance();
     m_SuperStruct = SuperStruct.getInstance();  
 
     switch (Constants.currentMode) {
@@ -120,6 +120,7 @@ public class RobotContainer {
     configureButtonBindings();
 
     SmartDashboard.putData("auto", autoChooser);
+   
   }
 
   /**

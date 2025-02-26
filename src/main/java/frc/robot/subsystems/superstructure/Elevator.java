@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems.superstructure;
 
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -38,7 +39,7 @@ public class Elevator extends SubsystemBase {
   private final SparkMax rightMotor;
   
   private static final double kG = 0.01;  // Voltage needed to overcome gravity
-  private static final double kDownSpeedMultiplier = 0.75; // Reduces speed when decending
+  private static final double kDownSpeedMultiplier = 0.9; // Reduces speed when decending
 
   // Shuffleboard entries
   private final ShuffleboardTab elevatorTab = Shuffleboard.getTab("Elevator");
@@ -53,8 +54,8 @@ public class Elevator extends SubsystemBase {
   // Profiled PID Controller for smooth motionS
   private final TrapezoidProfile.Constraints constraints = 
       new TrapezoidProfile.Constraints(
-          20,   
-          30
+          80,   
+          90
       );
   
   private final ProfiledPIDController pidController = 
@@ -88,9 +89,9 @@ public class Elevator extends SubsystemBase {
     
 
     // Configure PID Controller
-    pidController.setTolerance(0.1); 
+    pidController.setTolerance(2); 
     pidController.setIZone(Double.POSITIVE_INFINITY);
-    pidController.setIntegratorRange(-5, 5);
+    pidController.setIntegratorRange(-0.5, 0.5);
     pidController.setGoal(leftMotor.getEncoder().getPosition());
     pidController.calculate(leftMotor.getEncoder().getPosition());
     pidController.reset(leftMotor.getEncoder().getPosition());
@@ -126,11 +127,13 @@ public class Elevator extends SubsystemBase {
         .idleMode(IdleMode.kBrake)  
         .voltageCompensation(12.0)
         .openLoopRampRate(0.1)
-        .apply(softLimitConfig);
+        .apply(softLimitConfig)
+        .inverted(inverted)
+        .disableFollowerMode();
 
-    if (motor == rightMotor) {
-        neoConfig.follow(leftMotor, true);
-    }
+    // if (motor == rightMotor) {
+    //     neoConfig.follow(leftMotor, true);
+    // }
     
     motor.setCANTimeout(250);
     motor.configure(neoConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -166,6 +169,31 @@ public class Elevator extends SubsystemBase {
       output *= kDownSpeedMultiplier;
     }
     leftMotor.setVoltage(output);
+    rightMotor.setVoltage(output);
+  }
+
+  public void setleftVoltage(double voltagePercent) {
+    double speed = MathUtil.clamp(voltagePercent, -1, 1);
+    double ff = feedforward.calculate(speed);
+    double output = (speed * 12) + ff;
+
+    // Reduce speed when moving down
+    if (output < 0) {
+      output *= kDownSpeedMultiplier;
+    }
+    leftMotor.setVoltage(output);
+  }
+
+  public void setrightVoltage(double voltagePercent) {
+    double speed = MathUtil.clamp(voltagePercent, -1, 1);
+    double ff = feedforward.calculate(speed);
+    double output = (speed * 12) + ff;
+
+    // Reduce speed when moving down
+    if (output < 0) {
+      output *= kDownSpeedMultiplier;
+    }
+    rightMotor.setVoltage(output);
   }
 
   /**
@@ -177,8 +205,11 @@ public class Elevator extends SubsystemBase {
 
     public void setPosition(double position) {
     pidController.setGoal(position);
-    setVoltage(MathUtil.clamp(pidController.calculate(leftMotor.getEncoder().getPosition()), -0.3, 0.3));
+    setleftVoltage(MathUtil.clamp(pidController.calculate(leftMotor.getEncoder().getPosition()), -0.6, 0.6));
+    setrightVoltage(MathUtil.clamp(pidController.calculate(rightMotor.getEncoder().getPosition()), -0.6, 0.6));
   }
+
+
 
 
   public boolean atTargetPosition() {

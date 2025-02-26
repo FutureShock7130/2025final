@@ -1,6 +1,8 @@
 package frc.robot.subsystems.superstructure;
 
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
 import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Default;
 import com.revrobotics.spark.*;
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -43,15 +45,15 @@ public class Grabber extends SubsystemBase {
     // Add with other instance variables
     private final TrapezoidProfile.Constraints constraints = 
         new TrapezoidProfile.Constraints(
-            0.1,   // Max velocity in rotations per second
-            0.15    // Max acceleration in rotations per second squared
+            1,   // Max velocity in rotations per second
+            1    // Max acceleration in rotations per second squared
         );
     
     private final ArmFeedforward grabberFF = 
     new ArmFeedforward(
-        0.01, 
-        0.01, 
-        0
+        0.0, 
+        0.02, 
+        0.0
     );
     
     private final DigitalInput intakeLimitSwitch;
@@ -76,21 +78,28 @@ public class Grabber extends SubsystemBase {
 
         // Initialize PID controller
         pidController = new ProfiledPIDController(
-            8.7,    // kP
-            0.003,    // kI 
+            4.2,    // kP
+            0.0,    // kI 
             0.005,    // kD
             constraints  // Motion constraints
         );
 
+        
+    CANcoderConfiguration encoderConfig = new CANcoderConfiguration();
+    encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
+    encoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 0;
+    grabberEncoder.getConfigurator().apply(encoderConfig);
+
 
 
         pidController.reset(grabberEncoder.getAbsolutePosition().getValueAsDouble());
-        pidController.setTolerance(0.0004);  // Degrees of acceptable error
+        pidController.setTolerance(0.0);  // Degrees of acceptable error
         pidController.setIZone(0.05);  
         pidController.disableContinuousInput();
         pidController.setIntegratorRange(0,0);
         pidController.setGoal(grabberEncoder.getAbsolutePosition().getValueAsDouble());
         pidController.calculate(grabberEncoder.getAbsolutePosition().getValueAsDouble());
+        pidController.setTolerance(0.1);
 
         configureNEO550(rightIntake);
         configureNEO550(leftIntake);
@@ -166,7 +175,7 @@ public class Grabber extends SubsystemBase {
     public void setPosition(double position) {
         // pidController.reset(grabberEncoder.getAbsolutePosition().getValueAsDouble());
         pidController.setGoal(position);
-        set(MathUtil.clamp(pidController.calculate(grabberEncoder.getAbsolutePosition().getValueAsDouble()), -0.08, 0.08));
+        set(MathUtil.clamp(pidController.calculate(grabberEncoder.getAbsolutePosition().getValueAsDouble()), -0.3, 0.3));
     }
 
     /**
@@ -208,6 +217,11 @@ public class Grabber extends SubsystemBase {
         return grabberEncoder.getAbsolutePosition().getValueAsDouble();
     }
 
+    public void resetcounter() {
+        startupCounter = 0;
+        stallCounter = 0;
+    }
+
     public void intake() {
         // if (!intakeLimitSwitch.get()) {
         //     rightIntake.set(0);
@@ -220,26 +234,21 @@ public class Grabber extends SubsystemBase {
         double rightRPM = Math.abs(rightIntake.getEncoder().getVelocity());
         double leftRPM = Math.abs(leftIntake.getEncoder().getVelocity());
         
-        if (startupCounter < 10) {  // Startup delay
+        if (startupCounter < 20) {  // Startup delay
           rightIntake.set(-0.5);
           leftIntake.set(0.5);
           startupCounter++;
-        } else if (rightRPM < 50 || leftRPM < 50) {
-          if (stallCounter < 50) {  // Wait ~0.5 seconds (25 * 20ms) before stopping
+        } else if (rightRPM < 100 || leftRPM < 100) {
+          if (stallCounter < 150) {  // Wait ~0.5 seconds (25 * 20ms) before stopping
             stallCounter++;
             rightIntake.set(-0.5);
             leftIntake.set(0.5);
+            
           } else {
             rightIntake.set(0);
             leftIntake.set(0);
-            
-            startupCounter = 0;
-            stallCounter = 0;
+            return;
           }
-        } else {
-          stallCounter = 0;  // Reset stall counter if RPM is good
-          rightIntake.set(-0.5);
-          leftIntake.set(0.5);
         }
       
     }
