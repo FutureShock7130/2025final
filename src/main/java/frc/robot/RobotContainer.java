@@ -18,7 +18,6 @@ import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -38,11 +37,7 @@ import frc.robot.subsystems.superstructure.Elevator;
 import frc.robot.subsystems.superstructure.Grabber;
 // import frc.robot.subsystems.superstructure.Intake;
 import frc.robot.Vision;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
-
-// import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
-// import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
+import frc.robot.subsystems.ObjectDetection;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -58,6 +53,7 @@ public class RobotContainer {
   private final Grabber m_grabber;
   // private final Intake m_intake;
   private final SuperStruct m_SuperStruct;
+  private final ObjectDetection objectDetection = new ObjectDetection(); // 新增物件偵測子系統
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -98,6 +94,9 @@ public class RobotContainer {
                 vision);
         break;
     }
+    
+    // 設置物件偵測子系統的驅動系統
+    objectDetection.setDriveSubsystem(drive);
 
     // Set up auto routines
     autoChooser = AutoBuilder.buildAutoChooser();
@@ -130,6 +129,7 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
+    // 原有的驅動控制
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
@@ -146,6 +146,8 @@ public class RobotContainer {
                             new Pose2d(drive.getPose().getTranslation(), new Rotation2d())),
                     drive)
                 .ignoringDisable(true));
+    
+    // 注意：不再需要為物件偵測新增按鈕綁定，因為現在使用Shuffleboard控制
   }
 
   /**
