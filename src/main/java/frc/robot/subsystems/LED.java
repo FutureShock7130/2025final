@@ -202,9 +202,76 @@ public class LED extends SubsystemBase {
             timer.restart();
         }
         m_led.setData(m_ledBuffer);
-
     }
 
+    public void breath(int  hue){
+        timer.start();
+        if (timer.get()<0.3){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
+          m_ledBuffer.setHSV(i, hue, 255, 100);}
+          m_led.setData(m_ledBuffer);
+        }
+        else if (timer.get()<0.6){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
+          m_ledBuffer.setHSV(i, hue, 255, 90);}
+          m_led.setData(m_ledBuffer);
+        }
+        else if (timer.get()<0.9){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
+          m_ledBuffer.setHSV(i, hue, 255, 80);}
+          m_led.setData(m_ledBuffer);
+        }
+        else if (timer.get()<1.2){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
+          m_ledBuffer.setHSV(i, hue, 255, 70);}
+          m_led.setData(m_ledBuffer);
+        }
+        else if (timer.get()<1.5){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
+          m_ledBuffer.setHSV(i, hue, 255, 60);}
+          m_led.setData(m_ledBuffer);
+        }
+        else if (timer.get()<1.8){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
+          m_ledBuffer.setHSV(i, hue, 255, 50);}
+          m_led.setData(m_ledBuffer);
+        }
+        else if (timer.get()<2.1){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
+          m_ledBuffer.setHSV(i, hue, 255, 40);}
+          m_led.setData(m_ledBuffer);
+        }
+        else if (timer.get()<2.4){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
+          m_ledBuffer.setHSV(i, hue, 255, 30);}
+          m_led.setData(m_ledBuffer);
+        }
+        else if (timer.get()<2.7){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
+          m_ledBuffer.setHSV(i, hue, 255, 20);}
+          m_led.setData(m_ledBuffer);
+        }
+        else if (timer.get()<3){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
+          m_ledBuffer.setHSV(i, hue, 255, 30);}
+          m_led.setData(m_ledBuffer);
+        }
+        else if (timer.get()<3.3){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
+          m_ledBuffer.setHSV(i, hue, 255, 40);}
+          m_led.setData(m_ledBuffer);
+        }
+        else if (timer.get()<3.6){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
+          m_ledBuffer.setHSV(i, hue, 255, 50);}
+          m_led.setData(m_ledBuffer);
+        }
+        else if (timer.get()<3.9){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
+          m_ledBuffer.setHSV(i, hue, 255, 60);}
+          m_led.setData(m_ledBuffer);
+        }
+        else if (timer.get()<4.2){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
+          m_ledBuffer.setHSV(i, hue, 255, 70);}
+          m_led.setData(m_ledBuffer);
+        }
+        else if (timer.get()<4.5){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
+          m_ledBuffer.setHSV(i, hue, 255, 80);}
+          m_led.setData(m_ledBuffer);
+        }
+        else if (timer.get()<4.8){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
+          m_ledBuffer.setHSV(i, hue, 255, 90);}
+          m_led.setData(m_ledBuffer);
+        }
+        else if (timer.get()<5.1){timer.reset();}
+      }
     @Override
     public void periodic() {
 
