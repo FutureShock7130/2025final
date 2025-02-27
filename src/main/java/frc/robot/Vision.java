@@ -49,6 +49,8 @@ public class Vision extends SubsystemBase {
 
     private SendableChooser<String> cameraChooser;
     
+    private boolean processingEnabled = true;
+
     public Vision() {
         cameras = new HashMap<>();
         photonEstimators = new HashMap<>();
@@ -56,16 +58,16 @@ public class Vision extends SubsystemBase {
         // Define transforms for each camera
         Map<String, Transform3d> robotToCamTransforms = new HashMap<>();
         robotToCamTransforms.put("CAM_1", new Transform3d(
-            new Translation3d(0.3, 0.25, 0.20),  // right camera
+            new Translation3d(0.331964, -0.209447, 0.223367),  // right camera
             new Rotation3d(0.0, Math.toRadians(0), 0.0))); 
             
         robotToCamTransforms.put("CAM_2", new Transform3d(
-            new Translation3d(0, 0, 0),  // left camera
+            new Translation3d(0.331964, 0.209447, 0.223367),  // left camera
             new Rotation3d(0.0, Math.toRadians(0), Math.toRadians(0)))); 
             
         robotToCamTransforms.put("CAM_3", new Transform3d(
-            new Translation3d(0, 0, 0),  // top camera
-            new Rotation3d(0.0, Math.toRadians(0), 0.0))); 
+            new Translation3d(-0.331964, 0.209447, 0.223367),  // top camera
+            new Rotation3d(0.0, Math.toRadians(0), Math.toRadians(180)))); 
         
         // Create cameras and estimators with their specific transforms 
         for (Map.Entry<String, Transform3d> entry : robotToCamTransforms.entrySet()) {
@@ -90,7 +92,7 @@ public class Vision extends SubsystemBase {
             .withSize(2, 1)
             .withPosition(0, 0);
             
-        // Listen for camera selection changes
+        // // Listen for camera selection changes
         NetworkTableInstance.getDefault()
             .getTable("SmartDashboard")
             .getSubTable("Camera Selection")
@@ -123,26 +125,40 @@ public class Vision extends SubsystemBase {
     }
 
     /**
-     * The latest estimated robot pose on the field from vision data. This may be empty. This should
-     * only be called once per loop.
-     *
-     * <p>Also includes updates for the standard deviations, which can (optionally) be retrieved with
-     * {@link getEstimationStdDevs}
-     *
-     * @return An {@link EstimatedRobotPose} with an estimated pose, estimate timestamp, and targets
-     *     used for estimation.
+     * Get estimated poses from ALL cameras and return the best one
+     * @return The best estimated robot pose from any camera
      */
     public Optional<EstimatedRobotPose> getEstimatedGlobalPose() {
-        // Use current selected camera UwU
-        PhotonCamera camera = cameras.get(currentCamera);
-        PhotonPoseEstimator estimator = photonEstimators.get(currentCamera);
+        Optional<EstimatedRobotPose> bestEstimate = Optional.empty();
+        double bestDistance = Double.MAX_VALUE;
         
-        Optional<EstimatedRobotPose> visionEst = Optional.empty();
-        for (var change : camera.getAllUnreadResults()) {
-            visionEst = estimator.update(change);
-            updateEstimationStdDevs(visionEst, change.getTargets());
+        // Check ALL cameras instead of just the current one
+        for (Map.Entry<String, PhotonCamera> cameraEntry : cameras.entrySet()) {
+            String cameraName = cameraEntry.getKey();
+            PhotonCamera camera = cameraEntry.getValue();
+            PhotonPoseEstimator estimator = photonEstimators.get(cameraName);
+            
+            // Process each camera's results
+            for (var result : camera.getAllUnreadResults()) {
+                Optional<EstimatedRobotPose> visionEst = estimator.update(result);
+                updateEstimationStdDevs(visionEst, result.getTargets());
+                
+                // If we got a valid estimate, check if it's better than our current best
+                if (visionEst.isPresent()) {
+                    // Determine quality metric - here we're using number of tags
+                    // You could use different metrics like average distance to tags
+                    int numTags = result.getTargets().size();
+                    
+                    // Higher tag count = better estimate
+                    if (bestEstimate.isEmpty() || numTags > bestDistance) {
+                        bestEstimate = visionEst;
+                        bestDistance = numTags;
+                    }
+                }
+            }
         }
-        return visionEst;
+        
+        return bestEstimate;
     }
 
     /**
@@ -222,60 +238,77 @@ public class Vision extends SubsystemBase {
     }
 
     /**
+     * Gets translations to AprilTags from ALL cameras
+     * @return Map of camera name to tag translation (if visible)
+     */
+    public Map<String, Translation3d> getAllTagTranslations() {
+        Map<String, Translation3d> translations = new HashMap<>();
+        
+        // Check ALL cameras for visible tags
+        for (Map.Entry<String, PhotonCamera> cameraEntry : cameras.entrySet()) {
+            String cameraName = cameraEntry.getKey();
+            PhotonCamera camera = cameraEntry.getValue();
+            
+            var result = camera.getLatestResult();
+            if (result.hasTargets()) {
+                PhotonTrackedTarget target = result.getBestTarget();
+                Transform3d targetTransform = target.getBestCameraToTarget();
+                translations.put(cameraName, targetTransform.getTranslation());
+            }
+        }
+        
+        return translations;
+    }
+
+    /**
      * Gets the latest estimated pose from vision! OwO
      * @return The estimated Pose2d, or null if no valid vision data
      */
     public Pose2d getLatestPose() {
         Optional<EstimatedRobotPose> visionEst = getEstimatedGlobalPose();
         
-        // Check if we have a valid vision estimate >w<
         if (visionEst.isPresent()) {
             return visionEst.get().estimatedPose.toPose2d();
         }
         
-        return null; // No valid pose found ʕ•ᴥ•ʔ
+        return null;
     }
 
-    /**
-     * Gets the 3D translation to the best AprilTag currently visible UwU
-     * @return Translation3d to the tag, or null if no tag is visible
-     */
-    public Translation3d getTagTranslation() {
-        PhotonCamera camera = cameras.get(currentCamera);
-        var result = camera.getLatestResult();
-        
-        // Check if we have any targets ʕ•ᴥ•ʔ
-        if (result.hasTargets()) {
-            // Get best target (closest to camera center)
-            PhotonTrackedTarget target = result.getBestTarget();
-            
-            // Get the transform to the target
-            Transform3d targetTransform = target.getBestCameraToTarget();
-            return targetTransform.getTranslation();
-        }
-        
-        return null;  // No targets found (╥﹏╥)
+    public void disableProcessing() {
+        processingEnabled = false;
     }
 
     @Override
     public void periodic() {
-        // Update camera selection if needed
+        if (!processingEnabled) {
+            return; // Skip all vision processing
+        }
+        // Regular vision processing...
+        // We can still keep the camera selector for debug viewing,
+        // but now we're processing all cameras regardless of selection
         String selected = cameraChooser.getSelected();
         if (selected != null && selected != currentCamera) {
             currentCamera = selected;
         }
 
-        // Put tag translation on dashboard ✨
-        Translation3d tagTranslation = getTagTranslation();
-        if (tagTranslation != null) {
-            SmartDashboard.putNumber("Tag/X Distance (m)", tagTranslation.getX());
-            SmartDashboard.putNumber("Tag/Y Distance (m)", tagTranslation.getY());
-            SmartDashboard.putNumber("Tag/Z Distance (m)", tagTranslation.getZ());
-        } else {
-            // Clear values when no tag is visible UwU
-            SmartDashboard.putNumber("Tag/X Distance (m)", 0.0);
-            SmartDashboard.putNumber("Tag/Y Distance (m)", 0.0);
-            SmartDashboard.putNumber("Tag/Z Distance (m)", 0.0);
+        // Put ALL tag translations on dashboard
+        Map<String, Translation3d> allTranslations = getAllTagTranslations();
+        
+        // Clear previous values
+        for (String camera : cameras.keySet()) {
+            SmartDashboard.putNumber(camera + "/Tag/X", 0.0);
+            SmartDashboard.putNumber(camera + "/Tag/Y", 0.0);
+            SmartDashboard.putNumber(camera + "/Tag/Z", 0.0);
+        }
+        
+        // Update with new values
+        for (Map.Entry<String, Translation3d> entry : allTranslations.entrySet()) {
+            String camera = entry.getKey();
+            Translation3d translation = entry.getValue();
+            
+            SmartDashboard.putNumber(camera + "/Tag/X", translation.getX());
+            SmartDashboard.putNumber(camera + "/Tag/Y", translation.getY());
+            SmartDashboard.putNumber(camera + "/Tag/Z", translation.getZ());
         }
     }
 }

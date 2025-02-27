@@ -78,7 +78,7 @@ public class Grabber extends SubsystemBase {
 
         // Initialize PID controller
         pidController = new ProfiledPIDController(
-            4.2,    // kP
+            4.0,    // kP
             0.0,    // kI 
             0.005,    // kD
             constraints  // Motion constraints
@@ -88,6 +88,7 @@ public class Grabber extends SubsystemBase {
     CANcoderConfiguration encoderConfig = new CANcoderConfiguration();
     encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
     encoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 0;
+    encoderConfig.MagnetSensor.MagnetOffset = 0.605469;
     grabberEncoder.getConfigurator().apply(encoderConfig);
 
 
@@ -206,7 +207,7 @@ public class Grabber extends SubsystemBase {
     /**
      * @return true if grabber is at the target position
      */
-    public boolean atPosition() {
+    public boolean atTargetPosition() {
         return pidController.atSetpoint();
     }
     
@@ -260,6 +261,12 @@ public class Grabber extends SubsystemBase {
     public void placeCoral() {
         rightIntake.set(0.2);
         leftIntake.set(-0.2);
+    }
+
+    public void hitAlgea() {
+        rightIntake.set(0.4);
+        leftIntake.set(-0.4);
+
     }
 
     public void stop() {

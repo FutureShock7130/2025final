@@ -20,6 +20,11 @@ public final class Main {
    * <p>If you change your main robot class, change the parameter type.
    */
   public static void main(String... args) {
+    // Add JVM arguments for memory management
+    System.setProperty("javax.net.ssl.trustStore", "none");
+    // Add these memory settings
+    System.setProperty("java.awt.headless", "true"); // Disable AWT
+    System.setProperty("file.encoding", "UTF-8"); // Use efficient encoding
     RobotBase.startRobot(Robot::new);
   }
 }

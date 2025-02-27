@@ -33,9 +33,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Vision;
 import frc.robot.subsystems.drive.GyroIO.GyroIOInputs;
-import org.littletonrobotics.junction.AutoLogOutput;
-import org.littletonrobotics.junction.AutoLogOutputManager;
-import org.littletonrobotics.junction.Logger;
+// import org.littletonrobotics.junction.AutoLogOutput;
+// import org.littletonrobotics.junction.AutoLogOutputManager;
+// import org.littletonrobotics.junction.Logger;
 import org.photonvision.estimation.VisionEstimation;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
@@ -57,20 +57,20 @@ public class Drive extends SubsystemBase {
   private final GyroIOInputs gyroInputs = new GyroIOInputs();
   
   private  Module[] modules = new Module[4]; // FL, FR, BL, BR
-  private final SysIdRoutine sysId = new SysIdRoutine(
-    new SysIdRoutine.Config(
-        null,
-        null,
-        null,
-        (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())),
-    new SysIdRoutine.Mechanism(
-        (voltage) -> {
-          for (int i = 0; i < 4; i++) {
-            modules[i].runCharacterization(12);
-          }
-        },
-        null,
-        this));
+  // private final SysIdRoutine sysId = new SysIdRoutine(
+  //   new SysIdRoutine.Config(
+  //       null,
+  //       null,
+  //       null,
+  //       (state) -> Logger.recordOutput("Drive/SysIdState", state.toString())),
+  //   new SysIdRoutine.Mechanism(
+  //       (voltage) -> {
+  //         for (int i = 0; i < 4; i++) {
+  //           modules[i].runCharacterization(12);
+  //         }
+  //       },
+  //       null,
+  //       this));
 
   private SwerveDriveKinematics kinematics = new SwerveDriveKinematics(getModuleTranslations());
   private Rotation2d rawGyroRotation = new Rotation2d();
@@ -127,7 +127,7 @@ public class Drive extends SubsystemBase {
             this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
             (speeds, feedforwards) -> runVelocity(speeds), // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds. Also optionally outputs individual module feedforwards
             new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
-                    new PIDConstants(5.0, 0.0, 0.0), // Translation PID constants
+                    new PIDConstants(2.5, 0.75, 0.2), // Translation PID constants
                     new PIDConstants(5.0, 0.0, 0.0) // Rotation PID constants
             ),
             config, // The robot configuration
@@ -177,7 +177,7 @@ public class Drive extends SubsystemBase {
 
   public void periodic() {
     gyroIO.updateInputs(gyroInputs);
-    Logger.processInputs("Drive/Gyro", gyroInputs);
+    // Logger.processInputs("Drive/Gyro", gyroInputs);
     for (var module : modules) {
       module.periodic();
     }
@@ -189,10 +189,15 @@ public class Drive extends SubsystemBase {
       }
     }
     // Log empty setpoint states when disabled
-    if (DriverStation.isDisabled()) {
-      Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
-      Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
-    }
+    // if (DriverStation.isDisabled()) {
+    //   Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
+    //   Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
+    // }
+    
+    Runtime runtime = Runtime.getRuntime();
+    SmartDashboard.putNumber("Memory/MaxKB", runtime.maxMemory()/1024);
+    SmartDashboard.putNumber("Memory/UsedKB", (runtime.totalMemory() - runtime.freeMemory())/1024);
+    SmartDashboard.putNumber("Memory/FreeKB", runtime.freeMemory()/1024);
 
     // Read wheel positions and deltas from each module
     SwerveModulePosition[] modulePositions = getModulePositions();
@@ -222,7 +227,7 @@ public class Drive extends SubsystemBase {
     odoField2d.setRobotPose(poseEstimator.getEstimatedPosition());
     SmartDashboard.putData("map", odoField2d);
 
-    // Update pose estimator with vision data! 
+    // Update pose estimator with vision data
     Pose2d visionPose = vision.getLatestPose();
     if (visionPose != null) {
       poseEstimator.addVisionMeasurement(
@@ -231,16 +236,16 @@ public class Drive extends SubsystemBase {
       );
     }
 
-    Pose2d currentPose = getPose();
-    SmartDashboard.putNumber("Odometry/X Position (m)", currentPose.getX());
-    SmartDashboard.putNumber("Odometry/Y Position (m)", currentPose.getY());
-    SmartDashboard.putNumber("Odometry/Rotation (deg)", currentPose.getRotation().getDegrees());
+    // Pose2d currentPose = getPose();
+    // SmartDashboard.putNumber("Odometry/X Position (m)", currentPose.getX());
+    // SmartDashboard.putNumber("Odometry/Y Position (m)", currentPose.getY());
+    // SmartDashboard.putNumber("Odometry/Rotation (deg)", currentPose.getRotation().getDegrees());
     
-    // Get current speeds from module states
-    ChassisSpeeds speeds = kinematics.toChassisSpeeds(getModuleStates());
-    SmartDashboard.putNumber("Robot Speed/X (m/s)", speeds.vxMetersPerSecond);
-    SmartDashboard.putNumber("Robot Speed/Y (m/s)", speeds.vyMetersPerSecond);
-    SmartDashboard.putNumber("Robot Speed/Rotation (rad/s)", speeds.omegaRadiansPerSecond);
+    // // Get current speeds from module states
+    // ChassisSpeeds speeds = kinematics.toChassisSpeeds(getModuleStates());
+    // SmartDashboard.putNumber("Robot Speed/X (m/s)", speeds.vxMetersPerSecond);
+    // SmartDashboard.putNumber("Robot Speed/Y (m/s)", speeds.vyMetersPerSecond);
+    // SmartDashboard.putNumber("Robot Speed/Rotation (rad/s)", speeds.omegaRadiansPerSecond);
   }
 
   /**
@@ -261,9 +266,9 @@ public class Drive extends SubsystemBase {
       optimizedSetpointStates[i] = modules[i].runSetpoint(setpointStates[i]);
     }
 
-    // Log setpoint states
-    Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
-    Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
+    // // Log setpoint states
+    // Logger.recordOutput("SwerveStates/Setpoints", setpointStates);
+    // Logger.recordOutput("SwerveStates/SetpointsOptimized", optimizedSetpointStates);
   }
 
   /** Stops the drive. */
@@ -284,15 +289,15 @@ public class Drive extends SubsystemBase {
     stop();
   }
 
-  /** Returns a command to run a quasistatic test in the specified direction. */
-  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
-    return sysId.quasistatic(direction);
-  }
+  // /** Returns a command to run a quasistatic test in the specified direction. */
+  // public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+  //   return sysId.quasistatic(direction);
+  // }
 
-  // /** Returns a command to run a dynamic test in the specified direction. */
-  public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-    return sysId.dynamic(direction);
-  }
+  // // /** Returns a command to run a dynamic test in the specified direction. */
+  // public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+  //   return sysId.dynamic(direction);
+  // }
 
   /** Returns the module states (turn angles and drive velocities) for all of the modules. */
 //   @AutoLogOutput(key = "SwerveStates/Measured")

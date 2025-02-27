@@ -229,6 +229,9 @@ public class Elevator extends SubsystemBase {
 
     // Update values instead of creating new widgets
     speedEntry.setDouble(leftMotor.get());
+    SmartDashboard.putNumber("elevator applied output", leftMotor.getAppliedOutput());
+    SmartDashboard.putNumber("elevator get", leftMotor.get());
+    SmartDashboard.putNumber("elevator volts", leftMotor.getBusVoltage());
     leftRotationsEntry.setDouble(leftMotor.getEncoder().getPosition());
     rightRotationsEntry.setDouble(rightMotor.getEncoder().getPosition());
 
