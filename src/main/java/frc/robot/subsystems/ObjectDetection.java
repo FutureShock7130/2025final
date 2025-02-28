@@ -12,31 +12,54 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.subsystems.drive.Drive;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.Comparator;
+import java.util.Iterator;
 
 /**
  * 物件偵測子系統
- * 這個子系統使用PhotonVision來偵測分類為"0"或"1"的物件
+ * 這個子系統使用PhotonVision來偵測分類為"0"(algae)或"1"(coral)的物件
  * 提供以下功能:
  * - 透過Shuffleboard控制追蹤功能
  * - 追蹤並跟隨偵測到的物件
  * - 自動對準物件
  * - 追蹤最近的物件
+ * - 估算物件距離
+ * - 計算物件在場地上的位置
  */
 public class ObjectDetection extends SubsystemBase {
     private final PhotonCamera camera;
-    private int targetClass = 0; // 預設追蹤class 0 (有效值: 0或1)
+    private int targetClass = 0; // 預設追蹤class 0 (algae)
     private final PIDController turnController;
     private final PIDController driveController;
     private Drive driveSubsystem;
+    
+    // 遊戲物體尺寸定義 (單位: 公尺)
+    private static final double ALGAE_DIAMETER = 0.413; // algae的直徑
+    private static final double CORAL_LENGTH = 0.30;   // coral的長度
+    
+    // 相機設定
+    private static final double CAMERA_HORIZONTAL_FOV = 70.0; // 相機水平視角
+    private static final double CAMERA_RESOLUTION_WIDTH = 640.0; // 相機解析度寬度
     
     // 命令狀態
     private boolean isAiming = false;
     private boolean isFollowing = false;
     private Command activeCommand = null;
+    
+    // 物體追蹤系統
+    private Map<Integer, TrackedObject> trackedObjects = new HashMap<>();
+    private Field2d fieldWidget = new Field2d();
     
     // Shuffleboard 項目
     private final ShuffleboardTab visionTab = Shuffleboard.getTab("物件偵測");
@@ -46,19 +69,37 @@ public class ObjectDetection extends SubsystemBase {
     private GenericEntry aimButtonEntry;
     private GenericEntry followButtonEntry;
     private GenericEntry stopButtonEntry;
+    private GenericEntry distanceEstimateEntry;
     
-
     private static final double TARGET_AREA_SETPOINT = 15.0; 
     private static final double AIM_TOLERANCE_DEGREES = 2.0; 
     
+    /**
+     * 被追蹤物體的資訊
+     */
+    public class TrackedObject {
+        public int id;
+        public Pose2d pose;
+        public double distance;
+        public double lastUpdated;
+        
+        public TrackedObject(int id, Pose2d pose, double distance) {
+            this.id = id;
+            this.pose = pose;
+            this.distance = distance;
+            this.lastUpdated = Timer.getFPGATimestamp();
+        }
+        
+        public boolean isStale() {
+            // 如果超過3秒沒更新，視為過期
+            return Timer.getFPGATimestamp() - lastUpdated > 3.0;
+        }
+    }
+    
     public ObjectDetection() {
-        camera = new PhotonCamera("WEB-CAM");
-        
-
-        turnController = new PIDController(0.05, 0, 0.005);
-        driveController = new PIDController(0.1, 0, 0);
-        
-
+        camera = new PhotonCamera("WEB_CAM");
+        turnController = new PIDController(0.05, 0, 0.005); //轉向PID
+        driveController = new PIDController(0.1, 0, 0); //靠近PID
         setupShuffleboardControls();
     }
     
@@ -66,46 +107,44 @@ public class ObjectDetection extends SubsystemBase {
      * 設置Shuffleboard控制項
      */
     private void setupShuffleboardControls() {
-
-        targetClassEntry = visionTab.add("目標 (0 or 1)", targetClass)
+        targetClassEntry = visionTab.add("目標 (0=algae, 1=coral)", targetClass)
             .withPosition(0, 0)
             .withSize(1, 1)
             .getEntry();
         
-
-        targetAreaEntry = visionTab.add("target_area_set", TARGET_AREA_SETPOINT)
+        targetAreaEntry = visionTab.add("目標區域大小", TARGET_AREA_SETPOINT)
             .withPosition(1, 0)
             .withSize(1, 1)
             .getEntry();
         
-
-        aimToleranceEntry = visionTab.add("aim_degree", AIM_TOLERANCE_DEGREES)
+        aimToleranceEntry = visionTab.add("對準容許誤差(度)", AIM_TOLERANCE_DEGREES)
             .withPosition(2, 0)
             .withSize(1, 1)
             .getEntry();
         
-    
         aimButtonEntry = visionTab.add("對準目標", false)
             .withPosition(0, 1)
             .withSize(1, 1)
             .withProperties(Map.of("colorWhenTrue", "green"))
             .getEntry();
         
-        // 跟隨按鈕
         followButtonEntry = visionTab.add("跟隨目標", false)
             .withPosition(1, 1)
             .withSize(1, 1)
             .withProperties(Map.of("colorWhenTrue", "blue"))
             .getEntry();
         
-        // 停止按鈕
         stopButtonEntry = visionTab.add("停止", false)
             .withPosition(2, 1)
             .withSize(1, 1)
             .withProperties(Map.of("colorWhenTrue", "red"))
             .getEntry();
         
-        // 顯示狀態
+        distanceEstimateEntry = visionTab.add("估計距離(公尺)", 0.0)
+            .withPosition(3, 0)
+            .withSize(1, 1)
+            .getEntry();
+        
         visionTab.addBoolean("有目標", this::isTargetVisible)
             .withPosition(0, 2)
             .withSize(1, 1);
@@ -121,6 +160,40 @@ public class ObjectDetection extends SubsystemBase {
         })
             .withPosition(2, 2)
             .withSize(1, 1);
+            
+        visionTab.addString("目標物類別", () -> 
+            targetClass == 0 ? "algae" : "coral")
+            .withPosition(3, 1)
+            .withSize(1, 1);
+            
+        // 添加視覺化場地
+        visionTab.add("場地", fieldWidget)
+            .withSize(5, 3)
+            .withPosition(0, 3);
+            
+        // 顯示追蹤物體清單
+        visionTab.addString("追蹤物體", this::getTrackedObjectsAsString)
+            .withSize(2, 3)
+            .withPosition(5, 3);
+    }
+    
+    /**
+     * 將追蹤的物體轉換為字串顯示
+     */
+    private String getTrackedObjectsAsString() {
+        if (trackedObjects.isEmpty()) {
+            return "無物體";
+        }
+        
+        return trackedObjects.values().stream()
+            .filter(obj -> !obj.isStale())
+            .map(obj -> String.format("ID:%d %s @ (%.2f, %.2f) 距離:%.2f",
+                obj.id,
+                obj.id == 0 ? "algae" : "coral",
+                obj.pose.getX(),
+                obj.pose.getY(),
+                obj.distance))
+            .collect(Collectors.joining("\n"));
     }
     
     /**
@@ -136,23 +209,170 @@ public class ObjectDetection extends SubsystemBase {
         // 獲取最新的PhotonVision結果
         var result = camera.getLatestResult();
         
-        // 顯示目標資訊
+        // 更新被追蹤的物體
         if (result.hasTargets()) {
-            var target = getBestTarget(result);
-            if (target != null) {
-                SmartDashboard.putNumber("偵測到的類別", target.getFiducialId());
-                SmartDashboard.putNumber("目標偏航角", target.getYaw());
-                SmartDashboard.putNumber("目標俯仰角", target.getPitch());
-                SmartDashboard.putNumber("目標區域", target.getArea());
-            }
+            updateTrackedObjects(result);
         }
+        
+        // 清除過期的物體追蹤
+        removeStaleObjects();
+        
+        // 更新場地視覺化
+        updateFieldWidget();
         
         // 檢查用戶是否從Shuffleboard更新了設定
         checkShuffleboardControls();
     }
     
     /**
-     * 檢查Shuffleboard控制項的變更
+     * 清除過期的物體追蹤
+     */
+    private void removeStaleObjects() {
+        // 使用迭代器安全地移除過期項目
+        Iterator<Map.Entry<Integer, TrackedObject>> it = trackedObjects.entrySet().iterator();
+        while (it.hasNext()) {
+            if (it.next().getValue().isStale()) {
+                it.remove();
+            }
+        }
+    }
+    
+    /**
+     * 更新場地視覺化
+     */
+    private void updateFieldWidget() {
+        // 更新機器人位置
+        if (driveSubsystem != null) {
+            fieldWidget.setRobotPose(driveSubsystem.getPose());
+        }
+        
+        // 更新物體位置
+        trackedObjects.forEach((id, obj) -> {
+            if (!obj.isStale()) {
+                String objectType = id == 0 ? "algae" : "coral";
+                fieldWidget.getObject(objectType + "-" + id).setPose(obj.pose);
+            }
+        });
+    }
+    
+    /**
+     * 計算物體的距離
+     * @param target 追蹤目標
+     * @return 距離（公尺）
+     */
+    public double calculateDistance(PhotonTrackedTarget target) {
+
+        double apparentWidth = 0;
+    
+        try {
+            var corners = target.getMinAreaRectCorners();
+            if (corners != null && corners.size() >= 4) {
+
+                double diag1 = Math.hypot(
+                    corners.get(0).x - corners.get(2).x,
+                    corners.get(0).y - corners.get(2).y
+                );
+                double diag2 = Math.hypot(
+                    corners.get(1).x - corners.get(3).x,
+                    corners.get(1).y - corners.get(3).y
+                );
+                apparentWidth = Math.max(diag1, diag2) / Math.sqrt(2);
+            }
+        } catch (Exception e) {
+            apparentWidth = 0;
+        }
+        
+        if (apparentWidth <= 0) {
+            // 如果寬度無法獲取，使用面積作為備用方法
+            return estimateDistanceFromArea(target.getArea());
+        }
+        
+        // 根據物體ID判定實際尺寸
+        double actualWidth;
+        if (target.getFiducialId() == 0) {
+            actualWidth = ALGAE_DIAMETER; // algae的直徑
+        } else {
+            actualWidth = CORAL_LENGTH; // coral的長度
+        }
+        
+        // 使用視角公式計算距離
+        return (actualWidth * CAMERA_RESOLUTION_WIDTH) / 
+               (2 * apparentWidth * Math.tan(Math.toRadians(CAMERA_HORIZONTAL_FOV/2)));
+    }
+    
+    /**
+     * 從物體面積估計距離（主要方法）
+     * @param area 物體面積（0-100的百分比）
+     * @return 估計距離（公尺）
+     */
+    private double estimateDistanceFromArea(double area) {
+        // 根據物體類別選擇適當的校準因子
+        double scaleFactor;
+        if (targetClass == 0) { // algae
+            scaleFactor = 0.35; // 要通過實驗校準
+        } else { // coral
+            scaleFactor = 0.40; // 要通過實驗校準
+        }
+        
+        // 面積是百分比（0-100），面積越大，物體越近
+        if (area < 0.1) {
+            // 避免除以極小值
+            return 10.0; // 最大距離限制（10米）
+        }
+        
+        // 實驗表明，距離與面積平方根的倒數大致成正比
+        // Distance ≈ scaleFactor / √(Area)
+        return scaleFactor / Math.sqrt(area / 100.0);
+    }
+    
+    /**
+     * 更新追蹤的物體
+     */
+    private void updateTrackedObjects(PhotonPipelineResult result) {
+        if (!result.hasTargets() || driveSubsystem == null) {
+            return;
+        }
+        
+        for (PhotonTrackedTarget target : result.getTargets()) {
+            int objectId = target.getFiducialId();
+            if (objectId != 0 && objectId != 1) continue; // 只處理ID為0或1的物體
+            
+            // 計算物體距離
+            double distance = calculateDistance(target);
+            
+            // 計算相對於機器人的位置
+            double yaw = Math.toRadians(target.getYaw());
+            
+            // 相對位置向量 (前方為x軸正向)
+            Translation2d objectRelativePos = new Translation2d(
+                distance * Math.cos(yaw),
+                distance * Math.sin(yaw)
+            );
+            
+            // 轉換到場地坐標系
+            Pose2d robotPose = driveSubsystem.getPose();
+            double robotHeading = robotPose.getRotation().getRadians();
+            
+            Pose2d objectPose = new Pose2d(
+                robotPose.getX() + objectRelativePos.getX() * Math.cos(robotHeading) - 
+                            objectRelativePos.getY() * Math.sin(robotHeading),
+                robotPose.getY() + objectRelativePos.getX() * Math.sin(robotHeading) + 
+                            objectRelativePos.getY() * Math.cos(robotHeading),
+                new Rotation2d(0)
+            );
+            
+            // 更新物體位置
+            trackedObjects.put(objectId, new TrackedObject(objectId, objectPose, distance));
+            
+            // 如果是當前目標類別，更新到Shuffleboard
+            if (objectId == targetClass) {
+                distanceEstimateEntry.setDouble(distance);
+            }
+        }
+    }
+    
+    /**
+     * 檢查用戶是否從Shuffleboard更新了設定
      */
     private void checkShuffleboardControls() {
         // 讀取目標類別設定
@@ -188,7 +408,6 @@ public class ObjectDetection extends SubsystemBase {
      */
     private void startAiming() {
         if (driveSubsystem == null) {
-            System.err.println("錯誤: 未設置驅動子系統！");
             return;
         }
         
@@ -203,7 +422,6 @@ public class ObjectDetection extends SubsystemBase {
      */
     private void startFollowing() {
         if (driveSubsystem == null) {
-            System.err.println("錯誤: 未設置驅動子系統！");
             return;
         }
         
@@ -247,7 +465,6 @@ public class ObjectDetection extends SubsystemBase {
             }
         }
         
-        // 如果沒有匹配的類別，返回最近的目標
         return getClosestTarget(targets);
     }
     
@@ -274,7 +491,7 @@ public class ObjectDetection extends SubsystemBase {
     }
     
     /**
-     * 設置要追蹤的類別(0或1)
+     * 設置要追蹤的類別(0=algae, 1=coral)
      */
     public void setTargetClass(int classID) {
         if (classID == 0 || classID == 1) {
@@ -299,8 +516,6 @@ public class ObjectDetection extends SubsystemBase {
         }
         
         // 使用PID計算居中目標所需的轉向量
-        // 否定是因為正yaw意味著目標在右側，
-        // 所以我們需要向左轉(負值)
         return -turnController.calculate(target.getYaw(), 0);
     }
     
@@ -324,8 +539,6 @@ public class ObjectDetection extends SubsystemBase {
         double targetArea = targetAreaEntry.getDouble(TARGET_AREA_SETPOINT);
         
         // 使用PID計算達到理想區域所需的驅動速度
-        // 注意：如果當前區域 < 目標區域，我們需要前進(正值)
-        // 如果當前區域 > 目標區域，我們需要後退(負值)
         return driveController.calculate(area, targetArea);
     }
     
@@ -334,12 +547,7 @@ public class ObjectDetection extends SubsystemBase {
      */
     public boolean isTargetVisible() {
         var result = camera.getLatestResult();
-        if (!result.hasTargets()) {
-            return false;
-        }
-        
-        var target = getBestTarget(result);
-        return target != null;
+        return result.hasTargets() && getBestTarget(result) != null;
     }
     
     /**
@@ -369,10 +577,57 @@ public class ObjectDetection extends SubsystemBase {
     }
     
     /**
-     * 獲取當前目標類別(0或1)
+     * 獲取當前目標類別(0=algae, 1=coral)
      */
     public int getTargetClass() {
         return targetClass;
+    }
+    
+    /**
+     * 獲取目標物體的估計距離（米）
+     * @return 距離，如果沒有可見目標則返回-1
+     */
+    public double getTargetDistance() {
+        var result = camera.getLatestResult();
+        if (!result.hasTargets()) {
+            return -1.0;
+        }
+        
+        var target = getBestTarget(result);
+        if (target == null) {
+            return -1.0;
+        }
+        
+        return calculateDistance(target);
+    }
+    
+    /**
+     * 獲取特定類別的物體位置（如果可見）
+     * @param classId 物體類別ID (0=algae, 1=coral)
+     * @return 物體位置的Optional
+     */
+    public Optional<Pose2d> getObjectPosition(int classId) {
+        TrackedObject obj = trackedObjects.get(classId);
+        if (obj != null && !obj.isStale()) {
+            return Optional.of(obj.pose);
+        }
+        return Optional.empty();
+    }
+    
+    /**
+     * 獲取最近的物體
+     * @return 包含物體ID和位置的Optional
+     */
+    public Optional<TrackedObject> getNearestObject() {
+        if (trackedObjects.isEmpty() || driveSubsystem == null) {
+            return Optional.empty();
+        }
+        
+        Pose2d robotPose = driveSubsystem.getPose();
+        return trackedObjects.values().stream()
+            .filter(obj -> !obj.isStale())
+            .min(Comparator.comparingDouble(obj -> 
+                robotPose.getTranslation().getDistance(obj.pose.getTranslation())));
     }
     
     // ===================== 命令類 =====================
@@ -397,12 +652,6 @@ public class ObjectDetection extends SubsystemBase {
         }
         
         @Override
-        public void initialize() {
-            // 記錄命令開始時的日誌
-            System.out.println("開始對準目標類別: " + getTargetClass());
-        }
-        
-        @Override
         public void execute() {
             // 獲取視覺對準目標所需的轉向值
             double turnOutput = calculateAimOutput();
@@ -422,13 +671,6 @@ public class ObjectDetection extends SubsystemBase {
             // 停止驅動系統
             driveSubsystem.stop();
             isAiming = false;
-            
-            // 記錄結束原因
-            if (interrupted) {
-                System.out.println("對準被中斷");
-            } else {
-                System.out.println("對準成功完成");
-            }
         }
     }
     
@@ -442,58 +684,45 @@ public class ObjectDetection extends SubsystemBase {
         /**
          * 創建一個新的FollowTargetCommand
          * 
-         * @param driveSubsystem 控制機器人移動的驅動子系統
+         * @param driveSubsystem 
          */
         public FollowTargetCommand(Drive driveSubsystem) {
             this.driveSubsystem = driveSubsystem;
             
-            // 此命令需要這兩個子系統
+
             addRequirements(ObjectDetection.this, driveSubsystem);
         }
         
         @Override
-        public void initialize() {
-            // 記錄命令開始時的日誌
-            System.out.println("開始跟隨目標類別: " + getTargetClass());
-        }
-        
-        @Override
         public void execute() {
-            // 檢查目標是否可見
             if (!isTargetVisible()) {
-                // 如果沒有可見目標，停止機器人
                 driveSubsystem.stop();
                 return;
             }
             
-            // 獲取對準目標的轉向值
+
             double turnOutput = calculateAimOutput();
             
-            // 獲取接近/維持與目標距離的驅動值
+
             double driveOutput = calculateDriveOutput();
             
-            // 將旋轉和前進/後退運動應用到驅動系統
+
             driveSubsystem.runVelocity(new ChassisSpeeds(driveOutput, 0, turnOutput));
             
-            // 更新儀表板上的狀態
+
             SmartDashboard.putNumber("驅動輸出", driveOutput);
             SmartDashboard.putNumber("轉向輸出", turnOutput);
         }
         
         @Override
         public boolean isFinished() {
-            // 此命令永遠不會自行結束
             return false;
         }
         
         @Override
         public void end(boolean interrupted) {
-            // 停止驅動系統
             driveSubsystem.stop();
             isFollowing = false;
-            
-            // 記錄結束原因
-            System.out.println("目標跟隨結束");
         }
     }
 }
