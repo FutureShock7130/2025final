@@ -210,6 +210,9 @@ public class Elevator extends SubsystemBase {
   }
 
 
+  public double getElevatorPosition() {
+    return leftMotor.getEncoder().getPosition();
+  }
 
 
   public boolean atTargetPosition() {
