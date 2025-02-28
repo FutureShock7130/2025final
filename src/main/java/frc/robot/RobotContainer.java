@@ -28,6 +28,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
+// import frc.robot.subsystems.LED;
+import frc.robot.subsystems.NavigationController;
 import frc.robot.subsystems.SuperStruct;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
@@ -53,11 +55,13 @@ import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
-  private final Vision vision = new Vision();
+  public final Vision vision = new Vision();
   private final Elevator m_elevator;
   private final Grabber m_grabber;
   // private final Intake m_intake;
   private final SuperStruct m_SuperStruct;
+  private final NavigationController m_navigationController;
+  // private final LED m_led;
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -72,7 +76,9 @@ public class RobotContainer {
     m_grabber = Grabber.getInstance();
     // m_intake = Intake.getInstance();
     m_SuperStruct = SuperStruct.getInstance();  
-
+    m_navigationController = NavigationController.getInstance();
+    // m_led = LED.getInstance();
+    
     switch (Constants.currentMode) {
       case REAL:
         // Real robot, instantiate hardware IO implementation
@@ -103,6 +109,8 @@ public class RobotContainer {
     autoChooser = AutoBuilder.buildAutoChooser();
     autoChooser.setDefaultOption("null", null);
     autoChooser.addOption("LEAVE", new PathPlannerAuto("LEAVE"));
+    autoChooser.addOption("FullAuto", new PathPlannerAuto("FullAuto"));
+    autoChooser.addOption("Short", new PathPlannerAuto("Short"));
     SmartDashboard.putData("auto", autoChooser);
     // // Set up SysId routines
     // autoChooser.addOption(

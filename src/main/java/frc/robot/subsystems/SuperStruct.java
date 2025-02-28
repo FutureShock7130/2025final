@@ -28,6 +28,7 @@ public class SuperStruct extends SubsystemBase {
     // Intake mIntake;
     StateMachine mStateMachine;
     SuperStructState mCommandedState;
+    LED mled;
 
     private final XboxController driver;
     private final Joystick buttonBoard1;
@@ -36,6 +37,9 @@ public class SuperStruct extends SubsystemBase {
     private static SuperStruct mInstance = null;
 
     private final PathConstraints constraints = new PathConstraints(3, 3, 2 * Math.PI, 4 * Math.PI);
+
+    // Add a field to track the previous state
+    private SuperStructState mPreviousState = SuperStructState.DEFAULT;
 
     public static synchronized SuperStruct getInstance() {
         if (mInstance == null) {
@@ -88,6 +92,7 @@ public class SuperStruct extends SubsystemBase {
         mGrabber = Grabber.getInstance();
         // mIntake = Intake.getInstance();
         mStateMachine = StateMachine.getInstance();
+        mled = LED.getInstance();
         mCommandedState = SuperStructState.DEFAULT;
         driver = new XboxController(0);
         buttonBoard1 = new Joystick(1); // First port
@@ -130,29 +135,67 @@ public class SuperStruct extends SubsystemBase {
 
     public void CS() {
         mElevator.setPosition(-0.001);
-        // mIntake.setAngle(0.340436);
-        // mIntake.setIntake(-0.7);
-        // if (mElevator.atTargetPosition()) {
         mGrabber.setPosition(-0.753154);
         mGrabber.intake();
-        // mGrabber.placeCoral();
-        // }
     }
 
     public void PLACEMENT() {
         mGrabber.placeCoral();
     }
 
+    /**
+     * Sets a new state and updates the previous state tracker
+     * @param state The new state to transition to
+     */
+    public void setState(SuperStructState state) {
+        //save previos state
+        mPreviousState = mCommandedState;
+        
+        // Set the new state
+        mStateMachine.setCommandedState(state);
+    }
+    
+    /**
+     * Checks if the given state is one of the L-levels
+     */
+    private boolean isLLevel(SuperStructState state) {
+        return state == SuperStructState.L1 || 
+               state == SuperStructState.L2 || 
+               state == SuperStructState.L3 || 
+               state == SuperStructState.L4;
+    }
+
     public void DEFAULT() {
-        mGrabber.setPosition(-0.453613);
-        if (mGrabber.atTargetPosition()) {
+        // Check if coming from an L-level
+        boolean comingFromLLevel = isLLevel(mPreviousState);
+
+        if (comingFromLLevel) {
+            if (mPreviousState == SuperStructState.L2) {
+                mElevator.setPosition(23.5);
+                if (mElevator.atTargetPosition()) {
+                    mGrabber.setPosition(-0.453613);
+                    mElevator.setPosition(-0.02);
+                }
+            } else if (mPreviousState == SuperStructState.L3) {
+                mElevator.setPosition(75.420);
+                if (mElevator.atTargetPosition()) {
+                    mGrabber.setPosition(-0.453613);
+                    mElevator.setPosition(-0.02);
+                }
+            } else if (mPreviousState == SuperStructState.L4) {
+                mled.rainbowmarquee();
+                mGrabber.setPosition(-0.453613);
+                mElevator.setPosition(-0.02);
+            }
+        } else {
+            mGrabber.setPosition(-0.453613);
             mElevator.setPosition(-0.02);
         }
         mGrabber.stop();
-        // mIntake.setIntake(0);
-        // mIntake.setAngle(0.338623);
         mGrabber.resetcounter();
+        // mled.rainbowblink();
     }
+
 
     public void ALGAE_STOWAGE() {
         // mIntake.setAngle(0.469727);
@@ -209,17 +252,18 @@ public class SuperStruct extends SubsystemBase {
         }
     }
 
-    public void setState(SuperStructState state) {
-        mStateMachine.setCommandedState(state);
-    }
-
+   
     @Override
     public void periodic() {
-        // This method will be called once per scheduler run
+        // Get current state
         mCommandedState = mStateMachine.getCommandedState();
+        
+        // Update state
         updateState();
 
         SmartDashboard.putString("Commanded State", mCommandedState.toString());
+        SmartDashboard.putString("Previous State", mPreviousState.toString());
+        SmartDashboard.putBoolean("From L-Level", isLLevel(mPreviousState) && mCommandedState == SuperStructState.DEFAULT);
 
         // Add button state monitoring to SmartDashboard
         SmartDashboard.putBoolean("Board 1 Button 1 (L1)", buttonBoard1.getRawButton(1));

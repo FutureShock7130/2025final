@@ -1,0 +1,10 @@
+---
+description: code alignment
+globs: 
+alwaysApply: false
+---
+
+# Your rule content
+always check code alignment
+- You can @ files here
+- You can use markdown but dont have to

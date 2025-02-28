@@ -15,9 +15,11 @@ import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.Constants.FieldConstants;
+import frc.robot.subsystems.NavigationController;
 
 /**
  * The methods in this class are called automatically corresponding to each
@@ -29,6 +31,8 @@ import frc.robot.Constants.FieldConstants;
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
+  private Vision vision;
+
   private XboxController driver;
   private Joystick ButtonBox1;
   private Joystick ButtonBox2;
@@ -36,6 +40,7 @@ public class Robot extends TimedRobot {
   private final RobotContainer m_robotContainer;
 
   private final PathConstraints constraints = new PathConstraints(3, 3, 2 * Math.PI, 4 * Math.PI);
+
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -47,10 +52,11 @@ public class Robot extends TimedRobot {
     driver = new XboxController(0);
     ButtonBox1 = new Joystick(1);
     ButtonBox2 = new Joystick(2);
+    CommandScheduler.getInstance().registerSubsystem(NavigationController.getInstance());
   }
 
   public void RobotInit() {
-
+    
   }
 
   /**
@@ -107,9 +113,14 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    if (ButtonBox2.getRawButtonPressed(7)) {
+    SmartDashboard.putBoolean("has target", m_robotContainer.vision.hasTarget());
+    // NavigationController.getInstance().periodic();
+    if (!m_robotContainer.vision.hasTarget()) {
+       if (ButtonBox2.getRawButtonPressed(7)) {
       AutoBuilder.pathfindToPose(Constants.FieldConstants.A, constraints).until(() -> driverWantsControl()).schedule();
     }
+    }
+   
     if (ButtonBox2.getRawButtonPressed(8)) {
       AutoBuilder.pathfindToPose(Constants.FieldConstants.B, constraints).until(() -> driverWantsControl()).schedule();
     }
@@ -160,10 +171,6 @@ public class Robot extends TimedRobot {
 
     if (driver.getRightBumperButtonPressed()) {
       AutoBuilder.pathfindToPose(Constants.FieldConstants.CSR, constraints).until(() -> driverWantsControl()).schedule();
-    }
-
-    if (driver.getLeftBumperButtonPressed()) {
-      AutoBuilder.pathfindToPose(Constants.FieldConstants.CSL, constraints).until(() -> driverWantsControl()).schedule();
     }
   }
 
