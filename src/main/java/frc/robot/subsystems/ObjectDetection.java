@@ -71,8 +71,21 @@ public class ObjectDetection extends SubsystemBase {
     private GenericEntry stopButtonEntry;
     private GenericEntry distanceEstimateEntry;
     
-    private static final double TARGET_AREA_SETPOINT = 15.0; 
+    private static final double TARGET_AREA_SETPOINT = 37.0; 
     private static final double AIM_TOLERANCE_DEGREES = 2.0; 
+    
+    // 濾波相關的變數
+    private double filteredYaw = 0.0;
+    private double filteredArea = 0.0;
+    private double lastTurnOutput = 0.0;
+    private double lastDriveOutput = 0.0;
+    
+    // 濾波常數 (可根據需要調整)
+    private static final double YAW_FILTER_CLOSE = 0.85; // 近距離時強度較高的濾波 (越高 = 濾波越強)
+    private static final double YAW_FILTER_FAR = 0.5;    // 遠距離時強度較低的濾波
+    private static final double AREA_FILTER = 0.7;       // 面積濾波強度
+    private static final double SLEW_RATE_LIMIT = 0.05;  // 每次循環輸出變化的限制
+    private static final double CLOSE_DISTANCE = 1.0;    // 多少米被視為"靠近"
     
     /**
      * Information for tracked objects
@@ -98,8 +111,8 @@ public class ObjectDetection extends SubsystemBase {
     
     public ObjectDetection() {
         camera = new PhotonCamera("WEB_CAM");
-        turnController = new PIDController(0.05, 0, 0.005); // Turning PID
-        driveController = new PIDController(0.1, 0, 0); // Approach PID
+        turnController = new PIDController(0.007, 0, 0.0001); // Turning PID
+        driveController = new PIDController(0.05, 0, 0.0001); // Approach PID
         setupShuffleboardControls();
     }
     
@@ -197,6 +210,15 @@ public class ObjectDetection extends SubsystemBase {
             return 0.0;
         })
             .withPosition(4, 2)
+            .withSize(1, 1);
+            
+        // 增加顯示濾波後的數值
+        visionTab.addNumber("Filtered Yaw", () -> filteredYaw)
+            .withPosition(4, 0)
+            .withSize(1, 1);
+            
+        visionTab.addNumber("Filtered Area", () -> filteredArea)
+            .withPosition(4, 1)
             .withSize(1, 1);
     }
     
@@ -514,6 +536,62 @@ public class ObjectDetection extends SubsystemBase {
     }
     
     /**
+     * 獲取經過濾波的偏航值
+     * @param target 目標
+     * @return 經過濾波的偏航值 (角度)
+     */
+    private double getFilteredYaw(PhotonTrackedTarget target) {
+        if (target == null) return 0.0;
+        
+        // 根據距離計算濾波因子
+        double distance = calculateDistance(target);
+        double filterFactor = YAW_FILTER_FAR;
+        
+        // 當靠近目標時應用更強的濾波
+        if (distance < CLOSE_DISTANCE) {
+            // 線性增加濾波強度（距離越近，濾波越強）
+            double t = Math.max(0, distance / CLOSE_DISTANCE);
+            filterFactor = YAW_FILTER_CLOSE * (1 - t) + YAW_FILTER_FAR * t;
+        }
+        
+        // 應用低通濾波
+        filteredYaw = filterFactor * filteredYaw + (1 - filterFactor) * target.getYaw();
+        return filteredYaw;
+    }
+    
+    /**
+     * 獲取經過濾波的面積值
+     * @param target 目標
+     * @return 經過濾波的面積值
+     */
+    private double getFilteredArea(PhotonTrackedTarget target) {
+        if (target == null) return 0.0;
+        
+        // 應用低通濾波
+        filteredArea = AREA_FILTER * filteredArea + (1 - AREA_FILTER) * target.getArea();
+        return filteredArea;
+    }
+    
+    /**
+     * 應用變化率限制，防止輸出突然變化
+     * @param newValue 新值
+     * @param lastValue 上一個值
+     * @return 限制後的值
+     */
+    private double applyRateLimit(double newValue, double lastValue) {
+        double change = newValue - lastValue;
+        
+        // 限制變化率
+        if (change > SLEW_RATE_LIMIT) {
+            change = SLEW_RATE_LIMIT;
+        } else if (change < -SLEW_RATE_LIMIT) {
+            change = -SLEW_RATE_LIMIT;
+        }
+        
+        return lastValue + change;
+    }
+    
+    /**
      * Set the class to track (0=algae, 1=coral)
      */
     public void setTargetClass(int classID) {
@@ -530,17 +608,32 @@ public class ObjectDetection extends SubsystemBase {
     public double calculateAimOutput() {
         var result = camera.getLatestResult();
         if (!result.hasTargets()) {
-            return 0.0;
+            // 如果沒有目標，逐漸減少轉向輸出
+            lastTurnOutput = applyRateLimit(0.0, lastTurnOutput);
+            return lastTurnOutput;
         }
         
         var target = getBestTarget(result);
         if (target == null) {
-            return 0.0;
+            // 如果沒有目標，逐漸減少轉向輸出
+            lastTurnOutput = applyRateLimit(0.0, lastTurnOutput);
+            return lastTurnOutput;
         }
         
-        // FIXED: Removed negative sign to fix aiming direction
-        // Use PID to calculate the steering amount needed to center the target
-        return turnController.calculate(target.getYaw(), 0);
+        // 使用經過濾波的偏航值而不是原始值
+        double filteredYawValue = getFilteredYaw(target);
+        
+        // 根據濾波後的值計算轉向輸出
+        double turnOutput = turnController.calculate(filteredYawValue, 0);
+        
+        // 應用變化率限制
+        lastTurnOutput = applyRateLimit(turnOutput, lastTurnOutput);
+        
+        // 輸出調試信息
+        SmartDashboard.putNumber("Raw Yaw", target.getYaw());
+        SmartDashboard.putNumber("Filtered Yaw", filteredYawValue);
+        
+        return lastTurnOutput;
     }
     
     /**
@@ -550,21 +643,33 @@ public class ObjectDetection extends SubsystemBase {
     public double calculateDriveOutput() {
         var result = camera.getLatestResult();
         if (!result.hasTargets()) {
-            return 0.0;
+            // 如果沒有目標，逐漸減少驅動輸出
+            lastDriveOutput = applyRateLimit(0.0, lastDriveOutput);
+            return lastDriveOutput;
         }
         
         var target = getBestTarget(result);
         if (target == null) {
-            return 0.0;
+            // 如果沒有目標，逐漸減少驅動輸出
+            lastDriveOutput = applyRateLimit(0.0, lastDriveOutput);
+            return lastDriveOutput;
         }
         
-        // Use area as a proxy for distance (larger area = closer distance)
-        double area = target.getArea();
+        // 使用經過濾波的面積而不是原始面積
+        double filteredAreaValue = getFilteredArea(target);
         double targetArea = targetAreaEntry.getDouble(TARGET_AREA_SETPOINT);
         
-        // FIXED: Invert the output to fix the direction issue
-        // If area < targetArea, we need to move forward (positive output)
-        return -driveController.calculate(area, targetArea);
+        // 根據濾波後的值計算驅動輸出
+        double driveOutput = -driveController.calculate(filteredAreaValue, targetArea);
+        
+        // 應用變化率限制
+        lastDriveOutput = applyRateLimit(driveOutput, lastDriveOutput);
+        
+        // 輸出調試信息
+        SmartDashboard.putNumber("Raw Area", target.getArea());
+        SmartDashboard.putNumber("Filtered Area", filteredAreaValue);
+        
+        return lastDriveOutput;
     }
     
     /**
@@ -590,8 +695,8 @@ public class ObjectDetection extends SubsystemBase {
         }
         
         double tolerance = aimToleranceEntry.getDouble(AIM_TOLERANCE_DEGREES);
-        // Consider aimed if within tolerance range
-        return Math.abs(target.getYaw()) < tolerance;
+        // 使用濾波後的偏航值來決定是否已對準
+        return Math.abs(filteredYaw) < tolerance;
     }
     
     /**
