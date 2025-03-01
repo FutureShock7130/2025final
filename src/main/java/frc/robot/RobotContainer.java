@@ -147,7 +147,6 @@ public class RobotContainer {
                     drive)
                 .ignoringDisable(true));
     
-    // 注意：不再需要為物件偵測新增按鈕綁定，因為現在使用Shuffleboard控制
   }
 
   /**
