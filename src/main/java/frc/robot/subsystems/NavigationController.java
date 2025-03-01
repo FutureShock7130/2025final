@@ -64,9 +64,9 @@ public class NavigationController extends SubsystemBase {
     @Override
     public void periodic() {
         // Check if driver wants manual control
-        if (currentDestination != DestinationState.MANUAL_DRIVING && driverWantsControl()) {
+        if (driverWantsControl()) {
             cancelPathfinding();
-            return;
+            
         }
 
         // Check button presses to set new destinations

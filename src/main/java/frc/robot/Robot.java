@@ -120,63 +120,63 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     SmartDashboard.putBoolean("has target", m_robotContainer.vision.hasTarget());
-    // NavigationController.getInstance().periodic();
-       if (ButtonBox2.getRawButtonPressed(7)) {
-      AutoBuilder.pathfindToPose(Constants.FieldConstants.A, constraints).until(() -> driverWantsControl()).schedule();
-    }
+    NavigationController.getInstance().periodic();
+    //    if (ButtonBox2.getRawButtonPressed(7)) {
+    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.A, constraints).until(() -> driverWantsControl()).schedule();
+    // }
     
    
-    if (ButtonBox2.getRawButtonPressed(8)) {
-      AutoBuilder.pathfindToPose(Constants.FieldConstants.B, constraints).until(() -> driverWantsControl()).schedule();
-    }
+    // if (ButtonBox2.getRawButtonPressed(8)) {
+    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.B, constraints).until(() -> driverWantsControl()).schedule();
+    // }
 
-    if (ButtonBox1.getRawButtonPressed(7)) {
-      AutoBuilder.pathfindToPose(Constants.FieldConstants.C, constraints).until(() -> driverWantsControl()).schedule();
-    }
+    // if (ButtonBox1.getRawButtonPressed(7)) {
+    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.C, constraints).until(() -> driverWantsControl()).schedule();
+    // }
 
-    if (ButtonBox1.getRawButtonPressed(12)) {
-      AutoBuilder.pathfindToPose(Constants.FieldConstants.D, constraints).until(() -> driverWantsControl()).schedule();
-    }
+    // if (ButtonBox1.getRawButtonPressed(12)) {
+    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.D, constraints).until(() -> driverWantsControl()).schedule();
+    // }
 
-    if (ButtonBox1.getRawButtonPressed(5)) {
-      AutoBuilder.pathfindToPose(Constants.FieldConstants.E, constraints).until(() -> driverWantsControl()).schedule();
-    }
+    // if (ButtonBox1.getRawButtonPressed(5)) {
+    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.E, constraints).until(() -> driverWantsControl()).schedule();
+    // }
 
-    if (ButtonBox1.getRawButtonPressed(6)) {
-      AutoBuilder.pathfindToPose(Constants.FieldConstants.F, constraints).until(() -> driverWantsControl()).schedule();
-    }
+    // if (ButtonBox1.getRawButtonPressed(6)) {
+    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.F, constraints).until(() -> driverWantsControl()).schedule();
+    // }
 
-    if (ButtonBox1.getRawButtonPressed(3)) {
-      AutoBuilder.pathfindToPose(Constants.FieldConstants.G, constraints).until(() -> driverWantsControl()).schedule();
-    }
+    // if (ButtonBox1.getRawButtonPressed(3)) {
+    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.G, constraints).until(() -> driverWantsControl()).schedule();
+    // }
 
-    if (ButtonBox1.getRawButtonPressed(4)) {
-      AutoBuilder.pathfindToPose(Constants.FieldConstants.H, constraints).until(() -> driverWantsControl()).schedule();
-    }
+    // if (ButtonBox1.getRawButtonPressed(4)) {
+    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.H, constraints).until(() -> driverWantsControl()).schedule();
+    // }
 
-    if (ButtonBox1.getRawButtonPressed(1)) {
-      AutoBuilder.pathfindToPose(Constants.FieldConstants.I, constraints).until(() -> driverWantsControl()).schedule();
-    }
+    // if (ButtonBox1.getRawButtonPressed(1)) {
+    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.I, constraints).until(() -> driverWantsControl()).schedule();
+    // }
 
-    if (ButtonBox1.getRawButtonPressed(2)) {
-      AutoBuilder.pathfindToPose(Constants.FieldConstants.J, constraints).until(() -> driverWantsControl()).schedule();
-    }
+    // if (ButtonBox1.getRawButtonPressed(2)) {
+    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.J, constraints).until(() -> driverWantsControl()).schedule();
+    // }
 
-    if (ButtonBox2.getRawButtonPressed(5)) {
-      AutoBuilder.pathfindToPose(Constants.FieldConstants.K, constraints).until(() -> driverWantsControl()).schedule();
-    }
+    // if (ButtonBox2.getRawButtonPressed(5)) {
+    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.K, constraints).until(() -> driverWantsControl()).schedule();
+    // }
 
-    if (ButtonBox2.getRawButtonPressed(6)) {
-      AutoBuilder.pathfindToPose(Constants.FieldConstants.L, constraints).until(() -> driverWantsControl()).schedule();
-    }
+    // if (ButtonBox2.getRawButtonPressed(6)) {
+    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.L, constraints).until(() -> driverWantsControl()).schedule();
+    // }
 
-    if (driver.getLeftBumperButtonPressed()) {
-      AutoBuilder.pathfindToPose(Constants.FieldConstants.CSL, constraints).until(() -> driverWantsControl()).schedule();
-    }
+    // if (driver.getLeftBumperButtonPressed()) {
+    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.CSL, constraints).until(() -> driverWantsControl()).schedule();
+    // }
 
-    if (driver.getRightBumperButtonPressed()) {
-      AutoBuilder.pathfindToPose(Constants.FieldConstants.CSR, constraints).until(() -> driverWantsControl()).schedule();
-    }
+    // if (driver.getRightBumperButtonPressed()) {
+    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.CSR, constraints).until(() -> driverWantsControl()).schedule();
+    // }
   }
 
   @Override
