@@ -11,7 +11,10 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.networktables.NetworkTableEvent;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -25,34 +28,35 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.EnumSet;
 
 /**
  * Object Detection Subsystem
  * This subsystem uses PhotonVision to detect objects classified as "0" (algae) or "1" (coral)
- * Provides the following functionality:
+ * Provides the following functions:
  * - Control tracking features through Shuffleboard
  * - Track and follow detected objects
- * - Automatically aim at objects
- * - Track the closest object
+ * - Auto-aim at objects
+ * - Track closest objects
  * - Estimate object distance
  * - Calculate object positions on the field
  */
 public class ObjectDetection extends SubsystemBase {
     private final PhotonCamera camera;
-    private int targetClass = 0; // Default tracking class 0 (algae)
+    private int targetClass = 0; // Default to track class 0 (algae)
     private final PIDController turnController;
     private final PIDController driveController;
     private Drive driveSubsystem;
     
-    // Game object size definitions (units: meters)
-    private static final double ALGAE_DIAMETER = 0.413; // algae diameter
-    private static final double CORAL_LENGTH = 0.30;   // coral length
+    // Game object size definitions (in meters)
+    private static final double ALGAE_DIAMETER = 0.413; // Algae diameter
+    private static final double CORAL_LENGTH = 0.30;   // Coral length
     
     // Camera settings
     private static final double CAMERA_HORIZONTAL_FOV = 70.0; // Camera horizontal field of view
     private static final double CAMERA_RESOLUTION_WIDTH = 640.0; // Camera resolution width
     
-    // Command state
+    // Command states
     private boolean isAiming = false;
     private boolean isFollowing = false;
     private Command activeCommand = null;
@@ -61,7 +65,7 @@ public class ObjectDetection extends SubsystemBase {
     private Map<Integer, TrackedObject> trackedObjects = new HashMap<>();
     private Field2d fieldWidget = new Field2d();
     
-    // Shuffleboard items
+    // Shuffleboard entries
     private final ShuffleboardTab visionTab = Shuffleboard.getTab("Object Detection");
     private GenericEntry targetClassEntry;
     private GenericEntry targetAreaEntry;
@@ -74,21 +78,28 @@ public class ObjectDetection extends SubsystemBase {
     private static final double TARGET_AREA_SETPOINT = 37.0; 
     private static final double AIM_TOLERANCE_DEGREES = 2.0; 
     
-    // 濾波相關的變數
+    // Filtering related variables
     private double filteredYaw = 0.0;
     private double filteredArea = 0.0;
     private double lastTurnOutput = 0.0;
     private double lastDriveOutput = 0.0;
     
-    // 濾波常數 (可根據需要調整)
-    private static final double YAW_FILTER_CLOSE = 0.85; // 近距離時強度較高的濾波 (越高 = 濾波越強)
-    private static final double YAW_FILTER_FAR = 0.5;    // 遠距離時強度較低的濾波
-    private static final double AREA_FILTER = 0.7;       // 面積濾波強度
-    private static final double SLEW_RATE_LIMIT = 0.05;  // 每次循環輸出變化的限制
-    private static final double CLOSE_DISTANCE = 1.0;    // 多少米被視為"靠近"
+    // Adjustable variables
+    private double SLEW_RATE_LIMIT = 0.05;  // Output change rate limit
+    
+    // Fields for storing historical data
+    private final int FILTER_HISTORY_SIZE = 10; // Size of history buffer
+    private double[] yawHistory = new double[FILTER_HISTORY_SIZE];
+    private double[] areaHistory = new double[FILTER_HISTORY_SIZE];
+    
+    // Convolution kernel options
+    private double[] uniformKernel; // Uniform convolution kernel
+    private double[] gaussianKernel; // Gaussian convolution kernel
+    private double[] currentYawKernel; // Current yaw convolution kernel
+    private double[] currentAreaKernel; // Current area convolution kernel
     
     /**
-     * Information for tracked objects
+     * Information about a tracked object
      */
     public class TrackedObject {
         public int id;
@@ -104,67 +115,150 @@ public class ObjectDetection extends SubsystemBase {
         }
         
         public boolean isStale() {
-            // If not updated for more than 3 seconds, consider stale
+            // Consider stale if not updated for 3 seconds
             return Timer.getFPGATimestamp() - lastUpdated > 3.0;
         }
     }
     
     public ObjectDetection() {
         camera = new PhotonCamera("WEB_CAM");
-        turnController = new PIDController(0.007, 0, 0.0001); // Turning PID
+        turnController = new PIDController(0.007, 0, 0.0001); // Turn PID
         driveController = new PIDController(0.05, 0, 0.0001); // Approach PID
+        
+        // Initialize convolution kernels
+        uniformKernel = createUniformKernel(5); // Size 5 uniform kernel
+        gaussianKernel = createGaussianKernel(5, 1.0); // Size 5, sigma 1.0 Gaussian kernel
+        
+        // Default to gaussian kernel
+        currentYawKernel = gaussianKernel;
+        currentAreaKernel = gaussianKernel;
+        
+        // Initialize history data
+        for (int i = 0; i < FILTER_HISTORY_SIZE; i++) {
+            yawHistory[i] = 0.0;
+            areaHistory[i] = 0.0;
+        }
+        
         setupShuffleboardControls();
     }
     
     /**
-     * Set up Shuffleboard controls
+     * Create 1D uniform convolution kernel
+     */
+    private double[] createUniformKernel(int size) {
+        double[] kernel = new double[size];
+        for (int i = 0; i < size; i++) {
+            kernel[i] = 1.0 / size;
+        }
+        return kernel;
+    }
+    
+    /**
+     * Create 1D Gaussian convolution kernel
+     */
+    private double[] createGaussianKernel(int size, double sigma) {
+        double[] kernel = new double[size];
+        double sum = 0.0;
+        int center = size / 2;
+        
+        for (int i = 0; i < size; i++) {
+            int x = i - center;
+            kernel[i] = Math.exp(-(x*x) / (2*sigma*sigma));
+            sum += kernel[i];
+        }
+        
+        // Normalize kernel
+        for (int i = 0; i < size; i++) {
+            kernel[i] /= sum;
+        }
+        
+        return kernel;
+    }
+    
+    /**
+     * Apply 1D convolution filter
+     */
+    private double applyConvolution(double[] data, double[] kernel) {
+        if (data.length < kernel.length) {
+            // Not enough data, return most recent value
+            return data[0];
+        }
+        
+        double result = 0.0;
+        for (int i = 0; i < kernel.length; i++) {
+            result += data[i] * kernel[i];
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Update history array
+     */
+    private void updateHistory(double[] history, double newValue) {
+        // Shift all values back one position
+        for (int i = history.length - 1; i > 0; i--) {
+            history[i] = history[i-1];
+        }
+        // Put new value at front
+        history[0] = newValue;
+    }
+    
+    /**
+     * Setup Shuffleboard controls
      */
     private void setupShuffleboardControls() {
-        targetClassEntry = visionTab.add("Target (0=algae, 1=coral)", targetClass)
+        targetClassEntry = visionTab.add("Target Class", targetClass)
             .withPosition(0, 0)
             .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "Target Class 0=algae, 1=coral"))
             .getEntry();
         
         targetAreaEntry = visionTab.add("Target Area Size", TARGET_AREA_SETPOINT)
             .withPosition(1, 0)
             .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "Target Area"))
             .getEntry();
         
-        aimToleranceEntry = visionTab.add("Aim Tolerance (deg)", AIM_TOLERANCE_DEGREES)
+        aimToleranceEntry = visionTab.add("Aim Tolerance", AIM_TOLERANCE_DEGREES)
             .withPosition(2, 0)
             .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "Aim Tolerance (deg)"))
             .getEntry();
         
         aimButtonEntry = visionTab.add("Aim at Target", false)
             .withPosition(0, 1)
             .withSize(1, 1)
-            .withProperties(Map.of("colorWhenTrue", "green"))
+            .withProperties(Map.of("colorWhenTrue", "green", "subtitle", "Aim at Target"))
             .getEntry();
         
         followButtonEntry = visionTab.add("Follow Target", false)
             .withPosition(1, 1)
             .withSize(1, 1)
-            .withProperties(Map.of("colorWhenTrue", "blue"))
+            .withProperties(Map.of("colorWhenTrue", "blue", "subtitle", "Follow Target"))
             .getEntry();
         
         stopButtonEntry = visionTab.add("Stop", false)
             .withPosition(2, 1)
             .withSize(1, 1)
-            .withProperties(Map.of("colorWhenTrue", "red"))
+            .withProperties(Map.of("colorWhenTrue", "red", "subtitle", "Stop"))
             .getEntry();
         
-        distanceEstimateEntry = visionTab.add("Estimated Distance (m)", 0.0)
+        distanceEstimateEntry = visionTab.add("Estimated Distance", 0.0)
             .withPosition(3, 0)
             .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "Estimated Distance (m)"))
             .getEntry();
         
         visionTab.addBoolean("Target Visible", this::isTargetVisible)
             .withPosition(0, 2)
-            .withSize(1, 1);
+            .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "Target Visible"));
         
         visionTab.addBoolean("Aimed", this::isAimedAtTarget)
             .withPosition(1, 2)
-            .withSize(1, 1);
+            .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "Aimed"));
         
         visionTab.addString("Status", () -> {
             if (isFollowing) return "Following";
@@ -172,24 +266,28 @@ public class ObjectDetection extends SubsystemBase {
             return "Idle";
         })
             .withPosition(2, 2)
-            .withSize(1, 1);
+            .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "Status"));
             
-        visionTab.addString("Target Class", () -> 
-            targetClass == 0 ? "algae" : "coral")
+        visionTab.addString("Target Class Name", () -> 
+            targetClass == 0 ? "Algae" : "Coral")
             .withPosition(3, 1)
-            .withSize(1, 1);
+            .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "Target Class Name"));
             
         // Add field visualization
         visionTab.add("Field", fieldWidget)
             .withSize(5, 3)
-            .withPosition(0, 3);
+            .withPosition(0, 3)
+            .withProperties(Map.of("subtitle", "Field"));
             
         // Display tracked objects list
         visionTab.addString("Tracked Objects", this::getTrackedObjectsAsString)
             .withSize(2, 3)
-            .withPosition(5, 3);
+            .withPosition(5, 3)
+            .withProperties(Map.of("subtitle", "Tracked Objects"));
             
-        // Add debug values for troubleshooting
+        // Add debug values
         visionTab.addNumber("Target Yaw", () -> {
             var result = camera.getLatestResult();
             if (result.hasTargets()) {
@@ -199,7 +297,8 @@ public class ObjectDetection extends SubsystemBase {
             return 0.0;
         })
             .withPosition(3, 2)
-            .withSize(1, 1);
+            .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "Target Yaw"));
             
         visionTab.addNumber("PID Turn Error", () -> {
             var result = camera.getLatestResult();
@@ -210,16 +309,117 @@ public class ObjectDetection extends SubsystemBase {
             return 0.0;
         })
             .withPosition(4, 2)
-            .withSize(1, 1);
+            .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "PID Turn Error"));
+        
+        // Add filter settings tab
+        ShuffleboardTab filterTab = Shuffleboard.getTab("Filter Settings");
+        
+        // Yaw filter settings
+        filterTab.addString("Yaw Filter Type", () -> 
+            (currentYawKernel == gaussianKernel) ? "Gaussian" : "Uniform")
+            .withPosition(0, 0)
+            .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "Yaw Filter Type"));
+        
+        // Button to toggle yaw filter type
+        GenericEntry yawFilterToggleEntry = filterTab.add("Toggle Yaw Filter", false)
+            .withPosition(1, 0)
+            .withSize(1, 1)
+            .withProperties(Map.of("colorWhenTrue", "green", "subtitle", "Toggle Yaw Filter"))
+            .getEntry();
             
-        // 增加顯示濾波後的數值
-        visionTab.addNumber("Filtered Yaw", () -> filteredYaw)
-            .withPosition(4, 0)
-            .withSize(1, 1);
+        NetworkTableInstance.getDefault().addListener(
+            yawFilterToggleEntry.getTopic(),
+            EnumSet.of(NetworkTableEvent.Kind.kValueAll),
+            event -> {
+                if (event.valueData.value.getBoolean()) {
+                    currentYawKernel = (currentYawKernel == gaussianKernel) ? 
+                        uniformKernel : gaussianKernel;
+                    yawFilterToggleEntry.setBoolean(false);
+                }
+            });
+        
+        // Area filter settings
+        filterTab.addString("Area Filter Type", () -> 
+            (currentAreaKernel == gaussianKernel) ? "Gaussian" : "Uniform")
+            .withPosition(0, 1)
+            .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "Area Filter Type"));
+        
+        // Button to toggle area filter type
+        GenericEntry areaFilterToggleEntry = filterTab.add("Toggle Area Filter", false)
+            .withPosition(1, 1)
+            .withSize(1, 1)
+            .withProperties(Map.of("colorWhenTrue", "green", "subtitle", "Toggle Area Filter"))
+            .getEntry();
             
-        visionTab.addNumber("Filtered Area", () -> filteredArea)
-            .withPosition(4, 1)
-            .withSize(1, 1);
+        NetworkTableInstance.getDefault().addListener(
+            areaFilterToggleEntry.getTopic(),
+            EnumSet.of(NetworkTableEvent.Kind.kValueAll),
+            event -> {
+                if (event.valueData.value.getBoolean()) {
+                    currentAreaKernel = (currentAreaKernel == gaussianKernel) ? 
+                        uniformKernel : gaussianKernel;
+                    areaFilterToggleEntry.setBoolean(false);
+                }
+            });
+        
+        // Display filtered values
+        filterTab.addNumber("Raw Yaw", () -> {
+            var result = camera.getLatestResult();
+            if (result.hasTargets()) {
+                var target = getBestTarget(result);
+                return target != null ? target.getYaw() : 0.0;
+            }
+            return 0.0;
+        })
+            .withPosition(2, 0)
+            .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "Raw Yaw"));
+        
+        filterTab.addNumber("Filtered Yaw", () -> filteredYaw)
+            .withPosition(3, 0)
+            .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "Filtered Yaw"));
+        
+        filterTab.addNumber("Raw Area", () -> {
+            var result = camera.getLatestResult();
+            if (result.hasTargets()) {
+                var target = getBestTarget(result);
+                return target != null ? target.getArea() : 0.0;
+            }
+            return 0.0;
+        })
+            .withPosition(2, 1)
+            .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "Raw Area"));
+        
+        filterTab.addNumber("Filtered Area", () -> filteredArea)
+            .withPosition(3, 1)
+            .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "Filtered Area"));
+        
+        // Slew rate limit settings
+        filterTab.addNumber("Slew Rate Limit", () -> SLEW_RATE_LIMIT)
+            .withPosition(0, 2)
+            .withSize(1, 1)
+            .withProperties(Map.of("subtitle", "Slew Rate Limit"));
+        
+        // Slider to adjust slew rate limit
+        GenericEntry sliderEntry = filterTab.add("Adjust Slew Rate", SLEW_RATE_LIMIT)
+            .withPosition(1, 2)
+            .withSize(2, 1)
+            .withWidget(BuiltInWidgets.kNumberSlider)
+            .withProperties(Map.of("min", 0.01, "max", 0.2, "block increment", 0.01, "subtitle", "Adjust Slew Rate"))
+            .getEntry();
+            
+        NetworkTableInstance.getDefault().addListener(
+            sliderEntry.getTopic(),
+            EnumSet.of(NetworkTableEvent.Kind.kValueAll),
+            event -> {
+                SLEW_RATE_LIMIT = event.valueData.value.getDouble();
+            });
     }
     
     /**
@@ -234,7 +434,7 @@ public class ObjectDetection extends SubsystemBase {
             .filter(obj -> !obj.isStale())
             .map(obj -> String.format("ID:%d %s @ (%.2f, %.2f) Distance:%.2f",
                 obj.id,
-                obj.id == 0 ? "algae" : "coral",
+                obj.id == 0 ? "Algae" : "Coral",
                 obj.pose.getX(),
                 obj.pose.getY(),
                 obj.distance))
@@ -270,7 +470,7 @@ public class ObjectDetection extends SubsystemBase {
     }
     
     /**
-     * Clear stale object tracking
+     * Remove stale object tracking
      */
     private void removeStaleObjects() {
         // Use iterator to safely remove stale items
@@ -302,8 +502,8 @@ public class ObjectDetection extends SubsystemBase {
     
     /**
      * Calculate object distance
-     * @param target Tracking target
-     * @return Distance (meters)
+     * @param target tracked target
+     * @return distance (meters)
      */
     public double calculateDistance(PhotonTrackedTarget target) {
 
@@ -328,44 +528,44 @@ public class ObjectDetection extends SubsystemBase {
         }
         
         if (apparentWidth <= 0) {
-            // If width cannot be obtained, use area as a backup method
+            // If width cannot be obtained, use area as fallback
             return estimateDistanceFromArea(target.getArea());
         }
         
         // Determine actual size based on object ID
         double actualWidth;
         if (target.getFiducialId() == 0) {
-            actualWidth = ALGAE_DIAMETER; // algae diameter
+            actualWidth = ALGAE_DIAMETER; // Algae diameter
         } else {
-            actualWidth = CORAL_LENGTH; // coral length
+            actualWidth = CORAL_LENGTH; // Coral length
         }
         
-        // Use angle formula to calculate distance
+        // Use angular formula to calculate distance
         return (actualWidth * CAMERA_RESOLUTION_WIDTH) / 
                (2 * apparentWidth * Math.tan(Math.toRadians(CAMERA_HORIZONTAL_FOV/2)));
     }
     
     /**
-     * Estimate distance from object area (main method)
-     * @param area Object area (percentage 0-100)
-     * @return Estimated distance (meters)
+     * Estimate distance from object area (primary method)
+     * @param area object area (percentage 0-100)
+     * @return estimated distance (meters)
      */
     private double estimateDistanceFromArea(double area) {
         // Choose appropriate calibration factor based on object class
         double scaleFactor;
-        if (targetClass == 0) { // algae
-            scaleFactor = 0.35; // To be calibrated through experiments
-        } else { // coral
-            scaleFactor = 0.40; // To be calibrated through experiments
+        if (targetClass == 0) { // Algae
+            scaleFactor = 0.35; // Calibrated through experiment
+        } else { // Coral
+            scaleFactor = 0.40; // Calibrated through experiment
         }
         
         // Area is percentage (0-100), larger area means object is closer
         if (area < 0.1) {
-            // Avoid dividing by extremely small values
+            // Avoid division by very small values
             return 10.0; // Maximum distance limit (10 meters)
         }
         
-        // Experiments show that distance is roughly proportional to the reciprocal of the square root of area
+        // Experiments show distance is roughly proportional to inverse square root of area
         // Distance ≈ scaleFactor / √(Area)
         return scaleFactor / Math.sqrt(area / 100.0);
     }
@@ -409,7 +609,7 @@ public class ObjectDetection extends SubsystemBase {
             // Update object position
             trackedObjects.put(objectId, new TrackedObject(objectId, objectPose, distance));
             
-            // If it's the current target class, update to Shuffleboard
+            // If this is the current target class, update to Shuffleboard
             if (objectId == targetClass) {
                 distanceEstimateEntry.setDouble(distance);
             }
@@ -502,7 +702,7 @@ public class ObjectDetection extends SubsystemBase {
         
         List<PhotonTrackedTarget> targets = result.getTargets();
         
-        // First, try to find targets matching the class
+        // First, try to find a target matching the class
         for (PhotonTrackedTarget target : targets) {
             // Assume fiducialId field contains class (0 or 1)
             if (target.getFiducialId() == targetClass) {
@@ -514,7 +714,7 @@ public class ObjectDetection extends SubsystemBase {
     }
     
     /**
-     * Get the closest target from the target list based on area (larger = closer)
+     * Get the closest target from a list, based on area (larger = closer)
      */
     public PhotonTrackedTarget getClosestTarget(List<PhotonTrackedTarget> targets) {
         if (targets.isEmpty()) {
@@ -536,52 +736,55 @@ public class ObjectDetection extends SubsystemBase {
     }
     
     /**
-     * 獲取經過濾波的偏航值
-     * @param target 目標
-     * @return 經過濾波的偏航值 (角度)
+     * Get filtered yaw value using convolution
+     * @param target target
+     * @return filtered yaw value (degrees)
      */
     private double getFilteredYaw(PhotonTrackedTarget target) {
         if (target == null) return 0.0;
         
-        // 根據距離計算濾波因子
-        double distance = calculateDistance(target);
-        double filterFactor = YAW_FILTER_FAR;
+        // Update history data
+        updateHistory(yawHistory, target.getYaw());
         
-        // 當靠近目標時應用更強的濾波
-        if (distance < CLOSE_DISTANCE) {
-            // 線性增加濾波強度（距離越近，濾波越強）
-            double t = Math.max(0, distance / CLOSE_DISTANCE);
-            filterFactor = YAW_FILTER_CLOSE * (1 - t) + YAW_FILTER_FAR * t;
-        }
+        // Apply convolution filter
+        double filteredValue = applyConvolution(yawHistory, currentYawKernel);
         
-        // 應用低通濾波
-        filteredYaw = filterFactor * filteredYaw + (1 - filterFactor) * target.getYaw();
-        return filteredYaw;
+        // Update member variable for Shuffleboard display
+        filteredYaw = filteredValue;
+        
+        return filteredValue;
     }
     
     /**
-     * 獲取經過濾波的面積值
-     * @param target 目標
-     * @return 經過濾波的面積值
+     * Get filtered area value using convolution
+     * @param target target
+     * @return filtered area value
      */
     private double getFilteredArea(PhotonTrackedTarget target) {
         if (target == null) return 0.0;
         
-        // 應用低通濾波
-        filteredArea = AREA_FILTER * filteredArea + (1 - AREA_FILTER) * target.getArea();
-        return filteredArea;
+        // Update history data
+        updateHistory(areaHistory, target.getArea());
+        
+        // Apply convolution filter
+        double filteredValue = applyConvolution(areaHistory, currentAreaKernel);
+        
+        // Update member variable for Shuffleboard display
+        filteredArea = filteredValue;
+        
+        return filteredValue;
     }
     
     /**
-     * 應用變化率限制，防止輸出突然變化
-     * @param newValue 新值
-     * @param lastValue 上一個值
-     * @return 限制後的值
+     * Apply rate limiting to prevent sudden output changes
+     * @param newValue new value
+     * @param lastValue previous value
+     * @return limited value
      */
     private double applyRateLimit(double newValue, double lastValue) {
         double change = newValue - lastValue;
         
-        // 限制變化率
+        // Limit rate of change
         if (change > SLEW_RATE_LIMIT) {
             change = SLEW_RATE_LIMIT;
         } else if (change < -SLEW_RATE_LIMIT) {
@@ -602,34 +805,34 @@ public class ObjectDetection extends SubsystemBase {
     }
     
     /**
-     * Calculate the turning speed needed to aim at the target
-     * @return Turning speed (positive = turn right, negative = turn left)
+     * Calculate turning speed needed to aim at target
+     * @return turning speed (positive=right, negative=left)
      */
     public double calculateAimOutput() {
         var result = camera.getLatestResult();
         if (!result.hasTargets()) {
-            // 如果沒有目標，逐漸減少轉向輸出
+            // If no target, gradually reduce turning output
             lastTurnOutput = applyRateLimit(0.0, lastTurnOutput);
             return lastTurnOutput;
         }
         
         var target = getBestTarget(result);
         if (target == null) {
-            // 如果沒有目標，逐漸減少轉向輸出
+            // If no target, gradually reduce turning output
             lastTurnOutput = applyRateLimit(0.0, lastTurnOutput);
             return lastTurnOutput;
         }
         
-        // 使用經過濾波的偏航值而不是原始值
+        // Use filtered yaw value instead of raw value
         double filteredYawValue = getFilteredYaw(target);
         
-        // 根據濾波後的值計算轉向輸出
+        // Calculate turning output based on filtered value
         double turnOutput = turnController.calculate(filteredYawValue, 0);
         
-        // 應用變化率限制
+        // Apply rate limiting
         lastTurnOutput = applyRateLimit(turnOutput, lastTurnOutput);
         
-        // 輸出調試信息
+        // Output debug info
         SmartDashboard.putNumber("Raw Yaw", target.getYaw());
         SmartDashboard.putNumber("Filtered Yaw", filteredYawValue);
         
@@ -637,35 +840,35 @@ public class ObjectDetection extends SubsystemBase {
     }
     
     /**
-     * Calculate driving speed needed to approach target
-     * @return Drive speed (positive = forward, negative = backward)
+     * Calculate drive speed needed to approach target
+     * @return drive speed (positive=forward, negative=backward)
      */
     public double calculateDriveOutput() {
         var result = camera.getLatestResult();
         if (!result.hasTargets()) {
-            // 如果沒有目標，逐漸減少驅動輸出
+            // If no target, gradually reduce drive output
             lastDriveOutput = applyRateLimit(0.0, lastDriveOutput);
             return lastDriveOutput;
         }
         
         var target = getBestTarget(result);
         if (target == null) {
-            // 如果沒有目標，逐漸減少驅動輸出
+            // If no target, gradually reduce drive output
             lastDriveOutput = applyRateLimit(0.0, lastDriveOutput);
             return lastDriveOutput;
         }
         
-        // 使用經過濾波的面積而不是原始面積
+        // Use filtered area instead of raw area
         double filteredAreaValue = getFilteredArea(target);
         double targetArea = targetAreaEntry.getDouble(TARGET_AREA_SETPOINT);
         
-        // 根據濾波後的值計算驅動輸出
+        // Calculate drive output based on filtered value
         double driveOutput = -driveController.calculate(filteredAreaValue, targetArea);
         
-        // 應用變化率限制
+        // Apply rate limiting
         lastDriveOutput = applyRateLimit(driveOutput, lastDriveOutput);
         
-        // 輸出調試信息
+        // Output debug info
         SmartDashboard.putNumber("Raw Area", target.getArea());
         SmartDashboard.putNumber("Filtered Area", filteredAreaValue);
         
@@ -673,7 +876,7 @@ public class ObjectDetection extends SubsystemBase {
     }
     
     /**
-     * Check if a target with the specified class is visible
+     * Check if a target of the specified class is visible
      */
     public boolean isTargetVisible() {
         var result = camera.getLatestResult();
@@ -681,7 +884,7 @@ public class ObjectDetection extends SubsystemBase {
     }
     
     /**
-     * Check if we are aimed at the target
+     * Check if we're aimed at the target
      */
     public boolean isAimedAtTarget() {
         var result = camera.getLatestResult();
@@ -695,7 +898,7 @@ public class ObjectDetection extends SubsystemBase {
         }
         
         double tolerance = aimToleranceEntry.getDouble(AIM_TOLERANCE_DEGREES);
-        // 使用濾波後的偏航值來決定是否已對準
+        // Use filtered yaw to determine if aimed
         return Math.abs(filteredYaw) < tolerance;
     }
     
@@ -707,15 +910,15 @@ public class ObjectDetection extends SubsystemBase {
     }
     
     /**
-     * Get current target class (0=algae, 1=coral)
+     * Get the current target class (0=algae, 1=coral)
      */
     public int getTargetClass() {
         return targetClass;
     }
     
     /**
-     * Get the estimated distance to the target object (meters)
-     * @return Distance, or -1 if no target visible
+     * Get estimated distance to target object (meters)
+     * @return distance, or -1 if no visible target
      */
     public double getTargetDistance() {
         var result = camera.getLatestResult();
@@ -732,9 +935,9 @@ public class ObjectDetection extends SubsystemBase {
     }
     
     /**
-     * Get object position for a specific class (if visible)
-     * @param classId Object class ID (0=algae, 1=coral)
-     * @return Optional with object position
+     * Get position of a specific class of object (if visible)
+     * @param classId object class ID (0=algae, 1=coral)
+     * @return optional object position
      */
     public Optional<Pose2d> getObjectPosition(int classId) {
         TrackedObject obj = trackedObjects.get(classId);
@@ -746,7 +949,7 @@ public class ObjectDetection extends SubsystemBase {
     
     /**
      * Get the nearest object
-     * @return Optional with object ID and position
+     * @return optional object ID and position
      */
     public Optional<TrackedObject> getNearestObject() {
         if (trackedObjects.isEmpty() || driveSubsystem == null) {
@@ -772,7 +975,7 @@ public class ObjectDetection extends SubsystemBase {
         /**
          * Create a new AimAtTargetCommand
          * 
-         * @param driveSubsystem Drive subsystem that controls robot movement
+         * @param driveSubsystem drive subsystem to control robot movement
          */
         public AimAtTargetCommand(Drive driveSubsystem) {
             this.driveSubsystem = driveSubsystem;
@@ -783,7 +986,7 @@ public class ObjectDetection extends SubsystemBase {
         
         @Override
         public void execute() {
-            // Get turning value needed to aim at vision target
+            // Get turn value needed to aim at visual target
             double turnOutput = calculateAimOutput();
             
             // Apply rotation to drive system (no forward/backward motion)
@@ -795,13 +998,13 @@ public class ObjectDetection extends SubsystemBase {
         
         @Override
         public boolean isFinished() {
-            // Command completes when we are aimed at the target
+            // Command completes when we're aimed at target
             return isAimedAtTarget();
         }
         
         @Override
         public void end(boolean interrupted) {
-            // Stop the drive system
+            // Stop drive system
             driveSubsystem.stop();
             isAiming = false;
         }
@@ -809,7 +1012,7 @@ public class ObjectDetection extends SubsystemBase {
     
     /**
      * Command to follow target
-     * This command both aims at the target and maintains a specified distance from it
+     * This command both aims at the target and maintains a specific distance from it
      */
     private class FollowTargetCommand extends Command {
         private final Drive driveSubsystem;
@@ -817,7 +1020,7 @@ public class ObjectDetection extends SubsystemBase {
         /**
          * Create a new FollowTargetCommand
          * 
-         * @param driveSubsystem Drive subsystem for robot movement
+         * @param driveSubsystem drive subsystem for robot movement
          */
         public FollowTargetCommand(Drive driveSubsystem) {
             this.driveSubsystem = driveSubsystem;
