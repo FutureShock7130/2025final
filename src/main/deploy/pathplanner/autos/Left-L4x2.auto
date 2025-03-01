@@ -15,30 +15,37 @@
                 }
               },
               {
-                "type": "named",
+                "type": "sequential",
                 "data": {
-                  "name": "L4"
-                }
-              },
-              {
-                "type": "wait",
-                "data": {
-                  "waitTime": 4.0
+                  "commands": [
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "DEFAULT"
+                      }
+                    },
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 0.5
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "L4"
+                      }
+                    },
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 3.5
+                      }
+                    }
+                  ]
                 }
               }
             ]
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "PLACE"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "DEFAULT"
           }
         },
         {
@@ -46,15 +53,34 @@
           "data": {
             "commands": [
               {
-                "type": "path",
+                "type": "sequential",
                 "data": {
-                  "pathName": "I-CSL"
+                  "commands": [
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "DEFAULT"
+                      }
+                    },
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 2.5
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "INTAKE"
+                      }
+                    }
+                  ]
                 }
               },
               {
-                "type": "named",
+                "type": "path",
                 "data": {
-                  "name": "INTAKE"
+                  "pathName": "I-CSL"
                 }
               }
             ]
@@ -83,106 +109,25 @@
                     {
                       "type": "wait",
                       "data": {
-                        "waitTime": 1.0
+                        "waitTime": 0.5
                       }
                     },
                     {
                       "type": "named",
                       "data": {
-                        "name": "L3"
+                        "name": "L4"
                       }
                     },
                     {
                       "type": "wait",
                       "data": {
-                        "waitTime": 2.0
+                        "waitTime": 3.5
                       }
                     }
                   ]
                 }
               }
             ]
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "PLACE"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "DEFAULT"
-          }
-        },
-        {
-          "type": "parallel",
-          "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "K-CSL"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "INTAKE"
-                }
-              }
-            ]
-          }
-        },
-        {
-          "type": "parallel",
-          "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "CSL-L"
-                }
-              },
-              {
-                "type": "sequential",
-                "data": {
-                  "commands": [
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "DEFAULT"
-                      }
-                    },
-                    {
-                      "type": "wait",
-                      "data": {
-                        "waitTime": 1.0
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "L3"
-                      }
-                    },
-                    {
-                      "type": "wait",
-                      "data": {
-                        "waitTime": 2.0
-                      }
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "PLACE"
           }
         },
         {

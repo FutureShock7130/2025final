@@ -107,29 +107,29 @@ public class NavigationController extends SubsystemBase {
      */
     private DestinationState checkButtonPresses() {
         
-        if (buttonBox2.getRawButtonPressed(7)) {
+        if (buttonBox1.getRawAxis(1) >= 0.5) {
             return DestinationState.PATHFINDING_TO_AB_THEN_A;
-        } else if (buttonBox2.getRawButtonPressed(8)) {
-            return DestinationState.PATHFINDING_TO_AB_THEN_B;
-        } else if (buttonBox1.getRawButtonPressed(7)) {
-            return DestinationState.PATHFINDING_TO_CD_THEN_C;
-        } else if (buttonBox1.getRawButtonPressed(12)) {
-            return DestinationState.PATHFINDING_TO_CD_THEN_D;
         } else if (buttonBox1.getRawButtonPressed(5)) {
-            return DestinationState.PATHFINDING_TO_EF_THEN_E;
+            return DestinationState.PATHFINDING_TO_AB_THEN_B;
         } else if (buttonBox1.getRawButtonPressed(6)) {
-            return DestinationState.PATHFINDING_TO_EF_THEN_F;
-        } else if (buttonBox1.getRawButtonPressed(3)) {
-            return DestinationState.PATHFINDING_TO_GH_THEN_G;
-        } else if (buttonBox1.getRawButtonPressed(4)) {
-            return DestinationState.PATHFINDING_TO_GH_THEN_H;
+            return DestinationState.PATHFINDING_TO_CD_THEN_C;
         } else if (buttonBox1.getRawButtonPressed(1)) {
+            return DestinationState.PATHFINDING_TO_CD_THEN_D;
+        } else if (buttonBox1.getRawButtonPressed(10)) {
+            return DestinationState.PATHFINDING_TO_EF_THEN_E;
+        } else if (buttonBox1.getRawButtonPressed(9)) {
+            return DestinationState.PATHFINDING_TO_EF_THEN_F;
+        } else if (buttonBox1.getRawButtonPressed(8)) {
+            return DestinationState.PATHFINDING_TO_GH_THEN_G;
+        } else if (buttonBox1.getRawButtonPressed(7)) {
+            return DestinationState.PATHFINDING_TO_GH_THEN_H;
+        } else if (buttonBox1.getRawButtonPressed(4)) {
             return DestinationState.PATHFINDING_TO_IJ_THEN_I;
-        } else if (buttonBox1.getRawButtonPressed(2)) {
+        } else if (buttonBox1.getRawButtonPressed(3)) {
             return DestinationState.PATHFINDING_TO_IJ_THEN_J;
-        } else if (buttonBox2.getRawButtonPressed(5)) {
+        } else if (buttonBox1.getRawButtonPressed(2)) {
             return DestinationState.PATHFINDING_TO_KL_THEN_K;
-        } else if (buttonBox2.getRawButtonPressed(6)) {
+        } else if (buttonBox1.getRawAxis(1) >= 0.5) {
             return DestinationState.PATHFINDING_TO_KL_THEN_L;
         } else if (driver.getLeftBumperPressed()) {
             return DestinationState.PATHFINDING_TO_CSL;

@@ -37,7 +37,7 @@ import frc.robot.subsystems.superstructure.Grabber;
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
-  private Vision vision;
+  // private Vision vision;
 
   private XboxController driver;
   private Joystick ButtonBox1;
@@ -119,7 +119,6 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
-    SmartDashboard.putBoolean("has target", m_robotContainer.vision.hasTarget());
     NavigationController.getInstance().periodic();
     //    if (ButtonBox2.getRawButtonPressed(7)) {
     //   AutoBuilder.pathfindToPose(Constants.FieldConstants.A, constraints).until(() -> driverWantsControl()).schedule();

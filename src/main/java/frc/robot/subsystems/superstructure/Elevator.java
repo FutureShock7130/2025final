@@ -89,7 +89,7 @@ public class Elevator extends SubsystemBase {
     
 
     // Configure PID Controller
-    pidController.setTolerance(2); 
+    pidController.setTolerance(4); 
     pidController.setIZone(Double.POSITIVE_INFINITY);
     pidController.setIntegratorRange(-0.5, 0.5);
     pidController.setGoal(leftMotor.getEncoder().getPosition());
@@ -197,7 +197,7 @@ public class Elevator extends SubsystemBase {
   }
 
   /**
-   * Stop the elevator
+   * Stop the elevator uwu
    */
   public void stop() {
     setElevatorSpeed(0.0);

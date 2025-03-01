@@ -77,7 +77,7 @@ public class Grabber extends SubsystemBase {
 
         // Initialize PID controller
         pidController = new ProfiledPIDController(
-                4.0, // kP
+                3.75, // kP
                 0.0, // kI
                 0.005, // kD
                 constraints // Motion constraints
@@ -91,7 +91,7 @@ public class Grabber extends SubsystemBase {
 
         pidController.reset(grabberEncoder.getAbsolutePosition().getValueAsDouble());
         pidController.setTolerance(0.0); // Degrees of acceptable error
-        pidController.setIZone(0.05);
+        pidController.setIZone(0.0005);
         pidController.disableContinuousInput();
         pidController.setIntegratorRange(0, 0);
         pidController.setGoal(grabberEncoder.getAbsolutePosition().getValueAsDouble());
