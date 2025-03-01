@@ -124,22 +124,10 @@ public class NavigationController extends SubsystemBase {
         
         // Find the target pose based on the destination
         Pose2d targetPose = getPoseForDestination(destination);
-        if (targetPose == null) {
-            // Invalid destination, stay in manual mode
-            currentDestination = DestinationState.MANUAL_DRIVING;
-            return;
-        }
-        
+    
         // Create the pathfinding command WITH the until condition
         activePathCommand = AutoBuilder.pathfindToPose(targetPose, constraints)
-            .until(() -> driverWantsControl())
-            .finallyDo((interrupted) -> {
-                if (!interrupted) {
-                    // Path completed successfully
-                    currentDestination = DestinationState.MANUAL_DRIVING;
-                    activePathCommand = null;
-                }
-            });
+            .until(() -> driverWantsControl());
         
         // Schedule the command
         activePathCommand.schedule();

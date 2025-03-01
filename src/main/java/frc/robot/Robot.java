@@ -115,11 +115,10 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
     SmartDashboard.putBoolean("has target", m_robotContainer.vision.hasTarget());
     // NavigationController.getInstance().periodic();
-    if (!m_robotContainer.vision.hasTarget()) {
        if (ButtonBox2.getRawButtonPressed(7)) {
       AutoBuilder.pathfindToPose(Constants.FieldConstants.A, constraints).until(() -> driverWantsControl()).schedule();
     }
-    }
+    
    
     if (ButtonBox2.getRawButtonPressed(8)) {
       AutoBuilder.pathfindToPose(Constants.FieldConstants.B, constraints).until(() -> driverWantsControl()).schedule();
