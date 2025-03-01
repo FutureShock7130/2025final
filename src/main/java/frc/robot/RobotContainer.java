@@ -57,14 +57,11 @@ public class RobotContainer {
   private final Elevator m_elevator;
   private final Grabber m_grabber;
   // private final Intake m_intake;
-<<<<<<< HEAD
-  private final SuperStruct m_SuperStruct;
-  private final ObjectDetection objectDetection = new ObjectDetection(); // 新增物件偵測子系統
-=======
-  public final SuperStruct m_SuperStruct;
-  private final NavigationController m_navigationController;
-  // private final LED m_led;
->>>>>>> 96b8d27cca2d70452ef0099e63ad5a4e4c6331c0
+
+  final SuperStruct m_SuperStruct;
+  private final ObjectDetection objectDetection = new ObjectDetection(); 
+
+
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -79,7 +76,7 @@ public class RobotContainer {
     m_grabber = Grabber.getInstance();
     // m_intake = Intake.getInstance();
     m_SuperStruct = SuperStruct.getInstance();  
-    m_navigationController = NavigationController.getInstance();
+
     // m_led = LED.getInstance();
     
     switch (Constants.currentMode) {
@@ -177,9 +174,8 @@ public class RobotContainer {
     drive.setPose(new Pose2d());
     return autoChooser.getSelected();
   }
-<<<<<<< HEAD
-}
-=======
+
+
+
 
 }
->>>>>>> 96b8d27cca2d70452ef0099e63ad5a4e4c6331c0
