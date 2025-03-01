@@ -6,13 +6,14 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.SuperStructState;
 import frc.robot.subsystems.superstructure.Elevator;
 import frc.robot.subsystems.superstructure.Grabber;
-// import frc.robot.subsystems.superstructure.Intake;
+import frc.robot.subsystems.superstructure.Intake;
 import edu.wpi.first.wpilibj.XboxController;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -25,12 +26,12 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 public class SuperStruct extends SubsystemBase {
     Elevator mElevator;
     Grabber mGrabber;
-    // Intake mIntake;
+    Intake mIntake;
     StateMachine mStateMachine;
     public SuperStructState mCommandedState;
     LED mled;
 
-    private final XboxController driver;
+    private final CommandXboxController driver;
     private final Joystick buttonBoard1;
     private final Joystick buttonBoard2;
 
@@ -79,6 +80,20 @@ public class SuperStruct extends SubsystemBase {
                         () -> setState(SuperStructState.DEFAULT),
                         this));
 
+        new JoystickButton(driver.getHID(), 1)
+                .onTrue(Commands.runOnce(
+                    () -> setState(SuperStructState.ALGAE_INTAKE), 
+                    this));
+                    
+        new JoystickButton(driver.getHID(), 2)
+        .onTrue(Commands.runOnce(
+            () -> setState(SuperStructState.ALGAE_STOWAGE), 
+            this));
+                                
+        new JoystickButton(driver.getHID(), 4)
+        .onTrue(Commands.runOnce(
+            () -> setState(SuperStructState.ALGAE_PLACEMENT), 
+            this));
         // new JoystickButton(buttonBoard2, 7)
         // .onTrue(AutoBuilder.pathfindToPose(FieldConstants.A,
         // constraints).schedule());
@@ -90,11 +105,11 @@ public class SuperStruct extends SubsystemBase {
     public SuperStruct() {
         mElevator = Elevator.getInstance();
         mGrabber = Grabber.getInstance();
-        // mIntake = Intake.getInstance();
+        mIntake = Intake.getInstance();
         mStateMachine = StateMachine.getInstance();
         mled = LED.getInstance();
         mCommandedState = SuperStructState.DEFAULT;
-        driver = new XboxController(0);
+        driver = new CommandXboxController(0);
         buttonBoard1 = new Joystick(1); // First port
         buttonBoard2 = new Joystick(2); // Second port
         configureButtonBindings();
@@ -185,7 +200,9 @@ public class SuperStruct extends SubsystemBase {
             } else if (mPreviousState == SuperStructState.L4) {
                 mled.rainbowmarquee();
                 mGrabber.setPosition(-0.453613);
-                mElevator.setPosition(-0.02);
+                if (mGrabber.atTargetPosition()) {
+                    mElevator.setPosition(-0.02);
+                }
             }
         } else {
             mGrabber.setPosition(-0.453613);
@@ -193,25 +210,24 @@ public class SuperStruct extends SubsystemBase {
         }
         mGrabber.stop();
         mGrabber.resetcounter();
-        // mled.rainbowblink();
+        mIntake.setAngle(0.700439);
+        mled.rainbowmarquee();
     }
 
 
     public void ALGAE_STOWAGE() {
-        // mIntake.setAngle(0.469727);
-        // mIntake.setIntake(0.0);
+        mIntake.setAngle(0.866211);
+        mIntake.setIntake(0.0);
     }
 
     public void ALGAE_INTAKE() {
-        // mIntake.setAngle(0.469727);
-        // mIntake.setIntake(0.4);
-        mGrabber.setPosition(-0.696969);
-        mGrabber.hitAlgea();
+        mIntake.setAngle(0.866211);
+        mIntake.setIntake(0.6);
     }
 
     public void ALGAE_PLACEMENT() {
-        // mIntake.setAngle(0.469727);
-        // mIntake.setIntake(-0.4);
+        
+        mIntake.setIntake(-0.6);
     }
 
     public void updateState() {

@@ -70,6 +70,13 @@ public final class Constants {
         public static final Pose2d J = new Pose2d(new Translation2d(5.065, 5.318), Rotation2d.fromDegrees(-120));
         public static final Pose2d K = new Pose2d(new Translation2d(3.798, 5.151), Rotation2d.fromDegrees(-60));
         public static final Pose2d L = new Pose2d(new Translation2d(3.641, 5.120), Rotation2d.fromDegrees(-60));
+        public static final Pose2d AB = new Pose2d(new Translation2d(2.393, 4.110), Rotation2d.fromDegrees(0));
+        public static final Pose2d CD = new Pose2d(new Translation2d(3.530, 2.435), Rotation2d.fromDegrees(60));
+        public static final Pose2d EF = new Pose2d(new Translation2d(5.395, 2.445), Rotation2d.fromDegrees(120));
+        public static final Pose2d GH = new Pose2d(new Translation2d(6.342, 4.040), Rotation2d.fromDegrees(180));
+        public static final Pose2d IJ = new Pose2d(new Translation2d(5.365, 5.576), Rotation2d.fromDegrees(-120));
+        public static final Pose2d KL = new Pose2d(new Translation2d(3.660, 5.556), Rotation2d.fromDegrees(-60));
+        
         // Algae & Coral
         public static final Pose2d LA = new Pose2d(new Translation2d(1.843, 5.848), Rotation2d.fromDegrees(180));
         public static final Pose2d LC = new Pose2d(new Translation2d(1.843, 5.848), Rotation2d.fromDegrees(180));
