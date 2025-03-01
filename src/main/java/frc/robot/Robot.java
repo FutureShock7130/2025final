@@ -14,12 +14,18 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.NavigationController;
+import frc.robot.subsystems.StateMachine;
+import frc.robot.subsystems.SuperStructState;
+import frc.robot.subsystems.superstructure.Elevator;
+import frc.robot.subsystems.superstructure.Grabber;
 
 /**
  * The methods in this class are called automatically corresponding to each
@@ -40,8 +46,6 @@ public class Robot extends TimedRobot {
   private final RobotContainer m_robotContainer;
 
   private final PathConstraints constraints = new PathConstraints(3, 3, 2 * Math.PI, 4 * Math.PI);
-
-
   /**
    * This function is run when the robot is first started up and should be used
    * for any
@@ -95,11 +99,14 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
     }
+
+    StateMachine.getInstance().setCommandedState(SuperStructState.L2);
   }
 
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
+    m_robotContainer.m_SuperStruct.updateState();
   }
 
   @Override
@@ -107,7 +114,6 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
-
   }
 
   /** This function is called periodically during operator control. */

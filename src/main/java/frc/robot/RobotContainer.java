@@ -14,6 +14,7 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -30,7 +31,9 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
 // import frc.robot.subsystems.LED;
 import frc.robot.subsystems.NavigationController;
+import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.SuperStruct;
+import frc.robot.subsystems.SuperStructState;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -59,7 +62,7 @@ public class RobotContainer {
   private final Elevator m_elevator;
   private final Grabber m_grabber;
   // private final Intake m_intake;
-  private final SuperStruct m_SuperStruct;
+  public final SuperStruct m_SuperStruct;
   private final NavigationController m_navigationController;
   // private final LED m_led;
 
@@ -105,12 +108,16 @@ public class RobotContainer {
         break;
     }
 
+    NamedCommands.registerCommand("DEFAULT", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.DEFAULT), m_elevator));
+    NamedCommands.registerCommand("L1", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L1), m_elevator));
+    NamedCommands.registerCommand("L2", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L2), m_elevator));
+    NamedCommands.registerCommand("L3", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L3), m_elevator));
+    NamedCommands.registerCommand("L4", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L3), m_elevator));
+    NamedCommands.registerCommand("PLACE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.PLACEMENT), m_grabber).withTimeout(1));
+    NamedCommands.registerCommand("INTAKE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.CS), m_grabber).withTimeout(5));
+
     // Set up auto routines
     autoChooser = AutoBuilder.buildAutoChooser();
-    autoChooser.setDefaultOption("null", null);
-    autoChooser.addOption("LEAVE", new PathPlannerAuto("LEAVE"));
-    autoChooser.addOption("FullAuto", new PathPlannerAuto("FullAuto"));
-    autoChooser.addOption("Short", new PathPlannerAuto("Short"));
     SmartDashboard.putData("auto", autoChooser);
     // // Set up SysId routines
     // autoChooser.addOption(
@@ -165,4 +172,5 @@ public class RobotContainer {
     drive.setPose(new Pose2d());
     return autoChooser.getSelected();
   }
+
 }

@@ -27,7 +27,7 @@ public class SuperStruct extends SubsystemBase {
     Grabber mGrabber;
     // Intake mIntake;
     StateMachine mStateMachine;
-    SuperStructState mCommandedState;
+    public SuperStructState mCommandedState;
     LED mled;
 
     private final XboxController driver;
@@ -111,7 +111,7 @@ public class SuperStruct extends SubsystemBase {
         mElevator.setPosition(17.5);
         if (mElevator.atTargetPosition()) {
             mGrabber.setPosition(-0.587637);
-        }
+        }   
     }
 
     public void L3() {
