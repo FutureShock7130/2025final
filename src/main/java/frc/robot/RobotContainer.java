@@ -19,7 +19,6 @@ import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -43,11 +42,7 @@ import frc.robot.subsystems.superstructure.Elevator;
 import frc.robot.subsystems.superstructure.Grabber;
 // import frc.robot.subsystems.superstructure.Intake;
 import frc.robot.Vision;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
-
-// import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
-// import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
+import frc.robot.subsystems.ObjectDetection;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -62,9 +57,11 @@ public class RobotContainer {
   private final Elevator m_elevator;
   private final Grabber m_grabber;
   // private final Intake m_intake;
-  public final SuperStruct m_SuperStruct;
-  private final NavigationController m_navigationController;
-  // private final LED m_led;
+
+  final SuperStruct m_SuperStruct;
+  private final ObjectDetection objectDetection = new ObjectDetection(); 
+
+
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -79,7 +76,7 @@ public class RobotContainer {
     m_grabber = Grabber.getInstance();
     // m_intake = Intake.getInstance();
     m_SuperStruct = SuperStruct.getInstance();  
-    m_navigationController = NavigationController.getInstance();
+
     // m_led = LED.getInstance();
     
     switch (Constants.currentMode) {
@@ -107,6 +104,9 @@ public class RobotContainer {
                 vision);
         break;
     }
+    
+
+    objectDetection.setDriveSubsystem(drive);
 
     NamedCommands.registerCommand("DEFAULT", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.DEFAULT), m_elevator));
     NamedCommands.registerCommand("L1", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L1), m_elevator));
@@ -145,6 +145,7 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
+    // 原有的驅動控制
     drive.setDefaultCommand(
         DriveCommands.joystickDrive(
             drive,
@@ -161,6 +162,7 @@ public class RobotContainer {
                             new Pose2d(drive.getPose().getTranslation(), new Rotation2d())),
                     drive)
                 .ignoringDisable(true));
+    
   }
 
   /**
@@ -172,5 +174,8 @@ public class RobotContainer {
     drive.setPose(new Pose2d());
     return autoChooser.getSelected();
   }
+
+
+
 
 }
