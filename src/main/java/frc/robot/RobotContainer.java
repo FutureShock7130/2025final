@@ -31,6 +31,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
 // import frc.robot.subsystems.LED;
 import frc.robot.subsystems.NavigationController;
+import frc.robot.subsystems.ObjectDetection;
 import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.SuperStruct;
 import frc.robot.subsystems.SuperStructState;
@@ -65,6 +66,7 @@ public class RobotContainer {
   public final SuperStruct m_SuperStruct;
   private final NavigationController m_navigationController;
   // private final LED m_led;
+  private final ObjectDetection m_ObjectDetection = new ObjectDetection();
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -114,7 +116,7 @@ public class RobotContainer {
     NamedCommands.registerCommand("L3", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L3), m_elevator));
     NamedCommands.registerCommand("L4", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L3), m_elevator));
     NamedCommands.registerCommand("PLACE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.PLACEMENT), m_grabber).withTimeout(1));
-    NamedCommands.registerCommand("INTAKE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.CS), m_grabber).withTimeout(5));
+    NamedCommands.registerCommand("INTAKE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.CS), m_grabber).withTimeout(3));
 
     // Set up auto routines
     autoChooser = AutoBuilder.buildAutoChooser();

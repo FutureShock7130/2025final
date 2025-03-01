@@ -17,13 +17,13 @@
               {
                 "type": "named",
                 "data": {
-                  "name": "L2"
+                  "name": "L3"
                 }
               },
               {
                 "type": "wait",
                 "data": {
-                  "waitTime": 4.0
+                  "waitTime": 3.0
                 }
               }
             ]
@@ -33,6 +33,12 @@
           "type": "named",
           "data": {
             "name": "PLACE"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "DEFAULT"
           }
         },
         {
@@ -83,7 +89,13 @@
                     {
                       "type": "named",
                       "data": {
-                        "name": "L2"
+                        "name": "L3"
+                      }
+                    },
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 2.0
                       }
                     }
                   ]
@@ -96,6 +108,87 @@
           "type": "named",
           "data": {
             "name": "PLACE"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "DEFAULT"
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "K-CSL"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "INTAKE"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "CSL-L"
+                }
+              },
+              {
+                "type": "sequential",
+                "data": {
+                  "commands": [
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "DEFAULT"
+                      }
+                    },
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 1.0
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "L3"
+                      }
+                    },
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 2.0
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "PLACE"
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "DEFAULT"
           }
         }
       ]

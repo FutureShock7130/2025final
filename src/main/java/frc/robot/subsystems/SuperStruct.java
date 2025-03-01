@@ -215,7 +215,7 @@ public class SuperStruct extends SubsystemBase {
         }
         mGrabber.stop();
         mGrabber.resetcounter();
-        mIntake.setAngle(0.700439);
+        // mIntake.setAngle(0.700439);
         mled.rainbowmarquee();
     }
 

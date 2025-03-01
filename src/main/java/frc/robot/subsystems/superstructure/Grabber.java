@@ -236,18 +236,18 @@ public class Grabber extends SubsystemBase {
         double leftRPM = Math.abs(leftIntake.getEncoder().getVelocity());
 
         if (startupCounter < 20) { // Startup delay
-            rightIntake.set(-0.5);
-            leftIntake.set(0.5);
+            rightIntake.set(-0.3);
+            leftIntake.set(0.3);
             startupCounter++;
-        } else if (rightRPM < 100 || leftRPM < 100) {
+        } else if (rightRPM < 200 || leftRPM < 200) {
             if (stallCounter < 75) { // Wait ~0.5 seconds (25 * 20ms) before stopping
                 stallCounter++;
-                rightIntake.set(-0.5);
-                leftIntake.set(0.5);
+                rightIntake.set(-0.3);
+                leftIntake.set(0.3);
                 hasCoral = false;
             } else {
-                rightIntake.set(0);
-                leftIntake.set(0);
+                rightIntake.set(-0.03);
+                leftIntake.set(0.03);
                 hasCoral = true;
                 return;
             }
