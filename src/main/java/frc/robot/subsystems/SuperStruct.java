@@ -94,6 +94,11 @@ public class SuperStruct extends SubsystemBase {
         .onTrue(Commands.runOnce(
             () -> setState(SuperStructState.ALGAE_PLACEMENT), 
             this));
+                                            
+        new JoystickButton(driver.getHID(), 7)
+        .onTrue(Commands.runOnce(
+            () -> setState(SuperStructState.DEFAULT), 
+            this));
         // new JoystickButton(buttonBoard2, 7)
         // .onTrue(AutoBuilder.pathfindToPose(FieldConstants.A,
         // constraints).schedule());
