@@ -107,72 +107,72 @@ public class ObjectDetection extends SubsystemBase {
      * Set up Shuffleboard controls
      */
     private void setupShuffleboardControls() {
-        targetClassEntry = visionTab.add("Target (0=algae, 1=coral)", targetClass)
+        targetClassEntry = visionTab.add("目標 (0=algae, 1=coral)", targetClass)
             .withPosition(0, 0)
             .withSize(1, 1)
             .getEntry();
         
-        targetAreaEntry = visionTab.add("Target Area Size", TARGET_AREA_SETPOINT)
+        targetAreaEntry = visionTab.add("目標區域大小", TARGET_AREA_SETPOINT)
             .withPosition(1, 0)
             .withSize(1, 1)
             .getEntry();
         
-        aimToleranceEntry = visionTab.add("Aim Tolerance (deg)", AIM_TOLERANCE_DEGREES)
+        aimToleranceEntry = visionTab.add("對準容許誤差(度)", AIM_TOLERANCE_DEGREES)
             .withPosition(2, 0)
             .withSize(1, 1)
             .getEntry();
         
-        aimButtonEntry = visionTab.add("Aim at Target", false)
+        aimButtonEntry = visionTab.add("對準目標", false)
             .withPosition(0, 1)
             .withSize(1, 1)
             .withProperties(Map.of("colorWhenTrue", "green"))
             .getEntry();
         
-        followButtonEntry = visionTab.add("Follow Target", false)
+        followButtonEntry = visionTab.add("跟隨目標", false)
             .withPosition(1, 1)
             .withSize(1, 1)
             .withProperties(Map.of("colorWhenTrue", "blue"))
             .getEntry();
         
-        stopButtonEntry = visionTab.add("Stop", false)
+        stopButtonEntry = visionTab.add("停止", false)
             .withPosition(2, 1)
             .withSize(1, 1)
             .withProperties(Map.of("colorWhenTrue", "red"))
             .getEntry();
         
-        distanceEstimateEntry = visionTab.add("Estimated Distance (m)", 0.0)
+        distanceEstimateEntry = visionTab.add("估計距離(公尺)", 0.0)
             .withPosition(3, 0)
             .withSize(1, 1)
             .getEntry();
         
-        visionTab.addBoolean("Target Visible", this::isTargetVisible)
+        visionTab.addBoolean("有目標", this::isTargetVisible)
             .withPosition(0, 2)
             .withSize(1, 1);
         
-        visionTab.addBoolean("Aimed", this::isAimedAtTarget)
+        visionTab.addBoolean("已對準", this::isAimedAtTarget)
             .withPosition(1, 2)
             .withSize(1, 1);
         
-        visionTab.addString("Status", () -> {
-            if (isFollowing) return "Following";
-            if (isAiming) return "Aiming";
-            return "Idle";
+        visionTab.addString("狀態", () -> {
+            if (isFollowing) return "跟隨中";
+            if (isAiming) return "對準中";
+            return "閒置";
         })
             .withPosition(2, 2)
             .withSize(1, 1);
             
-        visionTab.addString("Target Class", () -> 
+        visionTab.addString("目標物類別", () -> 
             targetClass == 0 ? "algae" : "coral")
             .withPosition(3, 1)
             .withSize(1, 1);
             
-        // Add field visualization
-        visionTab.add("Field", fieldWidget)
+        // 添加視覺化場地
+        visionTab.add("場地", fieldWidget)
             .withSize(5, 3)
             .withPosition(0, 3);
             
-        // Display tracked objects list
-        visionTab.addString("Tracked Objects", this::getTrackedObjectsAsString)
+        // 顯示追蹤物體清單
+        visionTab.addString("追蹤物體", this::getTrackedObjectsAsString)
             .withSize(2, 3)
             .withPosition(5, 3);
     }
@@ -182,7 +182,7 @@ public class ObjectDetection extends SubsystemBase {
      */
     private String getTrackedObjectsAsString() {
         if (trackedObjects.isEmpty()) {
-            return "No Objects";
+            return "無物體";
         }
         
         return trackedObjects.values().stream()
