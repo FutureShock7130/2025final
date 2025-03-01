@@ -11,9 +11,21 @@
           }
         },
         {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.6
+          }
+        },
+        {
           "type": "path",
           "data": {
             "pathName": "I-CSL"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.6
           }
         },
         {
@@ -23,9 +35,21 @@
           }
         },
         {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.6
+          }
+        },
+        {
           "type": "path",
           "data": {
             "pathName": "K-CSL"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.6
           }
         },
         {
@@ -35,9 +59,21 @@
           }
         },
         {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.6
+          }
+        },
+        {
           "type": "path",
           "data": {
             "pathName": "L-CSL"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.6
           }
         },
         {
