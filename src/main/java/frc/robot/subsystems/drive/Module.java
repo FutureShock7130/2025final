@@ -22,7 +22,6 @@ import edu.wpi.first.math.util.Units;
 import frc.robot.Constants;
 import frc.robot.subsystems.drive.ModuleIO.ModuleIOInputs;
 
-import org.littletonrobotics.junction.Logger;
 
 public class Module {
   private static final double WHEEL_RADIUS = Units.inchesToMeters(2.0);
@@ -57,7 +56,7 @@ public class Module {
         turnFeedback = new PIDController(10.0, 0.0, 0.0);
         break;
       default:
-        driveFeedforward = new SimpleMotorFeedforward(0.0, 0.0);
+        driveFeedforward = new SimpleMotorFeedforward(0.0, 0.0, 0.0);
         driveFeedback = new PIDController(0.0, 0.0, 0.0);
         turnFeedback = new PIDController(0.0008, 0.05, 0.005);
         break;
@@ -69,7 +68,6 @@ public class Module {
 
   public void periodic() {
     io.updateInputs(inputs);
-    Logger.processInputs("Drive/Module" + Integer.toString(index), inputs);
 
     // On first cycle, reset relative turn encoder
     // Wait until absolute angle is nonzero in case it wasn't initialized yet

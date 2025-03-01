@@ -1,13 +1,9 @@
 package frc.robot.subsystems.drive;
 
 import edu.wpi.first.math.geometry.Rotation2d;
-import org.littletonrobotics.junction.AutoLog;
-import org.littletonrobotics.junction.LogTable;
-import org.littletonrobotics.junction.inputs.LoggableInputs;
-
 public interface ModuleIO {
-  @AutoLog
-  public static class ModuleIOInputs implements LoggableInputs {
+  
+  public static class ModuleIOInputs {
     public double drivePositionRad = 0.0;
     public double driveVelocityRadPerSec = 0.0;
     public double driveAppliedVolts = 0.0;
@@ -18,16 +14,7 @@ public interface ModuleIO {
     public double turnVelocityRadPerSec = 0.0;
     public double turnAppliedVolts = 0.0;
     public double[] turnCurrentAmps = new double[] {};
-    @Override
-    public void toLog(LogTable table) {
-      // TODO Auto-generated method stub
-      throw new UnsupportedOperationException("Unimplemented method 'toLog'");
-    }
-    @Override
-    public void fromLog(LogTable table) {
-      // TODO Auto-generated method stub
-      throw new UnsupportedOperationException("Unimplemented method 'fromLog'");
-    }
+    
   }
 
   /** Updates the set of loggable inputs. */

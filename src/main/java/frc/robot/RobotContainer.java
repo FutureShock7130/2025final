@@ -14,6 +14,7 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -27,7 +28,11 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
+// import frc.robot.subsystems.LED;
+import frc.robot.subsystems.NavigationController;
+import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.SuperStruct;
+import frc.robot.subsystems.SuperStructState;
 import frc.robot.subsystems.drive.Drive;
 import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
@@ -48,12 +53,18 @@ import frc.robot.subsystems.ObjectDetection;
 public class RobotContainer {
   // Subsystems
   private final Drive drive;
-  private final Vision vision = new Vision();
+  public final Vision vision = new Vision();
   private final Elevator m_elevator;
   private final Grabber m_grabber;
   // private final Intake m_intake;
+<<<<<<< HEAD
   private final SuperStruct m_SuperStruct;
   private final ObjectDetection objectDetection = new ObjectDetection(); // 新增物件偵測子系統
+=======
+  public final SuperStruct m_SuperStruct;
+  private final NavigationController m_navigationController;
+  // private final LED m_led;
+>>>>>>> 96b8d27cca2d70452ef0099e63ad5a4e4c6331c0
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -68,7 +79,9 @@ public class RobotContainer {
     m_grabber = Grabber.getInstance();
     // m_intake = Intake.getInstance();
     m_SuperStruct = SuperStruct.getInstance();  
-
+    m_navigationController = NavigationController.getInstance();
+    // m_led = LED.getInstance();
+    
     switch (Constants.currentMode) {
       case REAL:
         // Real robot, instantiate hardware IO implementation
@@ -98,22 +111,28 @@ public class RobotContainer {
     // 設置物件偵測子系統的驅動系統
     objectDetection.setDriveSubsystem(drive);
 
+    NamedCommands.registerCommand("DEFAULT", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.DEFAULT), m_elevator));
+    NamedCommands.registerCommand("L1", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L1), m_elevator));
+    NamedCommands.registerCommand("L2", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L2), m_elevator));
+    NamedCommands.registerCommand("L3", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L3), m_elevator));
+    NamedCommands.registerCommand("L4", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L3), m_elevator));
+    NamedCommands.registerCommand("PLACE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.PLACEMENT), m_grabber).withTimeout(1));
+    NamedCommands.registerCommand("INTAKE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.CS), m_grabber).withTimeout(5));
+
     // Set up auto routines
     autoChooser = AutoBuilder.buildAutoChooser();
-    autoChooser.setDefaultOption("null", null);
-    autoChooser.addOption("LEAVE", new PathPlannerAuto("LEAVE"));
     SmartDashboard.putData("auto", autoChooser);
-    // Set up SysId routines
-    autoChooser.addOption(
-        "Drive SysId (Quasistatic Forward)",
-        drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    autoChooser.addOption(
-        "Drive SysId (Quasistatic Reverse)",
-        drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    autoChooser.addOption(
-        "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    autoChooser.addOption(
-        "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+    // // Set up SysId routines
+    // autoChooser.addOption(
+    //     "Drive SysId (Quasistatic Forward)",
+    //     drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+    // autoChooser.addOption(
+    //     "Drive SysId (Quasistatic Reverse)",
+    //     drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+    // autoChooser.addOption(
+    //     "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
+    // autoChooser.addOption(
+    //     "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
 
     // Configure the button bindings
     configureButtonBindings();
@@ -158,4 +177,9 @@ public class RobotContainer {
     drive.setPose(new Pose2d());
     return autoChooser.getSelected();
   }
+<<<<<<< HEAD
 }
+=======
+
+}
+>>>>>>> 96b8d27cca2d70452ef0099e63ad5a4e4c6331c0
