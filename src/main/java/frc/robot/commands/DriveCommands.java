@@ -27,7 +27,8 @@ public class DriveCommands {
       Drive drive,
       DoubleSupplier xSupplier,
       DoubleSupplier ySupplier,
-      DoubleSupplier omegaSupplier) {
+      DoubleSupplier omegaSupplier,
+      DoubleSupplier speedmulti) {
     return Commands.run(
         () -> {
           // Apply deadband
@@ -54,9 +55,9 @@ public class DriveCommands {
                   && DriverStation.getAlliance().get() == Alliance.Red;
           drive.runVelocity(
               ChassisSpeeds.fromFieldRelativeSpeeds(
-                  linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec() * 0.3,
-                  linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec() * 0.3,
-                  omega * drive.getMaxAngularSpeedRadPerSec() * 0.3,
+                  linearVelocity.getX() * drive.getMaxLinearSpeedMetersPerSec() * speedmulti.getAsDouble(),
+                  linearVelocity.getY() * drive.getMaxLinearSpeedMetersPerSec() * speedmulti.getAsDouble(),
+                  omega * drive.getMaxAngularSpeedRadPerSec() * speedmulti.getAsDouble(),
                   isFlipped
                       ? drive.getRotation().plus(new Rotation2d(Math.PI))
                       : drive.getRotation()));

@@ -114,9 +114,9 @@ public class RobotContainer {
     NamedCommands.registerCommand("L1", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L1), m_elevator));
     NamedCommands.registerCommand("L2", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L2), m_elevator));
     NamedCommands.registerCommand("L3", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L3), m_elevator));
-    NamedCommands.registerCommand("L4", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L4), m_elevator));
+    NamedCommands.registerCommand("L4", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L4), m_elevator).withTimeout(2));
     NamedCommands.registerCommand("PLACE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.PLACEMENT), m_grabber).withTimeout(1));
-    NamedCommands.registerCommand("INTAKE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.CS), m_grabber).withTimeout(1.5));
+    NamedCommands.registerCommand("INTAKE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.CS), m_grabber).withTimeout(2.5));
 
     // Set up auto routines
     autoChooser = AutoBuilder.buildAutoChooser();
@@ -136,6 +136,9 @@ public class RobotContainer {
     // Configure the button bindings
     configureButtonBindings();
 
+    // Set drive subsystem for ObjectDetection
+    m_ObjectDetection.setDriveSubsystem(drive);
+
     SmartDashboard.putData("auto", autoChooser);
    
   }
@@ -152,7 +155,10 @@ public class RobotContainer {
             drive,
             () -> -controller.getLeftY(),
             () -> -controller.getLeftX(),
-            () -> -controller.getRightX()));
+            () -> -controller.getRightX(),
+            () -> controller.rightBumper().getAsBoolean() ? 0.3 : 1
+            ));
+ 
     controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
     controller
         .back()

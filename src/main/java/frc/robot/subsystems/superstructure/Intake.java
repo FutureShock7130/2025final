@@ -15,6 +15,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
+import com.ctre.phoenix6.sim.TalonFXSimState;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -43,7 +44,7 @@ public class Intake extends SubsystemBase {
 
   private final CANcoder angleEncoder;
 
-  private final SparkMax intakeMotor;
+  private final TalonFX intakeMotor;
 
   private final TrapezoidProfile.Constraints constraints =
   new TrapezoidProfile.Constraints(
@@ -97,8 +98,7 @@ public class Intake extends SubsystemBase {
     leftAngle = new TalonFX(17, "GTX7130");
     rightAngle = new TalonFX(18, "GTX7130");
     angleEncoder = new CANcoder(4, "rio");
-    intakeMotor = new SparkMax(45, MotorType.kBrushless);
-
+    intakeMotor = new TalonFX(45, "rio");
     // Configure TalonFX motors
     TalonFXConfiguration leftangleConfig = new TalonFXConfiguration();
     leftangleConfig.Voltage.PeakForwardVoltage = 12.0;
@@ -126,9 +126,11 @@ public class Intake extends SubsystemBase {
 
     leftAngle.getConfigurator().apply(leftangleConfig);
     rightAngle.getConfigurator().apply(rightangleConfig);
+    intakeMotor.getConfigurator().apply(rightangleConfig);
 
     leftAngle.setNeutralMode(NeutralModeValue.Brake);
     rightAngle.setNeutralMode(NeutralModeValue.Brake);
+    intakeMotor.setNeutralMode(NeutralModeValue.Brake);
 
     
 
@@ -137,23 +139,24 @@ public class Intake extends SubsystemBase {
     // Configure CANcoder
     CANcoderConfiguration encoderConfig = new CANcoderConfiguration();
     encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-    encoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
+    encoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 0;
+    encoderConfig.MagnetSensor.MagnetOffset = -0.2;
     angleEncoder.getConfigurator().apply(encoderConfig);
 
-    // Configure SparkMax
-    SparkMaxConfig neo550Config = new SparkMaxConfig();
+    // // Configure SparkMax
+    // SparkMaxConfig neo550Config = new SparkMaxConfig();
 
 
-    neo550Config
-        .smartCurrentLimit(20)  
-        .idleMode(IdleMode.kCoast)  
-        .voltageCompensation(12.0)  
-        .openLoopRampRate(0.1)
-        .inverted(true);
+    // neo550Config
+    //     .smartCurrentLimit(25)  
+    //     .idleMode(IdleMode.kCoast)  
+    //     .voltageCompensation(12.0)  
+    //     .openLoopRampRate(0.1)
+    //     .inverted(true);
     
-    // Apply our configuration with proper timeout
-    intakeMotor.setCANTimeout(250);
-    intakeMotor.configure(neo550Config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    // // Apply our configuration with proper timeout
+    // intakeMotor.setCANTimeout(250);
+    // intakeMotor.configure(neo550Config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     pidController.disableContinuousInput();
     pidController.setIntegratorRange(0,0);

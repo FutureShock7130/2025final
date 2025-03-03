@@ -39,7 +39,19 @@
                     {
                       "type": "wait",
                       "data": {
-                        "waitTime": 3.2
+                        "waitTime": 3.0
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "PLACE"
+                      }
+                    },
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 0.5
                       }
                     }
                   ]
@@ -122,6 +134,18 @@
                       "type": "wait",
                       "data": {
                         "waitTime": 3.0
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "PLACE"
+                      }
+                    },
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 0.5
                       }
                     }
                   ]

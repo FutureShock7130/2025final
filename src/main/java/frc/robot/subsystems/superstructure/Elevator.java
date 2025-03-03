@@ -54,19 +54,19 @@ public class Elevator extends SubsystemBase {
   // Profiled PID Controller for smooth motionS
   private final TrapezoidProfile.Constraints constraints = 
       new TrapezoidProfile.Constraints(
-          80,   
-          90
+          100,   
+          100
       );
   
   private final ProfiledPIDController pidController = 
       new ProfiledPIDController(
-          0.05,   // P gain
+          0.01,   // P gain
           0.0,   // I gain
           0.0,   // D gain
           constraints
       );
   
-  private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(0.36, 3.07, 0.04);
+  private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(0.5, 0, 0.0);
 
   private static Elevator mInstance = null;
 
@@ -89,7 +89,7 @@ public class Elevator extends SubsystemBase {
     
 
     // Configure PID Controller
-    pidController.setTolerance(4); 
+    pidController.setTolerance(2); 
     pidController.setIZone(Double.POSITIVE_INFINITY);
     pidController.setIntegratorRange(-0.5, 0.5);
     pidController.setGoal(leftMotor.getEncoder().getPosition());
@@ -117,7 +117,7 @@ public class Elevator extends SubsystemBase {
     // Create soft limit config for elevator
     SoftLimitConfig softLimitConfig = new SoftLimitConfig();
     softLimitConfig
-        .forwardSoftLimit(169)     // in rotations
+        .forwardSoftLimit(169 * 0.6)     // in rotations
         .forwardSoftLimitEnabled(softLimit)
         .reverseSoftLimit(0.0)     
         .reverseSoftLimitEnabled(softLimit);
@@ -205,8 +205,8 @@ public class Elevator extends SubsystemBase {
 
     public void setPosition(double position) {
     pidController.setGoal(position);
-    setleftVoltage(MathUtil.clamp(pidController.calculate(leftMotor.getEncoder().getPosition()), -0.6, 0.6));
-    setrightVoltage(MathUtil.clamp(pidController.calculate(rightMotor.getEncoder().getPosition()), -0.6, 0.6));
+    setleftVoltage(MathUtil.clamp(pidController.calculate(leftMotor.getEncoder().getPosition()), -0.8, 0.8));
+    setrightVoltage(MathUtil.clamp(pidController.calculate(rightMotor.getEncoder().getPosition()), -0.8, 0.8));
   }
 
 
@@ -235,6 +235,8 @@ public class Elevator extends SubsystemBase {
     SmartDashboard.putNumber("elevator applied output", leftMotor.getAppliedOutput());
     SmartDashboard.putNumber("elevator get", leftMotor.get());
     SmartDashboard.putNumber("elevator volts", leftMotor.getBusVoltage());
+    SmartDashboard.putNumber("Elevator pid", pidController.calculate(rightMotor.getEncoder().getPosition()));
+    SmartDashboard.putNumber("pid setpont le", pidController.getSetpoint().position);
     leftRotationsEntry.setDouble(leftMotor.getEncoder().getPosition());
     rightRotationsEntry.setDouble(rightMotor.getEncoder().getPosition());
 

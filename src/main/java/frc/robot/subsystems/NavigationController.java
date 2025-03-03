@@ -131,10 +131,10 @@ public class NavigationController extends SubsystemBase {
             return DestinationState.PATHFINDING_TO_KL_THEN_K;
         } else if (buttonBox1.getRawAxis(1) >= 0.5) {
             return DestinationState.PATHFINDING_TO_KL_THEN_L;
-        } else if (driver.getLeftBumperPressed()) {
-            return DestinationState.PATHFINDING_TO_CSL;
-        } else if (driver.getRightBumperPressed()) {
-            return DestinationState.PATHFINDING_TO_CSR;
+        // } else if (driver.getLeftBumperPressed()) {
+        //     return DestinationState.PATHFINDING_TO_CSL;
+        // } else if (driver.getRightBumperPressed()) {
+        //     return DestinationState.PATHFINDING_TO_CSR;
         }
         
         return currentDestination;
@@ -153,6 +153,36 @@ public class NavigationController extends SubsystemBase {
         } else if (destination == DestinationState.PATHFINDING_TO_AB_THEN_B) {
             nextDestination = DestinationState.PATHFINDING_TO_B;
             destination = DestinationState.PATHFINDING_TO_AB;
+        } else if (destination == DestinationState.PATHFINDING_TO_CD_THEN_C) {
+            nextDestination = DestinationState.PATHFINDING_TO_C;
+            destination = DestinationState.PATHFINDING_TO_CD;
+        } else if (destination == DestinationState.PATHFINDING_TO_CD_THEN_D) {
+            nextDestination = DestinationState.PATHFINDING_TO_D;
+            destination = DestinationState.PATHFINDING_TO_CD;
+        } else if (destination == DestinationState.PATHFINDING_TO_EF_THEN_E) {
+            nextDestination = DestinationState.PATHFINDING_TO_E;
+            destination = DestinationState.PATHFINDING_TO_EF;
+        } else if (destination == DestinationState.PATHFINDING_TO_EF_THEN_F) {
+            nextDestination = DestinationState.PATHFINDING_TO_F;
+            destination = DestinationState.PATHFINDING_TO_EF;
+        } else if (destination == DestinationState.PATHFINDING_TO_GH_THEN_G) {
+            nextDestination = DestinationState.PATHFINDING_TO_G;
+            destination = DestinationState.PATHFINDING_TO_GH;
+        } else if (destination == DestinationState.PATHFINDING_TO_GH_THEN_H) {
+            nextDestination = DestinationState.PATHFINDING_TO_H;
+            destination = DestinationState.PATHFINDING_TO_GH;
+        } else if (destination == DestinationState.PATHFINDING_TO_IJ_THEN_I) {
+            nextDestination = DestinationState.PATHFINDING_TO_I;
+            destination = DestinationState.PATHFINDING_TO_IJ;
+        } else if (destination == DestinationState.PATHFINDING_TO_IJ_THEN_J) {
+            nextDestination = DestinationState.PATHFINDING_TO_J;
+            destination = DestinationState.PATHFINDING_TO_IJ;
+        } else if (destination == DestinationState.PATHFINDING_TO_KL_THEN_K) {
+            nextDestination = DestinationState.PATHFINDING_TO_K;
+            destination = DestinationState.PATHFINDING_TO_KL;
+        } else if (destination == DestinationState.PATHFINDING_TO_KL_THEN_L) {
+            nextDestination = DestinationState.PATHFINDING_TO_L;
+            destination = DestinationState.PATHFINDING_TO_KL;
         }
         
         // Find the target pose based on the destination

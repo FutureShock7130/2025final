@@ -23,12 +23,16 @@ import com.pathplanner.lib.path.PathConstraints;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import frc.robot.subsystems.ObjectDetection;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import java.util.Map;
 
 public class SuperStruct extends SubsystemBase {
     Elevator mElevator;
     Grabber mGrabber;
     Intake mIntake;
     StateMachine mStateMachine;
+    ObjectDetection mObjectDetection;
     public SuperStructState mCommandedState;
     LED mled;
 
@@ -59,7 +63,7 @@ public class SuperStruct extends SubsystemBase {
                         this));
 
         new CommandJoystick(1).axisLessThan(1, -0.5)
-                .onTrue(Commands.runOnce(
+                .whileTrue(Commands.runOnce(
                         () -> setState(SuperStructState.L2),
                         this));
 
@@ -78,11 +82,12 @@ public class SuperStruct extends SubsystemBase {
                         () -> setState(SuperStructState.CS),
                         this));
 
-        new JoystickButton(driver.getHID(), 6)
-                .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.CS),
-                        this));
-        new CommandXboxController(0).axisGreaterThan(3, 0.05)
+        // new CommandXboxController(0).axisGreaterThan(3, 0.05)
+        // .toggleOnTrue(Commands.runOnce(
+        // () -> setState(SuperStructState.PLACEMENT),
+        // this));
+
+        new CommandJoystick(2).button(12)
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.PLACEMENT),
                         this));
@@ -107,6 +112,11 @@ public class SuperStruct extends SubsystemBase {
                         () -> setState(SuperStructState.IVECHANGEDMYMIND),
                         this));
 
+        new CommandJoystick(2).button(9)
+                .onTrue(Commands.runOnce(
+                        () -> setState(SuperStructState.HIT_ALGAE),
+                        this));
+
         new JoystickButton(driver.getHID(), 1)
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.ALGAE_INTAKE),
@@ -122,14 +132,33 @@ public class SuperStruct extends SubsystemBase {
                         () -> setState(SuperStructState.ALGAE_PLACEMENT),
                         this));
 
+        new CommandXboxController(0).axisGreaterThan(3, 0.05)
+                .onTrue(Commands.runOnce(
+                        () -> setState(SuperStructState.ALGAE_PLACEMENT),
+                        this));
+
         new JoystickButton(driver.getHID(), 7)
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.DEFAULT),
                         this));
-        // new JoystickButton(buttonBoard2, 7)
-        // .onTrue(AutoBuilder.pathfindToPose(FieldConstants.A,
-        // constraints).schedule());
 
+        // Object detection - Follow target (Xbox controller Y button)
+        // new JoystickButton(driver.getHID(), XboxController.Button.kY.value)
+        // .onTrue(Commands.runOnce(
+        // () -> {
+        // setState(SuperStructState.FOLLOW_TARGET);
+        // SmartDashboard.putString("Button Press", "Y Button - Start Following");
+        // },
+        // this));
+
+        // // Object detection - Stop following (Xbox controller B button)
+        // new JoystickButton(driver.getHID(), XboxController.Button.kB.value)
+        // .onTrue(Commands.runOnce(
+        // () -> {
+        // setState(SuperStructState.STOP_FOLLOWING);
+        // SmartDashboard.putString("Button Press", "B Button - Stop Following");
+        // },
+        // this));
     }
 
     /** Creates a new StateMachine. */
@@ -138,63 +167,98 @@ public class SuperStruct extends SubsystemBase {
         mGrabber = Grabber.getInstance();
         mIntake = Intake.getInstance();
         mStateMachine = StateMachine.getInstance();
+        mObjectDetection = ObjectDetection.getInstance();
         mled = LED.getInstance();
         mCommandedState = SuperStructState.DEFAULT;
         driver = new CommandXboxController(0);
         buttonBoard1 = new CommandJoystick(buttonBoard1Port); // First port
         buttonBoard2 = new CommandJoystick(buttonBoard2Port); // Second port
+
+        // Add Shuffleboard controls for object following
+        var tab = Shuffleboard.getTab("Controls");
+
+        // Current following status display with indicator color
+        tab.addBoolean("Following Status", () -> {
+            return mCommandedState == SuperStructState.FOLLOW_TARGET;
+        })
+                .withSize(2, 1)
+                .withPosition(0, 5)
+                .withProperties(Map.of("colorWhenTrue", "blue", "colorWhenFalse", "gray"));
+
+        // Current state display
+        tab.addString("Current State", () -> {
+            return mCommandedState.toString();
+        })
+                .withSize(2, 1)
+                .withPosition(2, 5);
+
+        // Debug panel for SmartDashboard values
+        tab.addBoolean("Y Button (Follow)", () -> driver.getHID().getRawButton(XboxController.Button.kY.value))
+                .withSize(1, 1)
+                .withPosition(4, 5)
+                .withProperties(Map.of("colorWhenTrue", "blue"));
+
+        tab.addBoolean("B Button (Stop)", () -> driver.getHID().getRawButton(XboxController.Button.kB.value))
+                .withSize(1, 1)
+                .withPosition(5, 5)
+                .withProperties(Map.of("colorWhenTrue", "red"));
+
         configureButtonBindings();
     }
 
     public void L1() {
-        mElevator.setPosition(-0.001);
+        mElevator.setPosition(-0.001 * 0.6);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(-0.587637);
+            mGrabber.setPosition(0.463135);
         } else {
-            mGrabber.setPosition(-0.453613);
+            mGrabber.setPosition(0.618896);
         }
     }
 
     public void L2() {
-        mElevator.setPosition(17.5);
+        mElevator.setPosition(25.69420 * 0.6);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(-0.587637);
+            mGrabber.setPosition(0.463135);
         } else {
-            mGrabber.setPosition(-0.453613);
+            mGrabber.setPosition(0.618896);
         }
     }
 
     public void L3() {
-        mElevator.setPosition(69.420);
+        mElevator.setPosition(72.420 * 0.6);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(-0.587637);
+            mGrabber.setPosition(0.463135);
         } else {
-            mGrabber.setPosition(-0.453613);
+            mGrabber.setPosition(0.618896);
         }
     }
 
     public void L4() {
-        mElevator.setPosition(165);
+        mElevator.setPosition(165 * 0.6);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(-0.5406969);
+            mGrabber.setPosition(0.50974);
         } else {
-            mGrabber.setPosition(-0.453613);
+            mGrabber.setPosition(0.618896);
         }
     }
 
     public void TRAVEL() {
-        mElevator.setPosition(-0.2); // ground
-        mGrabber.setPosition(-0.453613); // default
+        mElevator.setPosition(-0.2 * 0.6); // ground
+        mGrabber.setPosition(0.618896); // default
     }
 
     public void CS() {
-        mElevator.setPosition(-0.001);
-        mGrabber.setPosition(-0.753154);
+        mElevator.setPosition(-0.001 * 0.6);
+        mGrabber.setPosition(0.289307);
         mGrabber.intake();
     }
 
     public void PLACEMENT() {
+        if (mPreviousState == SuperStructState.L1) {
+            mGrabber.placeL1();
+        } else {
         mGrabber.placeCoral();
+        }
     }
 
     /**
@@ -227,48 +291,90 @@ public class SuperStruct extends SubsystemBase {
 
         if (comingFromLLevel) {
             if (mPreviousState == SuperStructState.L2) {
-                mElevator.setPosition(23.5);
+                mElevator.setPosition(33.5 * 0.6);
                 if (mElevator.atTargetPosition()) {
-                    mGrabber.setPosition(-0.453613);
-                    mElevator.setPosition(-0.02);
+                    mGrabber.setPosition(0.618896);
+                    mElevator.setPosition(-0.02 * 0.6);
                 }
             } else if (mPreviousState == SuperStructState.L3) {
-                mElevator.setPosition(75.420);
+                mElevator.setPosition(75.420 * 0.6);
                 if (mElevator.atTargetPosition()) {
-                    mGrabber.setPosition(-0.453613);
-                    mElevator.setPosition(-0.02);
+                    mGrabber.setPosition(0.618896);
+                    mElevator.setPosition(-0.02 * 0.6);
                 }
             } else if (mPreviousState == SuperStructState.L4) {
-                mled.rainbowmarquee();
-                mGrabber.setPosition(-0.453613);
-                mElevator.setPosition(167);
-                if (mGrabber.atTargetPosition()) {
-                    mElevator.setPosition(-0.02);
+                // mled.rainbowmarquee();
+                mGrabber.setPosition(0.618896);
+                mElevator.setPosition(169 * 0.6);
+                if (mElevator.atTargetPosition()) {
+                    mElevator.setPosition(-0.02 * 0.6);
                 }
             }
         } else {
-            mGrabber.setPosition(-0.453613);
-            mElevator.setPosition(-0.02);
+            mGrabber.setPosition(0.618896);
+            mElevator.setPosition(-0.02 * 0.6);
         }
         mGrabber.stop();
         mGrabber.resetcounter();
-        // mIntake.setAngle(0.700439);
+        mIntake.setAngle(-0.390137);
+        mIntake.setIntake(0);
         mled.rainbowmarquee();
+        mObjectDetection.stopFollowing();
     }
 
     public void ALGAE_STOWAGE() {
-        mIntake.setAngle(0.866211);
-        mIntake.setIntake(0.0);
+        mIntake.setAngle(-0.234619);
+        mIntake.setIntake(0.05);
+        mObjectDetection.stopFollowing();
     }
 
     public void ALGAE_INTAKE() {
-        mIntake.setAngle(0.866211);
-        mIntake.setIntake(0.6);
+        mIntake.setAngle(-0.234619);
+        mIntake.setIntake(0.5);
+        // mObjectDetection.startFollowing();
     }
 
     public void ALGAE_PLACEMENT() {
-
+        
         mIntake.setIntake(-0.6);
+    }
+
+    public void HIT_ALGAE() {
+        mGrabber.hitAlgea();
+        mGrabber.setPosition(0.352295);
+    }
+
+    /**
+     * Start following a target
+     * Uses the ObjectDetection subsystem to follow targets
+     */
+    public void FOLLOW_TARGET() {
+        mled.color(0, 0, 255); // Blue color to indicate following
+
+        // Debug output
+        SmartDashboard.putString("SuperStruct State", "FOLLOW_TARGET");
+        SmartDashboard.putBoolean("Following Active", true);
+
+        // Schedule the follow command through ObjectDetection
+        mObjectDetection.startFollowing();
+
+        // Stop other systems when we're following
+        mGrabber.stop();
+    }
+
+    /**
+     * Stop following a target
+     */
+    public void STOP_FOLLOWING() {
+        // Debug output
+        SmartDashboard.putString("SuperStruct State", "STOP_FOLLOWING");
+        SmartDashboard.putBoolean("Following Active", false);
+
+        // Stop following command through ObjectDetection
+        mObjectDetection.stopFollowing();
+
+        // After stopping, go to default state
+        setState(SuperStructState.DEFAULT);
     }
 
     public void updateState() {
@@ -305,6 +411,15 @@ public class SuperStruct extends SubsystemBase {
                 break;
             case ALGAE_PLACEMENT:
                 ALGAE_PLACEMENT();
+                break;
+            case FOLLOW_TARGET:
+                FOLLOW_TARGET();
+                break;
+            case STOP_FOLLOWING:
+                STOP_FOLLOWING();
+                break;
+            case HIT_ALGAE:
+                HIT_ALGAE();
                 break;
         }
     }

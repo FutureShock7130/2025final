@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.Comparator;
 import java.util.Iterator;
+import frc.robot.subsystems.LED;
 
 /**
  * Object Detection Subsystem
@@ -62,17 +63,26 @@ public class ObjectDetection extends SubsystemBase {
     private Field2d fieldWidget = new Field2d();
     
     // Shuffleboard items
-    private final ShuffleboardTab visionTab = Shuffleboard.getTab("Object Detection");
-    private GenericEntry targetClassEntry;
-    private GenericEntry targetAreaEntry;
-    private GenericEntry aimToleranceEntry;
-    private GenericEntry aimButtonEntry;
-    private GenericEntry followButtonEntry;
-    private GenericEntry stopButtonEntry;
-    private GenericEntry distanceEstimateEntry;
+    // private final ShuffleboardTab visionTab = Shuffleboard.getTab("Object Detection");
+    // private GenericEntry targetClassEntry;
+    // private GenericEntry targetAreaEntry;
+    // private GenericEntry aimToleranceEntry;
+    // private GenericEntry aimButtonEntry;
+    // private GenericEntry followButtonEntry;
+    // private GenericEntry stopButtonEntry;
+    // private GenericEntry distanceEstimateEntry;
     
-    private static final double TARGET_AREA_SETPOINT = 30.0; 
-    private static final double AIM_TOLERANCE_DEGREES = 2.0; 
+    private static final double TARGET_AREA_SETPOINT = 40.0; 
+    private static final double AIM_TOLERANCE_DEGREES = 10.0; 
+    
+    private static ObjectDetection mInstance = null;
+
+    public static synchronized ObjectDetection getInstance() {
+      if (mInstance == null) {
+        mInstance = new ObjectDetection();
+      }
+      return mInstance;
+    }
     
     /**
      * Information for tracked objects
@@ -98,107 +108,107 @@ public class ObjectDetection extends SubsystemBase {
     
     public ObjectDetection() {
         camera = new PhotonCamera("WEB_CAM");
-        turnController = new PIDController(0.1, 0.01, 0.00000000001); // Turning PID
-        driveController = new PIDController(0.05, 0.01, 0.00000000001); // Approach PID
-        setupShuffleboardControls();
+        turnController = new PIDController(0.05, 0, 0.00000000001); // Turning PID
+        driveController = new PIDController(0.05, 0, 0.00000000001); // Approach PID
+        // setupShuffleboardControls();
     }
     
     /**
      * Set up Shuffleboard controls
      */
-    private void setupShuffleboardControls() {
-        targetClassEntry = visionTab.add("Target (0=algae, 1=coral)", targetClass)
-            .withPosition(0, 0)
-            .withSize(1, 1)
-            .getEntry();
+    // private void setupShuffleboardControls() {
+    //     targetClassEntry = visionTab.add("Target (0=algae, 1=coral)", targetClass)
+    //         .withPosition(0, 0)
+    //         .withSize(1, 1)
+    //         .getEntry();
         
-        targetAreaEntry = visionTab.add("Target Area Size", TARGET_AREA_SETPOINT)
-            .withPosition(1, 0)
-            .withSize(1, 1)
-            .getEntry();
+    //     targetAreaEntry = visionTab.add("Target Area Size", TARGET_AREA_SETPOINT)
+    //         .withPosition(1, 0)
+    //         .withSize(1, 1)
+    //         .getEntry();
         
-        aimToleranceEntry = visionTab.add("Aim Tolerance (deg)", AIM_TOLERANCE_DEGREES)
-            .withPosition(2, 0)
-            .withSize(1, 1)
-            .getEntry();
+    //     aimToleranceEntry = visionTab.add("Aim Tolerance (deg)", AIM_TOLERANCE_DEGREES)
+    //         .withPosition(2, 0)
+    //         .withSize(1, 1)
+    //         .getEntry();
         
-        aimButtonEntry = visionTab.add("Aim at Target", false)
-            .withPosition(0, 1)
-            .withSize(1, 1)
-            .withProperties(Map.of("colorWhenTrue", "green"))
-            .getEntry();
+    //     aimButtonEntry = visionTab.add("Aim at Target", false)
+    //         .withPosition(0, 1)
+    //         .withSize(1, 1)
+    //         .withProperties(Map.of("colorWhenTrue", "green"))
+    //         .getEntry();
         
-        followButtonEntry = visionTab.add("Follow Target", false)
-            .withPosition(1, 1)
-            .withSize(1, 1)
-            .withProperties(Map.of("colorWhenTrue", "blue"))
-            .getEntry();
+    //     followButtonEntry = visionTab.add("Follow Target", false)
+    //         .withPosition(1, 1)
+    //         .withSize(1, 1)
+    //         .withProperties(Map.of("colorWhenTrue", "blue"))
+    //         .getEntry();
         
-        stopButtonEntry = visionTab.add("Stop", false)
-            .withPosition(2, 1)
-            .withSize(1, 1)
-            .withProperties(Map.of("colorWhenTrue", "red"))
-            .getEntry();
+    //     stopButtonEntry = visionTab.add("Stop", false)
+    //         .withPosition(2, 1)
+    //         .withSize(1, 1)
+    //         .withProperties(Map.of("colorWhenTrue", "red"))
+    //         .getEntry();
         
-        distanceEstimateEntry = visionTab.add("Estimated Distance (m)", 0.0)
-            .withPosition(3, 0)
-            .withSize(1, 1)
-            .getEntry();
+    //     distanceEstimateEntry = visionTab.add("Estimated Distance (m)", 0.0)
+    //         .withPosition(3, 0)
+    //         .withSize(1, 1)
+    //         .getEntry();
         
-        visionTab.addBoolean("Target Visible", this::isTargetVisible)
-            .withPosition(0, 2)
-            .withSize(1, 1);
+    //     visionTab.addBoolean("Target Visible", this::isTargetVisible)
+    //         .withPosition(0, 2)
+    //         .withSize(1, 1);
         
-        visionTab.addBoolean("Aimed", this::isAimedAtTarget)
-            .withPosition(1, 2)
-            .withSize(1, 1);
+    //     visionTab.addBoolean("Aimed", this::isAimedAtTarget)
+    //         .withPosition(1, 2)
+    //         .withSize(1, 1);
         
-        visionTab.addString("Status", () -> {
-            if (isFollowing) return "Following";
-            if (isAiming) return "Aiming";
-            return "Idle";
-        })
-            .withPosition(2, 2)
-            .withSize(1, 1);
+    //     visionTab.addString("Status", () -> {
+    //         if (isFollowing) return "Following";
+    //         if (isAiming) return "Aiming";
+    //         return "Idle";
+    //     })
+    //         .withPosition(2, 2)
+    //         .withSize(1, 1);
             
-        visionTab.addString("Target Class", () -> 
-            targetClass == 0 ? "algae" : "coral")
-            .withPosition(3, 1)
-            .withSize(1, 1);
+    //     visionTab.addString("Target Class", () -> 
+    //         targetClass == 0 ? "algae" : "coral")
+    //         .withPosition(3, 1)
+    //         .withSize(1, 1);
             
-        // Add field visualization
-        visionTab.add("Field", fieldWidget)
-            .withSize(5, 3)
-            .withPosition(0, 3);
+    //     // Add field visualization
+    //     visionTab.add("Field", fieldWidget)
+    //         .withSize(5, 3)
+    //         .withPosition(0, 3);
             
-        // Display tracked objects list
-        visionTab.addString("Tracked Objects", this::getTrackedObjectsAsString)
-            .withSize(2, 3)
-            .withPosition(5, 3);
+    //     // Display tracked objects list
+    //     visionTab.addString("Tracked Objects", this::getTrackedObjectsAsString)
+    //         .withSize(2, 3)
+    //         .withPosition(5, 3);
             
-        // Add debug values for troubleshooting
-        visionTab.addNumber("Target Yaw", () -> {
-            var result = camera.getLatestResult();
-            if (result.hasTargets()) {
-                var target = getBestTarget(result);
-                return target != null ? target.getYaw() : 0.0;
-            }
-            return 0.0;
-        })
-            .withPosition(3, 2)
-            .withSize(1, 1);
+    //     // Add debug values for troubleshooting
+    //     visionTab.addNumber("Target Yaw", () -> {
+    //         var result = camera.getLatestResult();
+    //         if (result.hasTargets()) {
+    //             var target = getBestTarget(result);
+    //             return target != null ? target.getYaw() : 0.0;
+    //         }
+    //         return 0.0;
+    //     })
+    //         .withPosition(3, 2)
+    //         .withSize(1, 1);
             
-        visionTab.addNumber("PID Turn Error", () -> {
-            var result = camera.getLatestResult();
-            if (result.hasTargets()) {
-                var target = getBestTarget(result);
-                return target != null ? turnController.getPositionError() : 0.0;
-            }
-            return 0.0;
-        })
-            .withPosition(4, 2)
-            .withSize(1, 1);
-    }
+    //     visionTab.addNumber("PID Turn Error", () -> {
+    //         var result = camera.getLatestResult();
+    //         if (result.hasTargets()) {
+    //             var target = getBestTarget(result);
+    //             return target != null ? turnController.getPositionError() : 0.0;
+    //         }
+    //         return 0.0;
+    //     })
+    //         .withPosition(4, 2)
+    //         .withSize(1, 1);
+    // }
     
     /**
      * Convert tracked objects to string for display
@@ -244,7 +254,7 @@ public class ObjectDetection extends SubsystemBase {
         updateFieldWidget();
         
         // Check if user updated settings from Shuffleboard
-        checkShuffleboardControls();
+        // checkShuffleboardControls();
     }
     
     /**
@@ -387,48 +397,65 @@ public class ObjectDetection extends SubsystemBase {
             // Update object position
             trackedObjects.put(objectId, new TrackedObject(objectId, objectPose, distance));
             
-            // If it's the current target class, update to Shuffleboard
-            if (objectId == targetClass) {
-                distanceEstimateEntry.setDouble(distance);
-            }
+            // // If it's the current target class, update to Shuffleboard
+            // if (objectId == targetClass) {
+            //     distanceEstimateEntry.setDouble(distance);
+            // }
         }
     }
     
     /**
      * Check if user updated settings from Shuffleboard
      */
-    private void checkShuffleboardControls() {
-        // Read target class setting
-        int newTargetClass = (int) targetClassEntry.getDouble(targetClass);
-        if (newTargetClass != targetClass && (newTargetClass == 0 || newTargetClass == 1)) {
-            targetClass = newTargetClass;
-        }
+    // private void checkShuffleboardControls() {
+    //     // Read target class setting
+    //     int newTargetClass = (int) targetClassEntry.getDouble(targetClass);
+    //     if (newTargetClass != targetClass && (newTargetClass == 0 || newTargetClass == 1)) {
+    //         targetClass = newTargetClass;
+    //     }
         
-        // Check button states
-        boolean aimRequested = aimButtonEntry.getBoolean(false);
-        boolean followRequested = followButtonEntry.getBoolean(false);
-        boolean stopRequested = stopButtonEntry.getBoolean(false);
+    //     // Check button states
+    //     boolean aimRequested = aimButtonEntry.getBoolean(false);
+    //     boolean followRequested = followButtonEntry.getBoolean(false);
+    //     boolean stopRequested = stopButtonEntry.getBoolean(false);
         
-        // Handle stop request
-        if (stopRequested) {
-            stopAllCommands();
-            stopButtonEntry.setBoolean(false);
-        }
-        // Handle aim request
-        else if (aimRequested && !isAiming && !isFollowing) {
-            startAiming();
-            aimButtonEntry.setBoolean(false);
-        }
-        // Handle follow request
-        else if (followRequested && !isFollowing) {
-            startFollowing();
-            followButtonEntry.setBoolean(false);
-        }
-    }
+    //     // Debug button states
+    //     SmartDashboard.putBoolean("Aim Button State", aimRequested);
+    //     SmartDashboard.putBoolean("Follow Button State", followRequested);
+    //     SmartDashboard.putBoolean("Stop Button State", stopRequested);
+        
+    //     // Handle stop request
+    //     if (stopRequested) {
+    //         SmartDashboard.putString("Button Action", "Stop Requested");
+    //         stopAllCommands();
+    //         // Update UI to show current state
+    //         aimButtonEntry.setBoolean(false);
+    //         followButtonEntry.setBoolean(false);
+    //         stopButtonEntry.setBoolean(true);
+    //     }
+    //     // Handle aim request
+    //     else if (aimRequested && !isAiming && !isFollowing) {
+    //         SmartDashboard.putString("Button Action", "Aim Requested");
+    //         startAiming();
+    //         // Update UI to show current state
+    //         aimButtonEntry.setBoolean(true);
+    //         followButtonEntry.setBoolean(false);
+    //         stopButtonEntry.setBoolean(false);
+    //     }
+    //     // Handle follow request
+    //     else if (followRequested && !isFollowing) {
+    //         SmartDashboard.putString("Button Action", "Follow Requested");
+    //         startFollowing();
+    //         // Update UI to show current state
+    //         aimButtonEntry.setBoolean(false);
+    //         followButtonEntry.setBoolean(true);
+    //         stopButtonEntry.setBoolean(false);
+    //     }
+    // }
     
-    /**
-     * Start aiming at target
-     */
+    // /**
+    //  * Start aiming at target
+    //  */
     private void startAiming() {
         if (driveSubsystem == null) {
             return;
@@ -441,17 +468,44 @@ public class ObjectDetection extends SubsystemBase {
     }
     
     /**
-     * Start following target
+     * Public method to start following a target (for use with state machine)
      */
-    private void startFollowing() {
+    public void startFollowing() {
+        // Update UI to show following status
+        SmartDashboard.putString("Object Detection", "FOLLOWING TARGET");
+        
+        // Set LED color to blue for following
+        LED.getInstance().color(0, 0, 255);
+        
+        // Start following if drive subsystem is available
         if (driveSubsystem == null) {
+            SmartDashboard.putString("ObjectDetection Error", "Drive subsystem not set!");
             return;
         }
         
+        // Start following
         stopAllCommands();
         isFollowing = true;
         activeCommand = new FollowTargetCommand(driveSubsystem);
         CommandScheduler.getInstance().schedule(activeCommand);
+        SmartDashboard.putString("ObjectDetection Status", "Following started via state machine");
+        SmartDashboard.putBoolean("Following Active", isFollowing);
+    }
+    
+    /**
+     * Public method to stop following a target (for use with state machine)
+     */
+    public void stopFollowing() {
+        // Update UI to show stopped status
+        SmartDashboard.putString("Object Detection", "STOPPED FOLLOWING");
+        
+        // Clear LED color when stopped
+        LED.getInstance().nocolor();
+        
+        // Stop all commands
+        stopAllCommands();
+        SmartDashboard.putString("ObjectDetection Status", "Following stopped via state machine");
+        SmartDashboard.putBoolean("Following Active", false);
     }
     
     /**
@@ -468,6 +522,11 @@ public class ObjectDetection extends SubsystemBase {
         if (driveSubsystem != null) {
             driveSubsystem.stop();
         }
+        
+        // Make sure UI buttons match the current state
+        // aimButtonEntry.setBoolean(false);
+        // followButtonEntry.setBoolean(false);
+        // stopButtonEntry.setBoolean(false);
     }
     
     /**
@@ -519,7 +578,7 @@ public class ObjectDetection extends SubsystemBase {
     public void setTargetClass(int classID) {
         if (classID == 0 || classID == 1) {
             this.targetClass = classID;
-            targetClassEntry.setDouble(classID);
+            // targetClassEntry.setDouble(classID);
         }
     }
     
@@ -560,11 +619,11 @@ public class ObjectDetection extends SubsystemBase {
         
         // Use area as a proxy for distance (larger area = closer distance)
         double area = target.getArea();
-        double targetArea = targetAreaEntry.getDouble(TARGET_AREA_SETPOINT);
+        // double targetArea = targetAreaEntry.getDouble(TARGET_AREA_SETPOINT);
         
         // FIXED: Invert the output to fix the direction issue
         // If area < targetArea, we need to move forward (positive output)
-        return -driveController.calculate(area, targetArea);
+        return -driveController.calculate(area, TARGET_AREA_SETPOINT);
     }
     
     /**
@@ -589,9 +648,9 @@ public class ObjectDetection extends SubsystemBase {
             return false;
         }
         
-        double tolerance = aimToleranceEntry.getDouble(AIM_TOLERANCE_DEGREES);
+        // double tolerance = aimToleranceEntry.getDouble(AIM_TOLERANCE_DEGREES);
         // Consider aimed if within tolerance range
-        return Math.abs(target.getYaw()) < tolerance;
+        return Math.abs(target.getYaw()) < AIM_TOLERANCE_DEGREES;
     }
     
     /**
@@ -699,6 +758,11 @@ public class ObjectDetection extends SubsystemBase {
             // Stop the drive system
             driveSubsystem.stop();
             isAiming = false;
+            
+            // Update UI buttons to match current state
+            // aimButtonEntry.setBoolean(false);
+            // followButtonEntry.setBoolean(false);
+            // stopButtonEntry.setBoolean(false);
         }
     }
     
@@ -751,6 +815,11 @@ public class ObjectDetection extends SubsystemBase {
         public void end(boolean interrupted) {
             driveSubsystem.stop();
             isFollowing = false;
+            
+            // Update UI buttons to match current state
+            // aimButtonEntry.setBoolean(false);
+            // followButtonEntry.setBoolean(false);
+            // stopButtonEntry.setBoolean(false);
         }
     }
 }

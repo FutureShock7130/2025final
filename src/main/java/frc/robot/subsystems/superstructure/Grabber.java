@@ -85,8 +85,8 @@ public class Grabber extends SubsystemBase {
 
         CANcoderConfiguration encoderConfig = new CANcoderConfiguration();
         encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-        encoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 0;
-        encoderConfig.MagnetSensor.MagnetOffset = 0.605469;
+        encoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
+        encoderConfig.MagnetSensor.MagnetOffset = 0.3;
         grabberEncoder.getConfigurator().apply(encoderConfig);
 
         pidController.reset(grabberEncoder.getAbsolutePosition().getValueAsDouble());
@@ -236,19 +236,19 @@ public class Grabber extends SubsystemBase {
         double leftRPM = Math.abs(leftIntake.getEncoder().getVelocity());
 
         if (startupCounter < 20) { // Startup delay
-            rightIntake.set(-0.3);
-            leftIntake.set(0.3);
+            rightIntake.set(0.3);
+            leftIntake.set(-0.3);
             startupCounter++;
         } else if (rightRPM < 200 || leftRPM < 200) {
             if (stallCounter < 75) { // Wait ~0.5 seconds (25 * 20ms) before stopping
                 stallCounter++;
-                rightIntake.set(-0.3);
-                leftIntake.set(0.3);
-                hasCoral = false;
+                rightIntake.set(0.3);
+                leftIntake.set(-0.3);
+                // hasCoral = false;
             } else {
-                rightIntake.set(-0.03);
-                leftIntake.set(0.03);
-                hasCoral = true;
+                rightIntake.set(-0.0);
+                leftIntake.set(0.0);
+                // hasCoral = true;
                 return;
             }
         }
@@ -260,20 +260,25 @@ public class Grabber extends SubsystemBase {
     }
 
     public void placeCoral() {
-        rightIntake.set(0.2);
-        leftIntake.set(-0.2);
+        rightIntake.set(-0.3);
+        leftIntake.set(0.3);
         
         double rightRPM = Math.abs(rightIntake.getEncoder().getVelocity());
         double leftRPM = Math.abs(leftIntake.getEncoder().getVelocity());
 
-        if (rightRPM > 200 || leftRPM > 200) {
-            hasCoral = false;
-        }
+        // if (rightRPM > 200 || leftRPM > 200) {
+        //     hasCoral = false;
+        // }
+    }
+
+    public void placeL1() {
+        rightIntake.set(-0.2);
+        leftIntake.set(0.3);
     }
 
     public void hitAlgea() {
-        rightIntake.set(0.4);
-        leftIntake.set(-0.4);
+        rightIntake.set(0.3);
+        leftIntake.set(-0.3);
 
     }
 

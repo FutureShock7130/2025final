@@ -19,5 +19,8 @@ public enum SuperStructState {
     AIM7PSPARROW,
     RADARLOCK,
     MISSILEOUT,
-    GENSHINIMPACT
+    GENSHINIMPACT,
+    FOLLOW_TARGET,    // Enable target following with ObjectDetection subsystem
+    STOP_FOLLOWING,
+    HIT_ALGAE    // Stop target following
 } 
