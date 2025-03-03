@@ -36,12 +36,24 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.math.estimator.KalmanFilter;
+import edu.wpi.first.math.MatBuilder;
+import edu.wpi.first.math.Nat;
+import java.util.Queue;
+import java.util.LinkedList;
 
 public class Vision extends SubsystemBase {
     private final Map<String, PhotonCamera> cameras;
     private final Map<String, PhotonPoseEstimator> photonEstimators;
     private String currentCamera;
     private Matrix<N3, N1> curStdDevs;
+    
+    // Kawman filter variables UwU
+    private static final double MINIMUM_AMBIGUITY = 0.5;  // Lower is better for confidence
+    private KalmanFilter<N3, N3, N3> poseFilter;
+    private Pose2d lastFilteredPose = new Pose2d();
+    private double lastTimestamp = 0;
+    private boolean isFilterInitialized = false;
 
     // Simulation
     private PhotonCameraSim cameraSim;
@@ -52,9 +64,60 @@ public class Vision extends SubsystemBase {
     private boolean processingEnabled = true;
     private boolean hasTarget = false;
 
+    // H-infinity inspired wobust filtering parameters
+    private final double GAMMA = 0.5;  // Robustness parameter (smaller = more robust, larger = more optimal)
+    private final double MAX_INNOVATION_THRESHOLD = 0.3;  // Maximum acceptable innovation (in meters)
+    private final double MIN_TRUST_FACTOR = 0.3;  // Minimum trust in measurements (0-1)
+    private Matrix<N3, N3> adaptiveR; // Adaptive measurement noise covariance
+    private Queue<Matrix<N3, N1>> innovationHistory = new LinkedList<>();
+    private final int INNOVATION_HISTORY_SIZE = 10;
+
     public Vision() {
         cameras = new HashMap<>();
         photonEstimators = new HashMap<>();
+        
+        // Initialize Kawman filter with state space model (x, y, theta)
+        // State transition matrix (A) - how state evolves without control or measurement
+        var A = MatBuilder.fill(Nat.N3(), Nat.N3(), 
+                1, 0, 0, 
+                0, 1, 0, 
+                0, 0, 1);
+        
+        // Control input matrix (B) - we're not using control input
+        var B = MatBuilder.fill(Nat.N3(), Nat.N3(), 
+                0, 0, 0, 
+                0, 0, 0, 
+                0, 0, 0);
+        
+        // Measurement matrix (C) - identity because we measure state directly
+        var C = MatBuilder.fill(Nat.N3(), Nat.N3(), 
+                1, 0, 0, 
+                0, 1, 0, 
+                0, 0, 1);
+                
+        // Process noise (Q) - uncertainty in the model
+        var Q = MatBuilder.fill(Nat.N3(), Nat.N3(), 
+                0.01, 0, 0, 
+                0, 0.01, 0, 
+                0, 0, 0.01);
+                
+        // Measurement noise (R) - uncertainty in measurements
+        var R = MatBuilder.fill(Nat.N3(), Nat.N3(), 
+                0.1, 0, 0, 
+                0, 0.1, 0, 
+                0, 0, 0.1);
+                
+        // Initial state estimate
+        var xHat = VecBuilder.fill(0, 0, 0);
+                
+        // Initial error covariance
+        var P0 = MatBuilder.fill(Nat.N3(), Nat.N3(), 
+                1, 0, 0, 
+                0, 1, 0, 
+                0, 0, 1);
+                
+        poseFilter = new KalmanFilter<>(Nat.N3(), Nat.N3(), Nat.N3(), A, B, C, Q, R, P0);
+        poseFilter.setXhat(xHat);
 
         // Define transforms for each camera
         Map<String, Transform3d> robotToCamTransforms = new HashMap<>();
@@ -126,6 +189,12 @@ public class Vision extends SubsystemBase {
 
             cameraSim.enableDrawWireframe(true);
         }
+
+        // Initialize adaptive measurement noise
+        adaptiveR = MatBuilder.fill(Nat.N3(), Nat.N3(), 
+                0.1, 0, 0, 
+                0, 0.1, 0, 
+                0, 0, 0.1);
     }
 
     /**
@@ -135,35 +204,198 @@ public class Vision extends SubsystemBase {
      */
     public Optional<EstimatedRobotPose> getEstimatedGlobalPose() {
         Optional<EstimatedRobotPose> bestEstimate = Optional.empty();
-        double bestDistance = Double.MAX_VALUE;
+        double bestAmbiguity = Double.MAX_VALUE;  // Lower is better
 
-        // Check ALL cameras instead of just the current one
         for (Map.Entry<String, PhotonCamera> cameraEntry : cameras.entrySet()) {
             String cameraName = cameraEntry.getKey();
             PhotonCamera camera = cameraEntry.getValue();
             PhotonPoseEstimator estimator = photonEstimators.get(cameraName);
 
-            // Process each camera's results
             for (var result : camera.getAllUnreadResults()) {
+                // Skip results with no targets or high ambiguity
+                if (!result.hasTargets() || result.getBestTarget().getPoseAmbiguity() > MINIMUM_AMBIGUITY) {
+                    continue;
+                }
+
                 Optional<EstimatedRobotPose> visionEst = estimator.update(result);
                 updateEstimationStdDevs(visionEst, result.getTargets());
 
-                // If we got a valid estimate, check if it's better than our current best
                 if (visionEst.isPresent()) {
-                    // Determine quality metric - here we're using number of tags
-                    // You could use different metrics like average distance to tags
-                    int numTags = result.getTargets().size();
-
-                    // Higher tag count = better estimate
-                    if (bestEstimate.isEmpty() || numTags > bestDistance) {
+                    double currentAmbiguity = result.getBestTarget().getPoseAmbiguity();
+                    if (bestEstimate.isEmpty() || currentAmbiguity < bestAmbiguity) {
                         bestEstimate = visionEst;
-                        bestDistance = numTags;
+                        bestAmbiguity = currentAmbiguity;
                     }
                 }
             }
         }
 
+        // Apply Kawman filter if we have a valid pose
+        if (bestEstimate.isPresent()) {
+            Pose2d filteredPose = applyKalmanFilter(
+                bestEstimate.get().estimatedPose.toPose2d(),
+                bestEstimate.get().timestampSeconds
+            );
+            
+            return Optional.of(new EstimatedRobotPose(
+                new Pose3d(filteredPose), 
+                bestEstimate.get().timestampSeconds, 
+                bestEstimate.get().targetsUsed
+            ));
+        }
+
+        // If no new vision data, predict forward
+        if (isFilterInitialized) {
+            double now = edu.wpi.first.wpilibj.Timer.getFPGATimestamp();
+            double dt = now - lastTimestamp;
+            if (dt > 0 && dt < 1.0) {  // Only predict if time difference is reasonable
+                // Prediction update with no control input
+                poseFilter.predict(VecBuilder.fill(0, 0, 0), dt);
+                
+                // Extract the predicted state
+                Matrix<N3, N1> state = poseFilter.getXhat();
+                lastFilteredPose = new Pose2d(
+                    state.get(0, 0), 
+                    state.get(1, 0), 
+                    new Rotation2d(state.get(2, 0))
+                );
+                lastTimestamp = now;
+            }
+        }
+
         return bestEstimate;
+    }
+
+    private Pose2d applyKalmanFilter(Pose2d newPose, double timestamp) {
+        // Convert pose to state vector
+        Matrix<N3, N1> measurement = VecBuilder.fill(
+            newPose.getX(),
+            newPose.getY(),
+            newPose.getRotation().getRadians()
+        );
+        
+        // If this is the first measurement, initialize the filter
+        if (!isFilterInitialized) {
+            poseFilter.setXhat(measurement);
+            lastFilteredPose = newPose;
+            lastTimestamp = timestamp;
+            isFilterInitialized = true;
+            return newPose;
+        }
+        
+        // Time update - predict
+        double dt = timestamp - lastTimestamp;
+        if (dt > 0 && dt < 1.0) {  // Only update if time difference is reasonable
+            // Predict with no control input
+            poseFilter.predict(VecBuilder.fill(0, 0, 0), dt);
+            
+            // H-infinity inspired robust filtering:
+            // 1. Calculate innovation (difference between measurement and prediction)
+            Matrix<N3, N1> predicted = poseFilter.getXhat();
+            Matrix<N3, N1> innovation = measurement.minus(predicted);
+            
+            // 2. Check if innovation is within acceptable bounds
+            double innovationMagnitude = Math.sqrt(
+                Math.pow(innovation.get(0, 0), 2) + 
+                Math.pow(innovation.get(1, 0), 2)
+            );
+            
+            // 3. Store innovation for adaptive filtering
+            innovationHistory.add(innovation);
+            while (innovationHistory.size() > INNOVATION_HISTORY_SIZE) {
+                innovationHistory.remove();
+            }
+            
+            // 4. Update adaptive measurement noise based on recent innovations
+            updateAdaptiveNoise();
+            
+            // 5. Apply H-infinity inspired robustness
+            if (innovationMagnitude <= MAX_INNOVATION_THRESHOLD) {
+                // Calculate adaptive gain similar to H-infinity approach
+                double trustFactor = Math.max(
+                    MIN_TRUST_FACTOR, 
+                    1.0 - (innovationMagnitude / MAX_INNOVATION_THRESHOLD) * (1.0 - MIN_TRUST_FACTOR)
+                );
+                
+                // Scale measurement noise inversely proportional to trust
+                Matrix<N3, N3> scaledR = adaptiveR.times(1.0 / trustFactor);
+                
+                // Update filter with new measurement noise
+                poseFilter.setR(scaledR);
+                
+                // Correct prediction with measurement using modified noise
+                poseFilter.correct(VecBuilder.fill(0, 0, 0), measurement);
+            } else {
+                // Innovation too large, likely an outlier
+                // Use minimum trust and maximum process noise for robustness
+                Matrix<N3, N3> outlierR = adaptiveR.times(1.0 / MIN_TRUST_FACTOR);
+                poseFilter.setR(outlierR);
+                
+                // Apply limited correction based on bounded innovation
+                Matrix<N3, N1> boundedInnovation = innovation.times(MAX_INNOVATION_THRESHOLD / innovationMagnitude);
+                Matrix<N3, N1> boundedMeasurement = predicted.plus(boundedInnovation);
+                poseFilter.correct(VecBuilder.fill(0, 0, 0), boundedMeasurement);
+            }
+            
+            // Extract the filtered state
+            Matrix<N3, N1> state = poseFilter.getXhat();
+            lastFilteredPose = new Pose2d(
+                state.get(0, 0), 
+                state.get(1, 0), 
+                new Rotation2d(state.get(2, 0))
+            );
+            lastTimestamp = timestamp;
+        }
+        
+        return lastFilteredPose;
+    }
+
+    /**
+     * Updates the adaptive measurement noise based on recent innovations
+     * This implements a simplified concept from H-infinity filtering
+     * for improved robustness against outliers and non-Gaussian noise
+     */
+    private void updateAdaptiveNoise() {
+        if (innovationHistory.size() < 3) return;
+        
+        // Calculate variance of recent innovations
+        double sumX = 0, sumY = 0, sumTheta = 0;
+        double sumXSquared = 0, sumYSquared = 0, sumThetaSquared = 0;
+        
+        for (Matrix<N3, N1> innovation : innovationHistory) {
+            double x = innovation.get(0, 0);
+            double y = innovation.get(1, 0);
+            double theta = innovation.get(2, 0);
+            
+            sumX += x;
+            sumY += y;
+            sumTheta += theta;
+            
+            sumXSquared += x * x;
+            sumYSquared += y * y;
+            sumThetaSquared += theta * theta;
+        }
+        
+        int n = innovationHistory.size();
+        double varX = (sumXSquared - (sumX * sumX) / n) / (n - 1);
+        double varY = (sumYSquared - (sumY * sumY) / n) / (n - 1);
+        double varTheta = (sumThetaSquared - (sumTheta * sumTheta) / n) / (n - 1);
+        
+        // Apply H-infinity inspired tuning to the noise (using GAMMA)
+        double robustVarX = varX * (1 + GAMMA * Math.sqrt(varX));
+        double robustVarY = varY * (1 + GAMMA * Math.sqrt(varY));
+        double robustVarTheta = varTheta * (1 + GAMMA * Math.sqrt(varTheta));
+        
+        // Ensure minimum values
+        robustVarX = Math.max(0.01, robustVarX);
+        robustVarY = Math.max(0.01, robustVarY);
+        robustVarTheta = Math.max(0.005, robustVarTheta);
+        
+        // Update adaptive measurement noise matrix
+        adaptiveR = MatBuilder.fill(Nat.N3(), Nat.N3(), 
+                robustVarX, 0, 0, 
+                0, robustVarY, 0, 
+                0, 0, robustVarTheta);
     }
 
     /**
