@@ -11,7 +11,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Mid-I"
+                  "pathName": "Right-J"
                 }
               },
               {
@@ -25,15 +25,9 @@
                       }
                     },
                     {
-                      "type": "named",
-                      "data": {
-                        "name": "DEFAULT"
-                      }
-                    },
-                    {
                       "type": "wait",
                       "data": {
-                        "waitTime": 0.4
+                        "waitTime": 0.1
                       }
                     },
                     {
@@ -45,7 +39,7 @@
                     {
                       "type": "wait",
                       "data": {
-                        "waitTime": 3.1
+                        "waitTime": 3.0
                       }
                     },
                     {
@@ -75,9 +69,15 @@
                 "data": {
                   "commands": [
                     {
+                      "type": "named",
+                      "data": {
+                        "name": "GRABBERDEFAULT"
+                      }
+                    },
+                    {
                       "type": "wait",
                       "data": {
-                        "waitTime": 0.1
+                        "waitTime": 0.3
                       }
                     },
                     {
@@ -86,6 +86,57 @@
                         "name": "DEFAULT"
                       }
                     },
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 2.5
+                      }
+                    },
+                    {
+                      "type": "named",
+                      "data": {
+                        "name": "INTAKE"
+                      }
+                    },
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 0.5
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "type": "sequential",
+                "data": {
+                  "commands": [
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 0.8
+                      }
+                    },
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "J-CSL"
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "sequential",
+                "data": {
+                  "commands": [
                     {
                       "type": "named",
                       "data": {
@@ -101,76 +152,13 @@
                     {
                       "type": "named",
                       "data": {
-                        "name": "INTAKE"
-                      }
-                    }
-                  ]
-                }
-              },
-              {
-                "type": "sequential",
-                "data": {
-                  "commands": [
-                    {
-                      "type": "path",
-                      "data": {
-                        "pathName": "I-CSL"
-                      }
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 1.2
-          }
-        },
-        {
-          "type": "parallel",
-          "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "CSL-L"
-                }
-              },
-              {
-                "type": "sequential",
-                "data": {
-                  "commands": [
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "DEFAULT"
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "DEFAULT"
-                      }
-                    },
-                    {
-                      "type": "wait",
-                      "data": {
-                        "waitTime": 0.6
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
                         "name": "L4"
                       }
                     },
                     {
                       "type": "wait",
                       "data": {
-                        "waitTime": 3.1
+                        "waitTime": 3.0
                       }
                     },
                     {
@@ -187,6 +175,19 @@
                     }
                   ]
                 }
+              },
+              {
+                "type": "sequential",
+                "data": {
+                  "commands": [
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "CSL-L"
+                      }
+                    }
+                  ]
+                }
               }
             ]
           }
@@ -202,7 +203,13 @@
                     {
                       "type": "named",
                       "data": {
-                        "name": "DEFAULT"
+                        "name": "GRABBERDEFAULT"
+                      }
+                    },
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 0.3
                       }
                     },
                     {
@@ -222,6 +229,12 @@
                       "data": {
                         "name": "INTAKE"
                       }
+                    },
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 3.0
+                      }
                     }
                   ]
                 }
@@ -230,6 +243,12 @@
                 "type": "sequential",
                 "data": {
                   "commands": [
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 1.5
+                      }
+                    },
                     {
                       "type": "path",
                       "data": {

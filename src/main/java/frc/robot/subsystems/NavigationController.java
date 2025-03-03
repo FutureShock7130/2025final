@@ -127,9 +127,9 @@ public class NavigationController extends SubsystemBase {
             return DestinationState.PATHFINDING_TO_IJ_THEN_I;
         } else if (buttonBox1.getRawButtonPressed(3)) {
             return DestinationState.PATHFINDING_TO_IJ_THEN_J;
-        } else if (buttonBox1.getRawButtonPressed(2)) {
+        } else if (buttonBox2.getRawButtonPressed(3)) {
             return DestinationState.PATHFINDING_TO_KL_THEN_K;
-        } else if (buttonBox1.getRawAxis(1) >= 0.5) {
+        } else if (buttonBox1.getRawButtonPressed(2)) {
             return DestinationState.PATHFINDING_TO_KL_THEN_L;
         // } else if (driver.getLeftBumperPressed()) {
         //     return DestinationState.PATHFINDING_TO_CSL;
