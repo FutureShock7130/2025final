@@ -7,43 +7,27 @@ package frc.robot.subsystems.superstructure;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DynamicMotionMagicVoltage;
-import com.ctre.phoenix6.controls.Follower;
-import com.ctre.phoenix6.controls.MotionMagicDutyCycle;
-import com.ctre.phoenix6.controls.compound.Diff_MotionMagicDutyCycle_Velocity;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
-import com.revrobotics.spark.SparkBase.PersistMode;
-import com.revrobotics.spark.SparkBase.ResetMode;
-import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.SparkMax;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.networktables.GenericEntry;
-import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
-import java.util.Map;
-
 
 public class Intake extends SubsystemBase {
 
   private final TalonFX leftAngle;
   private final TalonFX rightAngle;
-
   private final CANcoder angleEncoder;
-
-  private final SparkMax intakeMotor;
+  private final TalonFX intakeMotor;
 
   private final TrapezoidProfile.Constraints constraints =
   new TrapezoidProfile.Constraints(
@@ -74,10 +58,8 @@ public class Intake extends SubsystemBase {
     0.0
   );
 
-
   // Add with other instance variables
   private final ShuffleboardTab intakeTab;
-
 
   private static Intake mInstance = null;
   public static synchronized Intake getInstance() {
@@ -85,8 +67,7 @@ public class Intake extends SubsystemBase {
         mInstance = new Intake();
     }
     return mInstance;
-}
-
+  }
   
   /** Creates a new Intake. */
   public Intake() {
@@ -97,64 +78,47 @@ public class Intake extends SubsystemBase {
     leftAngle = new TalonFX(17, "GTX7130");
     rightAngle = new TalonFX(18, "GTX7130");
     angleEncoder = new CANcoder(4, "rio");
-    intakeMotor = new SparkMax(45, MotorType.kBrushless);
+    intakeMotor = new TalonFX(00, "GTX7130"); // i dont know devise id
 
-    // Configure TalonFX motors
-    TalonFXConfiguration leftangleConfig = new TalonFXConfiguration();
-    leftangleConfig.Voltage.PeakForwardVoltage = 12.0;
-    leftangleConfig.Voltage.PeakReverseVoltage = -12.0;
-    leftangleConfig.CurrentLimits.SupplyCurrentLimit = 40;
-    leftangleConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-
+    // Configure TalonFX motors for angle control
+    TalonFXConfiguration leftAngleConfig = new TalonFXConfiguration();
+    leftAngleConfig.Voltage.PeakForwardVoltage = 12.0;
+    leftAngleConfig.Voltage.PeakReverseVoltage = -12.0;
+    leftAngleConfig.CurrentLimits.SupplyCurrentLimit = 40;
+    leftAngleConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
     
-    TalonFXConfiguration rightangleConfig = new TalonFXConfiguration();
-    rightangleConfig.Voltage.PeakForwardVoltage = 12.0;
-    rightangleConfig.Voltage.PeakReverseVoltage = -12.0;
-    rightangleConfig.CurrentLimits.SupplyCurrentLimit = 40;
-    rightangleConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-    rightangleConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
-    
+    TalonFXConfiguration rightAngleConfig = new TalonFXConfiguration();
+    rightAngleConfig.Voltage.PeakForwardVoltage = 12.0;
+    rightAngleConfig.Voltage.PeakReverseVoltage = -12.0;
+    rightAngleConfig.CurrentLimits.SupplyCurrentLimit = 40;
+    rightAngleConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+    rightAngleConfig.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
 
-    // var slot0config = angleConfig.Slot0;
-    // slot0config.kP = 0.1;
-    // slot0config.kI = 0.0;
-    // slot0config.kD = 0.0;
-    // slot0config.kG = 0.56;
-    // slot0config.kS = 0.0;
-    // slot0config.kV = 1.62;
-    // slot0config.kA = 0.03;
+    // Configure TalonFX for intake motor
+    TalonFXConfiguration intakeMotorConfig = new TalonFXConfiguration();
+    intakeMotorConfig.Voltage.PeakForwardVoltage = 12.0;
+    intakeMotorConfig.Voltage.PeakReverseVoltage = -12.0;
+    intakeMotorConfig.CurrentLimits.SupplyCurrentLimit = 20; // 20A current limit
+    intakeMotorConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
+    intakeMotorConfig.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive; // 假設與原SparkMax相同方向
 
-    leftAngle.getConfigurator().apply(leftangleConfig);
-    rightAngle.getConfigurator().apply(rightangleConfig);
+    // Apply configurations
+    leftAngle.getConfigurator().apply(leftAngleConfig);
+    rightAngle.getConfigurator().apply(rightAngleConfig);
+    intakeMotor.getConfigurator().apply(intakeMotorConfig);
 
+    // Set neutral modes
     leftAngle.setNeutralMode(NeutralModeValue.Brake);
     rightAngle.setNeutralMode(NeutralModeValue.Brake);
+    intakeMotor.setNeutralMode(NeutralModeValue.Coast); // Coast mode for intake
 
-    
-
-    // rightAngle.setControl(new Follower(17, true));
-    
     // Configure CANcoder
     CANcoderConfiguration encoderConfig = new CANcoderConfiguration();
     encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
     encoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
     angleEncoder.getConfigurator().apply(encoderConfig);
 
-    // Configure SparkMax
-    SparkMaxConfig neo550Config = new SparkMaxConfig();
-
-
-    neo550Config
-        .smartCurrentLimit(20)  
-        .idleMode(IdleMode.kCoast)  
-        .voltageCompensation(12.0)  
-        .openLoopRampRate(0.1)
-        .inverted(true);
-    
-    // Apply our configuration with proper timeout
-    intakeMotor.setCANTimeout(250);
-    intakeMotor.configure(neo550Config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
+    // Configure PID controller
     pidController.disableContinuousInput();
     pidController.setIntegratorRange(0,0);
     pidController.setGoal(angleEncoder.getAbsolutePosition().getValueAsDouble());
@@ -164,15 +128,11 @@ public class Intake extends SubsystemBase {
 
   @Override
   public void periodic() {
-    
     SmartDashboard.putNumber("intake pid", pidController.calculate(angleEncoder.getAbsolutePosition().getValueAsDouble()));
     SmartDashboard.putNumber("intake pid setpoint", pidController.getSetpoint().position);
   }
 
   public void moveAngle(double speed) {
-    // magic.Velocity = speed;
-    // leftAngle.setControl(magic);
-    // leftAngle.set(speed + intakeFF.calculate(angleEncoder.getAbsolutePosition().getValueAsDouble(), speed))
     leftAngle.set(speed);
     rightAngle.set(speed);
   }
@@ -181,11 +141,9 @@ public class Intake extends SubsystemBase {
     intakeMotor.set(speed);
   }
 
-  //0.36101cs
   public void setAngle(double position) {
     pidController.setGoal(position);
     double output = MathUtil.clamp(pidController.calculate(angleEncoder.getAbsolutePosition().getValueAsDouble()), -0.1, 0.1);
-    // output += intakeFF.calculate(position, output);
     setVoltage(output);
   }
 

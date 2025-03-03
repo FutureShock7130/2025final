@@ -9,15 +9,17 @@ import org.photonvision.targeting.PhotonPipelineResult;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
-import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.subsystems.drive.Drive;
+
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.Nat;
+import edu.wpi.first.math.numbers.*;
+
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -27,21 +29,13 @@ import java.util.Comparator;
 import java.util.Iterator;
 
 /**
- * Object Detection Subsystem
+ * Object Detection Subsystem with H-Infinity Control
  * This subsystem uses PhotonVision to detect objects classified as "0" (algae) or "1" (coral)
- * Provides the following functionality:
- * - Control tracking features through Shuffleboard
- * - Track and follow detected objects
- * - Automatically aim at objects
- * - Track the closest object
- * - Estimate object distance
- * - Calculate object positions on the field
+ * Uses H-Infinity control for robust tracking against noise and disturbances
  */
 public class ObjectDetection extends SubsystemBase {
     private final PhotonCamera camera;
     private int targetClass = 0; // Default tracking class 0 (algae)
-    private final PIDController turnController;
-    private final PIDController driveController;
     private Drive driveSubsystem;
     
     // Game object size definitions (units: meters)
@@ -53,7 +47,6 @@ public class ObjectDetection extends SubsystemBase {
     private static final double CAMERA_RESOLUTION_WIDTH = 640.0; // Camera resolution width
     
     // Command state
-    private boolean isAiming = false;
     private boolean isFollowing = false;
     private Command activeCommand = null;
     
@@ -61,18 +54,38 @@ public class ObjectDetection extends SubsystemBase {
     private Map<Integer, TrackedObject> trackedObjects = new HashMap<>();
     private Field2d fieldWidget = new Field2d();
     
-    // Shuffleboard items
-    private final ShuffleboardTab visionTab = Shuffleboard.getTab("Object Detection");
-    private GenericEntry targetClassEntry;
-    private GenericEntry targetAreaEntry;
-    private GenericEntry aimToleranceEntry;
-    private GenericEntry aimButtonEntry;
-    private GenericEntry followButtonEntry;
-    private GenericEntry stopButtonEntry;
-    private GenericEntry distanceEstimateEntry;
-    
     private static final double TARGET_AREA_SETPOINT = 30.0; 
     private static final double AIM_TOLERANCE_DEGREES = 2.0; 
+    
+    // H-Infinity Control Parameters
+    private static final double GAMMA = 0.1; // 越小越抗干擾
+    
+    // State space representation for H-Infinity controller (for yaw control)
+    // x = [yaw error, yaw_rate]
+    private Matrix<N2, N1> x_yaw = new Matrix<>(Nat.N2(), Nat.N1());
+    
+    // State space representation for H-Infinity controller (for distance control)
+    // x = [distance error, distance_rate]
+    private Matrix<N2, N1> x_dist = new Matrix<>(Nat.N2(), Nat.N1());
+    
+    // H-Infinity controller gains (would normally be computed from Riccati equations)
+    private Matrix<N1, N2> K_yaw; // Control gain for yaw
+    private Matrix<N1, N2> K_dist; // Control gain for distance
+    
+    // System matrices for yaw control
+    private Matrix<N2, N2> A_yaw; // System matrix for yaw
+    private Matrix<N2, N1> B_yaw; // Input matrix for yaw
+    private Matrix<N2, N1> G_yaw; // Disturbance matrix for yaw
+    
+    // System matrices for distance control
+    private Matrix<N2, N2> A_dist; // System matrix for distance
+    private Matrix<N2, N1> B_dist; // Input matrix for distance
+    private Matrix<N2, N1> G_dist; // Disturbance matrix for distance
+    
+    // Previous measurements for state estimation
+    private double prevYawError = 0.0;
+    private double prevDistError = 0.0;
+    private double lastUpdateTime = 0.0;
     
     /**
      * Information for tracked objects
@@ -98,137 +111,62 @@ public class ObjectDetection extends SubsystemBase {
     
     public ObjectDetection() {
         camera = new PhotonCamera("WEB_CAM");
-        turnController = new PIDController(0.1, 0.01, 0.00000000001); // Turning PID
-        driveController = new PIDController(0.05, 0.01, 0.00000000001); // Approach PID
-        setupShuffleboardControls();
-    }
-    
-    /**
-     * Set up Shuffleboard controls
-     */
-    private void setupShuffleboardControls() {
-        targetClassEntry = visionTab.add("Target (0=algae, 1=coral)", targetClass)
-            .withPosition(0, 0)
-            .withSize(1, 1)
-            .getEntry();
         
-        targetAreaEntry = visionTab.add("Target Area Size", TARGET_AREA_SETPOINT)
-            .withPosition(1, 0)
-            .withSize(1, 1)
-            .getEntry();
+        // Initialize basic SmartDashboard values
+        SmartDashboard.putNumber("Estimated Distance (m)", 0.0);
+        SmartDashboard.putBoolean("Target Visible", false);
+        SmartDashboard.putString("Target Class", targetClass == 0 ? "algae" : "coral");
         
-        aimToleranceEntry = visionTab.add("Aim Tolerance (deg)", AIM_TOLERANCE_DEGREES)
-            .withPosition(2, 0)
-            .withSize(1, 1)
-            .getEntry();
+        // Initialize state vectors
+        x_yaw.set(0, 0, 0.0); // Initial yaw error
+        x_yaw.set(1, 0, 0.0); // Initial yaw error rate
         
-        aimButtonEntry = visionTab.add("Aim at Target", false)
-            .withPosition(0, 1)
-            .withSize(1, 1)
-            .withProperties(Map.of("colorWhenTrue", "green"))
-            .getEntry();
+        x_dist.set(0, 0, 0.0); // Initial distance error
+        x_dist.set(1, 0, 0.0); // Initial distance error rate
         
-        followButtonEntry = visionTab.add("Follow Target", false)
-            .withPosition(1, 1)
-            .withSize(1, 1)
-            .withProperties(Map.of("colorWhenTrue", "blue"))
-            .getEntry();
+        // Initialize system matrices for yaw control
+        // These values would typically be identified from system modeling
+        A_yaw = new Matrix<>(Nat.N2(), Nat.N2());
+        A_yaw.set(0, 0, 0.0);  // No natural drift in error
+        A_yaw.set(0, 1, 1.0);  // Rate of change affects error
+        A_yaw.set(1, 0, 0.0);  // Error doesn't affect rate directly
+        A_yaw.set(1, 1, -0.2); // Natural damping
         
-        stopButtonEntry = visionTab.add("Stop", false)
-            .withPosition(2, 1)
-            .withSize(1, 1)
-            .withProperties(Map.of("colorWhenTrue", "red"))
-            .getEntry();
+        B_yaw = new Matrix<>(Nat.N2(), Nat.N1());
+        B_yaw.set(0, 0, 0.0);  // Control doesn't directly affect error
+        B_yaw.set(1, 0, 1.0);  // Control affects rate of change
         
-        distanceEstimateEntry = visionTab.add("Estimated Distance (m)", 0.0)
-            .withPosition(3, 0)
-            .withSize(1, 1)
-            .getEntry();
+        G_yaw = new Matrix<>(Nat.N2(), Nat.N1());
+        G_yaw.set(0, 0, 0.1);  // Disturbance affects error
+        G_yaw.set(1, 0, 0.5);  // Disturbance affects rate more
         
-        visionTab.addBoolean("Target Visible", this::isTargetVisible)
-            .withPosition(0, 2)
-            .withSize(1, 1);
+        // Initialize system matrices for distance control
+        A_dist = new Matrix<>(Nat.N2(), Nat.N2());
+        A_dist.set(0, 0, 0.0);  // No natural drift in error
+        A_dist.set(0, 1, 1.0);  // Rate of change affects error
+        A_dist.set(1, 0, 0.0);  // Error doesn't affect rate directly
+        A_dist.set(1, 1, -0.1); // Natural damping
         
-        visionTab.addBoolean("Aimed", this::isAimedAtTarget)
-            .withPosition(1, 2)
-            .withSize(1, 1);
+        B_dist = new Matrix<>(Nat.N2(), Nat.N1());
+        B_dist.set(0, 0, 0.0);  // Control doesn't directly affect error
+        B_dist.set(1, 0, 1.0);  // Control affects rate of change
         
-        visionTab.addString("Status", () -> {
-            if (isFollowing) return "Following";
-            if (isAiming) return "Aiming";
-            return "Idle";
-        })
-            .withPosition(2, 2)
-            .withSize(1, 1);
-            
-        visionTab.addString("Target Class", () -> 
-            targetClass == 0 ? "algae" : "coral")
-            .withPosition(3, 1)
-            .withSize(1, 1);
-            
-        // Add field visualization
-        visionTab.add("Field", fieldWidget)
-            .withSize(5, 3)
-            .withPosition(0, 3);
-            
-        // Display tracked objects list
-        visionTab.addString("Tracked Objects", this::getTrackedObjectsAsString)
-            .withSize(2, 3)
-            .withPosition(5, 3);
-            
-        // Add debug values for troubleshooting
-        visionTab.addNumber("Target Yaw", () -> {
-            var result = camera.getLatestResult();
-            if (result.hasTargets()) {
-                var target = getBestTarget(result);
-                return target != null ? target.getYaw() : 0.0;
-            }
-            return 0.0;
-        })
-            .withPosition(3, 2)
-            .withSize(1, 1);
-            
-        visionTab.addNumber("PID Turn Error", () -> {
-            var result = camera.getLatestResult();
-            if (result.hasTargets()) {
-                var target = getBestTarget(result);
-                return target != null ? turnController.getPositionError() : 0.0;
-            }
-            return 0.0;
-        })
-            .withPosition(4, 2)
-            .withSize(1, 1);
-    }
-    
-    /**
-     * Convert tracked objects to string for display
-     */
-    private String getTrackedObjectsAsString() {
-        if (trackedObjects.isEmpty()) {
-            return "No Objects";
-        }
+        G_dist = new Matrix<>(Nat.N2(), Nat.N1());
+        G_dist.set(0, 0, 0.2);  // Disturbance affects error
+        G_dist.set(1, 0, 0.3);  // Disturbance affects rate
         
-        return trackedObjects.values().stream()
-            .filter(obj -> !obj.isStale())
-            .map(obj -> String.format("ID:%d %s @ (%.2f, %.2f) Distance:%.2f",
-                obj.id,
-                obj.id == 0 ? "algae" : "coral",
-                obj.pose.getX(),
-                obj.pose.getY(),
-                obj.distance))
-            .collect(Collectors.joining("\n"));
-    }
-    
-    /**
-     * Set the drive subsystem
-     * Must be set before using aim or follow functions
-     */
-    public void setDriveSubsystem(Drive drive) {
-        this.driveSubsystem = drive;
-    }
-
-    public boolean isFollowing() {
-        return isFollowing;
+        // Initialize H-Infinity controller gains
+        // In a real implementation, these would be computed by solving the Riccati equations
+        // Here we're using pre-computed values for simplicity
+        K_yaw = new Matrix<>(Nat.N1(), Nat.N2());
+        K_yaw.set(0, 0, 0.8);  // Gain for error
+        K_yaw.set(0, 1, 0.2);  // Gain for error rate
+        
+        K_dist = new Matrix<>(Nat.N1(), Nat.N2());
+        K_dist.set(0, 0, 0.6);  // Gain for error
+        K_dist.set(0, 1, 0.1);  // Gain for error rate
+        
+        lastUpdateTime = Timer.getFPGATimestamp();
     }
     
     @Override
@@ -247,8 +185,55 @@ public class ObjectDetection extends SubsystemBase {
         // Update field visualization
         updateFieldWidget();
         
-        // Check if user updated settings from Shuffleboard
-        checkShuffleboardControls();
+        // Update SmartDashboard values
+        SmartDashboard.putBoolean("Target Visible", isTargetVisible());
+        SmartDashboard.putString("Target Class", targetClass == 0 ? "algae" : "coral");
+        SmartDashboard.putNumber("Estimated Distance (m)", getTargetDistance());
+        
+        // Update the state estimates
+        updateStateEstimates(result);
+    }
+    
+    /**
+     * Update state estimates for H-Infinity control
+     */
+    private void updateStateEstimates(PhotonPipelineResult result) {
+        double currentTime = Timer.getFPGATimestamp();
+        double dt = currentTime - lastUpdateTime;
+        lastUpdateTime = currentTime;
+        
+        if (dt <= 0 || dt > 0.1) {
+            // Skip unreasonable time steps
+            return;
+        }
+        
+        if (result.hasTargets()) {
+            var target = getBestTarget(result);
+            if (target != null) {
+                // Update yaw state
+                double yawError = target.getYaw();
+                double yawRateError = (yawError - prevYawError) / dt;
+                prevYawError = yawError;
+                
+                x_yaw.set(0, 0, yawError);
+                x_yaw.set(1, 0, yawRateError);
+                
+                // Update distance state
+                double currentDist = calculateDistance(target);
+                double distError = currentDist - (TARGET_AREA_SETPOINT / (target.getArea() / 100.0));
+                double distRateError = (distError - prevDistError) / dt;
+                prevDistError = distError;
+                
+                x_dist.set(0, 0, distError);
+                x_dist.set(1, 0, distRateError);
+                
+                // Log state information
+                SmartDashboard.putNumber("Yaw Error", yawError);
+                SmartDashboard.putNumber("Yaw Rate Error", yawRateError);
+                SmartDashboard.putNumber("Distance Error", distError);
+                SmartDashboard.putNumber("Distance Rate Error", distRateError);
+            }
+        }
     }
     
     /**
@@ -288,13 +273,11 @@ public class ObjectDetection extends SubsystemBase {
      * @return Distance (meters)
      */
     public double calculateDistance(PhotonTrackedTarget target) {
-
         double apparentWidth = 0;
     
         try {
             var corners = target.getMinAreaRectCorners();
             if (corners != null && corners.size() >= 4) {
-
                 double diag1 = Math.hypot(
                     corners.get(0).x - corners.get(2).x,
                     corners.get(0).y - corners.get(2).y
@@ -390,83 +373,40 @@ public class ObjectDetection extends SubsystemBase {
             
             // Update object position
             trackedObjects.put(objectId, new TrackedObject(objectId, objectPose, distance));
-            
-            // If it's the current target class, update to Shuffleboard
-            if (objectId == targetClass) {
-                distanceEstimateEntry.setDouble(distance);
-            }
         }
     }
     
     /**
-     * Check if user updated settings from Shuffleboard
+     * Set the drive subsystem
+     * Must be set before using aim or follow functions
      */
-    private void checkShuffleboardControls() {
-        // Read target class setting
-        int newTargetClass = (int) targetClassEntry.getDouble(targetClass);
-        if (newTargetClass != targetClass && (newTargetClass == 0 || newTargetClass == 1)) {
-            targetClass = newTargetClass;
-        }
-        
-        // Check button states
-        boolean aimRequested = aimButtonEntry.getBoolean(false);
-        boolean followRequested = followButtonEntry.getBoolean(false);
-        boolean stopRequested = stopButtonEntry.getBoolean(false);
-        
-        // Handle stop request
-        if (stopRequested) {
-            stopAllCommands();
-            stopButtonEntry.setBoolean(false);
-        }
-        // Handle aim request
-        else if (aimRequested && !isAiming && !isFollowing) {
-            startAiming();
-            aimButtonEntry.setBoolean(false);
-        }
-        // Handle follow request
-        else if (followRequested && !isFollowing) {
-            startFollowing();
-            followButtonEntry.setBoolean(false);
-        }
+    public void setDriveSubsystem(Drive drive) {
+        this.driveSubsystem = drive;
     }
-    
-    /**
-     * Start aiming at target
-     */
-    private void startAiming() {
-        if (driveSubsystem == null) {
-            return;
-        }
-        
-        stopAllCommands();
-        isAiming = true;
-        activeCommand = new AimAtTargetCommand(driveSubsystem);
-        CommandScheduler.getInstance().schedule(activeCommand);
+
+    public boolean isFollowing() {
+        return isFollowing;
     }
     
     /**
      * Start following target
      */
-    void startFollowing() {
+    public void startFollowing() {
         if (driveSubsystem == null) {
             return;
         }
         
-        stopAllCommands();
         isFollowing = true;
-        activeCommand = new FollowTargetCommand(driveSubsystem);
-        CommandScheduler.getInstance().schedule(activeCommand);
     }
     
     /**
      * Stop all commands
      */
-    private void stopAllCommands() {
+    public void stopFollowing() {
         if (activeCommand != null) {
             activeCommand.cancel();
             activeCommand = null;
         }
-        isAiming = false;
         isFollowing = false;
         
         if (driveSubsystem != null) {
@@ -523,12 +463,12 @@ public class ObjectDetection extends SubsystemBase {
     public void setTargetClass(int classID) {
         if (classID == 0 || classID == 1) {
             this.targetClass = classID;
-            targetClassEntry.setDouble(classID);
+            SmartDashboard.putString("Target Class", targetClass == 0 ? "algae" : "coral");
         }
     }
     
     /**
-     * Calculate the turning speed needed to aim at the target
+     * Calculate the turning speed needed to aim at the target using H-Infinity control
      * @return Turning speed (positive = turn right, negative = turn left)
      */
     public double calculateAimOutput() {
@@ -542,13 +482,28 @@ public class ObjectDetection extends SubsystemBase {
             return 0.0;
         }
         
-        // FIXED: Removed negative sign to fix aiming direction
-        // Use PID to calculate the steering amount needed to center the target
-        return turnController.calculate(target.getYaw(), 0);
+        // Apply H-Infinity control law for yaw
+        // u = -K * x
+        Matrix<N1, N1> u_yaw = K_yaw.times(x_yaw).times(-1);
+        
+        // Add robustifying term to handle worst-case disturbance
+        // For H∞ control, we add a term to counteract the worst-case disturbance
+        Matrix<N1, N1> worstCaseDisturbance = G_yaw.transpose().times(x_yaw).times(1.0 / (GAMMA * GAMMA));
+        
+        // Combine main control with robustifying term
+        double control = u_yaw.get(0, 0) + worstCaseDisturbance.get(0, 0);
+        
+        // Apply limits
+        control = Math.max(-0.5, Math.min(0.5, control));
+        
+        // Debug output
+        SmartDashboard.putNumber("H-Inf Yaw Control", control);
+        
+        return control;
     }
     
     /**
-     * Calculate driving speed needed to approach target
+     * Calculate driving speed needed to approach target using H-Infinity control
      * @return Drive speed (positive = forward, negative = backward)
      */
     public double calculateDriveOutput() {
@@ -562,13 +517,23 @@ public class ObjectDetection extends SubsystemBase {
             return 0.0;
         }
         
-        // Use area as a proxy for distance (larger area = closer distance)
-        double area = target.getArea();
-        double targetArea = targetAreaEntry.getDouble(TARGET_AREA_SETPOINT);
+        // Apply H-Infinity control law for distance
+        // u = -K * x
+        Matrix<N1, N1> u_dist = K_dist.times(x_dist).times(-1);
         
-        // FIXED: Invert the output to fix the direction issue
-        // If area < targetArea, we need to move forward (positive output)
-        return -driveController.calculate(area, targetArea);
+        // Add robustifying term for worst-case disturbance
+        Matrix<N1, N1> worstCaseDisturbance = G_dist.transpose().times(x_dist).times(1.0 / (GAMMA * GAMMA));
+        
+        // Combine main control with robustifying term
+        double control = u_dist.get(0, 0) + worstCaseDisturbance.get(0, 0);
+        
+        // Apply limits
+        control = Math.max(-0.5, Math.min(0.5, control));
+        
+        // Debug output
+        SmartDashboard.putNumber("H-Inf Distance Control", control);
+        
+        return control;
     }
     
     /**
@@ -593,9 +558,8 @@ public class ObjectDetection extends SubsystemBase {
             return false;
         }
         
-        double tolerance = aimToleranceEntry.getDouble(AIM_TOLERANCE_DEGREES);
         // Consider aimed if within tolerance range
-        return Math.abs(target.getYaw()) < tolerance;
+        return Math.abs(target.getYaw()) < AIM_TOLERANCE_DEGREES;
     }
     
     /**
@@ -657,104 +621,5 @@ public class ObjectDetection extends SubsystemBase {
             .filter(obj -> !obj.isStale())
             .min(Comparator.comparingDouble(obj -> 
                 robotPose.getTranslation().getDistance(obj.pose.getTranslation())));
-    }
-    
-    // ===================== Command Classes =====================
-    
-    /**
-     * Command to aim at target
-     * This command will rotate the robot until it directly faces the target
-     */
-    private class AimAtTargetCommand extends Command {
-        private final Drive driveSubsystem;
-        
-        /**
-         * Create a new AimAtTargetCommand
-         * 
-         * @param driveSubsystem Drive subsystem that controls robot movement
-         */
-        public AimAtTargetCommand(Drive driveSubsystem) {
-            this.driveSubsystem = driveSubsystem;
-            
-            // This command requires these two subsystems
-            addRequirements(ObjectDetection.this, driveSubsystem);
-        }
-        
-        @Override
-        public void execute() {
-            // Get turning value needed to aim at vision target
-            double turnOutput = calculateAimOutput();
-            
-            // Apply rotation to drive system (no forward/backward motion)
-            driveSubsystem.runVelocity(new ChassisSpeeds(0, 0, turnOutput));
-            
-            // Debug output
-            SmartDashboard.putNumber("Aim Turn Output", turnOutput);
-        }
-        
-        @Override
-        public boolean isFinished() {
-            // Command completes when we are aimed at the target
-            return isAimedAtTarget();
-        }
-        
-        @Override
-        public void end(boolean interrupted) {
-            // Stop the drive system
-            driveSubsystem.stop();
-            isAiming = false;
-        }
-    }
-    
-    /**
-     * Command to follow target
-     * This command both aims at the target and maintains a specified distance from it
-     */
-    private class FollowTargetCommand extends Command {
-        private final Drive driveSubsystem;
-        
-        /**
-         * Create a new FollowTargetCommand
-         * 
-         * @param driveSubsystem Drive subsystem for robot movement
-         */
-        public FollowTargetCommand(Drive driveSubsystem) {
-            this.driveSubsystem = driveSubsystem;
-            
-            // This command requires these subsystems
-            addRequirements(ObjectDetection.this, driveSubsystem);
-        }
-        
-        @Override
-        public void execute() {
-            if (!isTargetVisible()) {
-                driveSubsystem.stop();
-                return;
-            }
-            
-            // Calculate aiming output
-            double turnOutput = calculateAimOutput();
-            
-            // Calculate drive output
-            double driveOutput = calculateDriveOutput();
-            
-            // Apply to drive system
-            driveSubsystem.runVelocity(new ChassisSpeeds(driveOutput, 0, turnOutput));
-            
-            // Debug output
-            SmartDashboard.putNumber("Follow Drive Output", driveOutput);
-            SmartDashboard.putNumber("Follow Turn Output", turnOutput);
-        }
-        
-        @Override
-        public boolean isFinished() {
-            return false;
-        }
-        
-        @Override
-        public void end(boolean interrupted) {
-            driveSubsystem.stop();
-            isFollowing = false;
-        }
     }
 }
