@@ -54,19 +54,19 @@ public class Elevator extends SubsystemBase {
   // Profiled PID Controller for smooth motionS
   private final TrapezoidProfile.Constraints constraints = 
       new TrapezoidProfile.Constraints(
-          100,   
+          120,   
           100
       );
   
   private final ProfiledPIDController pidController = 
       new ProfiledPIDController(
-          0.01,   // P gain
+          0.07,   // P gain
           0.0,   // I gain
           0.0,   // D gain
           constraints
       );
   
-  private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(0.5, 0, 0.0);
+  private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(0.5, 2.307, 0.05);
 
   private static Elevator mInstance = null;
 
@@ -117,13 +117,14 @@ public class Elevator extends SubsystemBase {
     // Create soft limit config for elevator
     SoftLimitConfig softLimitConfig = new SoftLimitConfig();
     softLimitConfig
-        .forwardSoftLimit(169 * 0.6)     // in rotations
+        .forwardSoftLimit(185 * 0.6)     // in rotations
         .forwardSoftLimitEnabled(softLimit)
         .reverseSoftLimit(0.0)     
         .reverseSoftLimitEnabled(softLimit);
     
     neoConfig
-        .smartCurrentLimit(30)
+        .smartCurrentLimit(50)
+        .secondaryCurrentLimit(70)
         .idleMode(IdleMode.kBrake)  
         .voltageCompensation(12.0)
         .openLoopRampRate(0.1)

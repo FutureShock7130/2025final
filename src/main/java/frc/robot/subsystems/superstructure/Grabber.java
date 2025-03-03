@@ -45,14 +45,14 @@ public class Grabber extends SubsystemBase {
     private final ProfiledPIDController pidController;
     // Add with other instance variables
     private final TrapezoidProfile.Constraints constraints = new TrapezoidProfile.Constraints(
-            1, // Max velocity in rotations per second
-            1 // Max acceleration in rotations per second squared
+            1.3, // Max velocity in rotations per second
+            1.5 // Max acceleration in rotations per second squared
     );
 
     private final ArmFeedforward grabberFF = new ArmFeedforward(
-            0.0,
+            0.01,
             0.02,
-            0.0);
+            0.1);
 
     private final DigitalInput intakeLimitSwitch;
     private boolean hasCoral;
@@ -77,9 +77,9 @@ public class Grabber extends SubsystemBase {
 
         // Initialize PID controller
         pidController = new ProfiledPIDController(
-                3.75, // kP
+                3.5, // kP
                 0.0, // kI
-                0.005, // kD
+                0.001, // kD
                 constraints // Motion constraints
         );
 
@@ -90,13 +90,12 @@ public class Grabber extends SubsystemBase {
         grabberEncoder.getConfigurator().apply(encoderConfig);
 
         pidController.reset(grabberEncoder.getAbsolutePosition().getValueAsDouble());
-        pidController.setTolerance(0.0); // Degrees of acceptable error
         pidController.setIZone(0.0005);
         pidController.disableContinuousInput();
         pidController.setIntegratorRange(0, 0);
         pidController.setGoal(grabberEncoder.getAbsolutePosition().getValueAsDouble());
         pidController.calculate(grabberEncoder.getAbsolutePosition().getValueAsDouble());
-        pidController.setTolerance(0.1);
+        pidController.setTolerance(0.2);
 
         configureNEO550(rightIntake);
         configureNEO550(leftIntake);

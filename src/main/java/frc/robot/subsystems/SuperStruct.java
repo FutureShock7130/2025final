@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj.XboxController;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
@@ -48,6 +49,9 @@ public class SuperStruct extends SubsystemBase {
 
     // Add a field to track the previous state
     private SuperStructState mPreviousState = SuperStructState.DEFAULT;
+
+    private double savedElevatorPos = 0.0; // Add this near the other class variables
+    private boolean hasSetSafeHeight = false; // Track if we've already set the safe height
 
     public static synchronized SuperStruct getInstance() {
         if (mInstance == null) {
@@ -129,7 +133,7 @@ public class SuperStruct extends SubsystemBase {
 
         new JoystickButton(driver.getHID(), 4)
                 .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.ALGAE_PLACEMENT),
+                        () -> setState(SuperStructState.DEFAULT),
                         this));
 
         new CommandXboxController(0).axisGreaterThan(3, 0.05)
@@ -213,6 +217,8 @@ public class SuperStruct extends SubsystemBase {
         } else {
             mGrabber.setPosition(0.618896);
         }
+        mIntake.setAngle(-0.390137);
+
     }
 
     public void L2() {
@@ -222,6 +228,8 @@ public class SuperStruct extends SubsystemBase {
         } else {
             mGrabber.setPosition(0.618896);
         }
+        mIntake.setAngle(-0.390137);
+
     }
 
     public void L3() {
@@ -231,6 +239,8 @@ public class SuperStruct extends SubsystemBase {
         } else {
             mGrabber.setPosition(0.618896);
         }
+        mIntake.setAngle(-0.390137);
+
     }
 
     public void L4() {
@@ -240,24 +250,30 @@ public class SuperStruct extends SubsystemBase {
         } else {
             mGrabber.setPosition(0.618896);
         }
+        mIntake.setAngle(-0.390137);
+
     }
 
     public void TRAVEL() {
         mElevator.setPosition(-0.2 * 0.6); // ground
         mGrabber.setPosition(0.618896); // default
+        mIntake.setAngle(-0.390137);
+
     }
 
     public void CS() {
         mElevator.setPosition(-0.001 * 0.6);
         mGrabber.setPosition(0.289307);
         mGrabber.intake();
+        mIntake.setAngle(-0.390137);
+
     }
 
     public void PLACEMENT() {
         if (mPreviousState == SuperStructState.L1) {
             mGrabber.placeL1();
         } else {
-        mGrabber.placeCoral();
+            mGrabber.placeCoral();
         }
     }
 
@@ -282,7 +298,8 @@ public class SuperStruct extends SubsystemBase {
                 state == SuperStructState.L2 ||
                 state == SuperStructState.L3 ||
                 state == SuperStructState.L4 ||
-                state == SuperStructState.CS;
+                state == SuperStructState.CS ||
+                state == SuperStructState.PLACEMENT;
     }
 
     public void DEFAULT() {
@@ -290,27 +307,22 @@ public class SuperStruct extends SubsystemBase {
         boolean comingFromLLevel = isLLevel(mPreviousState);
 
         if (comingFromLLevel) {
-            if (mPreviousState == SuperStructState.L2) {
-                mElevator.setPosition(33.5 * 0.6);
-                if (mElevator.atTargetPosition()) {
-                    mGrabber.setPosition(0.618896);
-                    mElevator.setPosition(-0.02 * 0.6);
-                }
-            } else if (mPreviousState == SuperStructState.L3) {
-                mElevator.setPosition(75.420 * 0.6);
-                if (mElevator.atTargetPosition()) {
-                    mGrabber.setPosition(0.618896);
-                    mElevator.setPosition(-0.02 * 0.6);
-                }
-            } else if (mPreviousState == SuperStructState.L4) {
-                // mled.rainbowmarquee();
+            if (!hasSetSafeHeight) {
+                // Only save position and set target once
+                savedElevatorPos = mElevator.getElevatorPosition();
+                mElevator.setPosition(MathUtil.clamp(savedElevatorPos + 15, 0, 185 * 0.6));
                 mGrabber.setPosition(0.618896);
-                mElevator.setPosition(169 * 0.6);
-                if (mElevator.atTargetPosition()) {
-                    mElevator.setPosition(-0.02 * 0.6);
-                }
+                hasSetSafeHeight = true;
+            }
+            // mGrabber.setPosition(0.618896);
+
+            // Only move to final position when we've reached the safe height
+            if (mElevator.atTargetPosition()) {
+                mElevator.setPosition(-0.02 * 0.6);
+                hasSetSafeHeight = false; // Reset for next time
             }
         } else {
+            hasSetSafeHeight = false; // Reset the flag
             mGrabber.setPosition(0.618896);
             mElevator.setPosition(-0.02 * 0.6);
         }
@@ -320,6 +332,12 @@ public class SuperStruct extends SubsystemBase {
         mIntake.setIntake(0);
         mled.rainbowmarquee();
         mObjectDetection.stopFollowing();
+    }
+
+    public void grabberDefault() {
+        mGrabber.setPosition(0.618896);
+        mGrabber.stop();
+        mGrabber.resetcounter();
     }
 
     public void ALGAE_STOWAGE() {
@@ -335,13 +353,15 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void ALGAE_PLACEMENT() {
-        
+
         mIntake.setIntake(-0.6);
     }
 
     public void HIT_ALGAE() {
         mGrabber.hitAlgea();
         mGrabber.setPosition(0.352295);
+
+        mIntake.setAngle(-0.390137);
     }
 
     /**
@@ -420,6 +440,9 @@ public class SuperStruct extends SubsystemBase {
                 break;
             case HIT_ALGAE:
                 HIT_ALGAE();
+                break;
+            case GRABBER_DEFAULT:
+                grabberDefault();
                 break;
         }
     }

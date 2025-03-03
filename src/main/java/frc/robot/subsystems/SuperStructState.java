@@ -22,5 +22,6 @@ public enum SuperStructState {
     GENSHINIMPACT,
     FOLLOW_TARGET,    // Enable target following with ObjectDetection subsystem
     STOP_FOLLOWING,
-    HIT_ALGAE    // Stop target following
+    HIT_ALGAE,    // Stop target following
+    GRABBER_DEFAULT
 } 
