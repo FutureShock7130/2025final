@@ -1,16 +1,3 @@
-// Copyright 2021-2024 FRC 6328
-// http://github.com/Mechanical-Advantage
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// version 3 as published by the Free Software Foundation or
-// available in the root directory of this project.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -29,7 +16,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
-// import frc.robot.subsystems.LED;
 import frc.robot.subsystems.NavigationController;
 import frc.robot.subsystems.ObjectDetection;
 import frc.robot.subsystems.StateMachine;
@@ -42,13 +28,9 @@ import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.Swerve;
 import frc.robot.subsystems.superstructure.Elevator;
 import frc.robot.subsystems.superstructure.Grabber;
-// import frc.robot.subsystems.superstructure.Intake;
 import frc.robot.Vision;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
-
-// import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
-// import org.littletonrobotics.junction.networktables.LoggedDashboardNumber;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -62,11 +44,12 @@ public class RobotContainer {
   public final Vision vision = new Vision();
   private final Elevator m_elevator;
   private final Grabber m_grabber;
-  // private final Intake m_intake;
   public final SuperStruct m_SuperStruct;
   private final NavigationController m_navigationController;
-  // private final LED m_led;
   private final ObjectDetection m_ObjectDetection = new ObjectDetection();
+  
+  
+
 
   // Controller
   private final CommandXboxController controller = new CommandXboxController(0);
@@ -74,16 +57,14 @@ public class RobotContainer {
   // Dashboard inputs
   private final SendableChooser<Command> autoChooser;
   
-
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+
     m_elevator = Elevator.getInstance();
     m_grabber = Grabber.getInstance();
-    // m_intake = Intake.getInstance();
-    m_SuperStruct = SuperStruct.getInstance();  
-    m_navigationController = NavigationController.getInstance();
-    // m_led = LED.getInstance();
+
     
+
     switch (Constants.currentMode) {
       case REAL:
         // Real robot, instantiate hardware IO implementation
@@ -95,7 +76,6 @@ public class RobotContainer {
                 new Swerve(2),
                 new Swerve(3),
                 vision);
-
         break;
       default:
         // Replayed robot, disable IO implementations
@@ -109,6 +89,21 @@ public class RobotContainer {
                 vision);
         break;
     }
+    
+
+    m_SuperStruct = SuperStruct.getInstance();  
+    m_navigationController = NavigationController.getInstance();
+    m_SuperStruct.setObjectDetection(m_ObjectDetection);
+    
+    if (drive != null) {
+        m_ObjectDetection.setDriveSubsystem(drive);
+    }
+    
+
+
+    
+
+
 
     NamedCommands.registerCommand("DEFAULT", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.DEFAULT), m_elevator).withTimeout(3));
     NamedCommands.registerCommand("L1", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L1), m_elevator));
@@ -121,23 +116,11 @@ public class RobotContainer {
     // Set up auto routines
     autoChooser = AutoBuilder.buildAutoChooser();
     SmartDashboard.putData("auto", autoChooser);
-    // // Set up SysId routines
-    // autoChooser.addOption(
-    //     "Drive SysId (Quasistatic Forward)",
-    //     drive.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    // autoChooser.addOption(
-    //     "Drive SysId (Quasistatic Reverse)",
-    //     drive.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    // autoChooser.addOption(
-    //     "Drive SysId (Dynamic Forward)", drive.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    // autoChooser.addOption(
-    //     "Drive SysId (Dynamic Reverse)", drive.sysIdDynamic(SysIdRoutine.Direction.kReverse));
 
     // Configure the button bindings
     configureButtonBindings();
 
     SmartDashboard.putData("auto", autoChooser);
-   
   }
 
   /**
@@ -174,5 +157,4 @@ public class RobotContainer {
     drive.setPose(new Pose2d());
     return autoChooser.getSelected();
   }
-
 }

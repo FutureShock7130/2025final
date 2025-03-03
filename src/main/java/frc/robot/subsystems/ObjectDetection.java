@@ -226,6 +226,10 @@ public class ObjectDetection extends SubsystemBase {
     public void setDriveSubsystem(Drive drive) {
         this.driveSubsystem = drive;
     }
+
+    public boolean isFollowing() {
+        return isFollowing;
+    }
     
     @Override
     public void periodic() {
@@ -443,7 +447,7 @@ public class ObjectDetection extends SubsystemBase {
     /**
      * Start following target
      */
-    private void startFollowing() {
+    void startFollowing() {
         if (driveSubsystem == null) {
             return;
         }

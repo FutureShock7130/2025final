@@ -31,6 +31,8 @@ public class SuperStruct extends SubsystemBase {
     StateMachine mStateMachine;
     public SuperStructState mCommandedState;
     LED mled;
+    
+    private ObjectDetection detection;
 
     private final CommandXboxController driver;
     private final CommandJoystick buttonBoard1;
@@ -50,6 +52,11 @@ public class SuperStruct extends SubsystemBase {
             mInstance = new SuperStruct();
         }
         return mInstance;
+    }
+    
+
+    public void setObjectDetection(ObjectDetection objectDetection) {
+        this.detection = objectDetection;
     }
 
     private void configureButtonBindings() {
@@ -129,7 +136,6 @@ public class SuperStruct extends SubsystemBase {
         // new JoystickButton(buttonBoard2, 7)
         // .onTrue(AutoBuilder.pathfindToPose(FieldConstants.A,
         // constraints).schedule());
-
     }
 
     /** Creates a new StateMachine. */
@@ -141,8 +147,8 @@ public class SuperStruct extends SubsystemBase {
         mled = LED.getInstance();
         mCommandedState = SuperStructState.DEFAULT;
         driver = new CommandXboxController(0);
-        buttonBoard1 = new CommandJoystick(buttonBoard1Port); // First port
-        buttonBoard2 = new CommandJoystick(buttonBoard2Port); // Second port
+        buttonBoard1 = new CommandJoystick(buttonBoard1Port);
+        buttonBoard2 = new CommandJoystick(buttonBoard2Port);
         configureButtonBindings();
     }
 
@@ -196,31 +202,7 @@ public class SuperStruct extends SubsystemBase {
     public void PLACEMENT() {
         mGrabber.placeCoral();
     }
-
-    /**
-     * Sets a new state and updates the previous state tracker
-     * 
-     * @param state The new state to transition to
-     */
-    public void setState(SuperStructState state) {
-        // save previos state
-        mPreviousState = mCommandedState;
-
-        // Set the new state
-        mStateMachine.setCommandedState(state);
-    }
-
-    /**
-     * Checks if the given state is one of the L-levels
-     */
-    private boolean isLLevel(SuperStructState state) {
-        return state == SuperStructState.L1 ||
-                state == SuperStructState.L2 ||
-                state == SuperStructState.L3 ||
-                state == SuperStructState.L4 ||
-                state == SuperStructState.CS;
-    }
-
+    
     public void DEFAULT() {
         // Check if coming from an L-level
         boolean comingFromLLevel = isLLevel(mPreviousState);
@@ -262,13 +244,77 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void ALGAE_INTAKE() {
-        mIntake.setAngle(0.866211);
-        mIntake.setIntake(0.6);
+        if (detection != null) {
+            detection.setTargetClass(0);
+            
+            if (!detection.isFollowing()) {
+                detection.startFollowing();
+            }
+            
+            if (detection.isTargetVisible()) {
+                double distance = detection.getTargetDistance();
+                double areaEstimate = distance > 0 ? 100.0 / (distance * distance) : 0;
+                
+                var result = detection.getCamera().getLatestResult();
+                double actualArea = 0;
+                if (result.hasTargets()) {
+                    var target = detection.getBestTarget(result);
+                    if (target != null) {
+                        actualArea = target.getArea();
+                    }
+                }
+                
+                double area = Math.max(actualArea, areaEstimate);
+                
+                SmartDashboard.putNumber("algae distance(estimate)", distance);
+                SmartDashboard.putNumber("algae area", area);
+                
+                if (area >= 30.0) {
+                    mIntake.setAngle(0.866211);
+                    mIntake.setIntake(0.6);
+                    mled.color(0, 255, 0); 
+                } else {
+                    mIntake.setAngle(0.700439);
+                    mIntake.setIntake(0.0);
+                    mled.color(255, 165, 0); 
+                }
+            } else {
+                mIntake.setAngle(0.700439);
+                mIntake.setIntake(0.0);
+                mled.color(255, 0, 0);
+            }
+        } else {
+            mIntake.setAngle(0.866211);
+            mIntake.setIntake(0.6);
+        }
     }
 
     public void ALGAE_PLACEMENT() {
-
         mIntake.setIntake(-0.6);
+    }
+
+    /**
+     * Sets a new state and updates the previous state tracker
+     * 
+     * @param state The new state to transition to
+     */
+    public void setState(SuperStructState state) {
+        // save previos state
+        mPreviousState = mCommandedState;
+
+        // Set the new state
+        mStateMachine.setCommandedState(state);
+    }
+
+    /**
+     * Checks if the given state is one of the L-levels
+     */
+    private boolean isLLevel(SuperStructState state) {
+        return state == SuperStructState.L1 ||
+                state == SuperStructState.L2 ||
+                state == SuperStructState.L3 ||
+                state == SuperStructState.L4 ||
+                state == SuperStructState.CS;
     }
 
     public void updateState() {
@@ -305,6 +351,10 @@ public class SuperStruct extends SubsystemBase {
                 break;
             case ALGAE_PLACEMENT:
                 ALGAE_PLACEMENT();
+                break;
+            default:
+                // 对于未处理的状态，使用默认行为
+                DEFAULT();
                 break;
         }
     }
