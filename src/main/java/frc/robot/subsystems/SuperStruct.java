@@ -368,7 +368,7 @@ public class SuperStruct extends SubsystemBase {
 
     public void ALGAE_STOWAGE() {
         mIntake.setAngle(-0.234619);
-        mIntake.setIntake(0.0);
+        mIntake.setIntake(0.01);
         mObjectDetection.stopFollowing();
     }
 
