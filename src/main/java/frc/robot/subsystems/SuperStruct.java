@@ -151,6 +151,11 @@ public class SuperStruct extends SubsystemBase {
                         () -> setState(SuperStructState.DEFAULT),
                         this));
 
+        new CommandXboxController(0).rightTrigger(0.5)
+                .onTrue(Commands.runOnce(
+                        () -> setState(SuperStructState.ALGAE_PLACEMENT),
+                        this));
+
         // Object detection - Follow target (Xbox controller Y button)
         // new JoystickButton(driver.getHID(), XboxController.Button.kY.value)
         // .onTrue(Commands.runOnce(
@@ -372,14 +377,14 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void ALGAE_STOWAGE() {
-        mIntake.setAngle(IntakePos.Down);
-        mIntake.setIntake(0.01);
+        mIntake.setAngle(IntakePos.Intake);
+        mIntake.setIntake(0.00);
         mObjectDetection.stopFollowing();
     }
 
     public void ALGAE_INTAKE() {
-        mIntake.setAngle(IntakePos.Down);
-        mIntake.setIntake(0.5);
+        mIntake.setAngle(IntakePos.Intake);
+        mIntake.setIntake(0.3);
         // mObjectDetection.startFollowing();
     }
 

@@ -21,6 +21,7 @@ public class SuperStructPosition {
 
     public static class IntakePos {
         public static double Default = -0.390137;
-        public static double Down = -0.234619;
+        public static double Down = -0.229248;
+        public static double Intake = -0.226074;
     }
 }

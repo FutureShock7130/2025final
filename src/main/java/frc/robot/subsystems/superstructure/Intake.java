@@ -167,7 +167,7 @@ public class Intake extends SubsystemBase {
 
   @Override
   public void periodic() {
-    
+    // System.out.println("intake pos: " + angleEncoder.getAbsolutePosition().getValueAsDouble());
     SmartDashboard.putNumber("intake pid", pidController.calculate(angleEncoder.getAbsolutePosition().getValueAsDouble()));
     SmartDashboard.putNumber("intake pid setpoint", pidController.getSetpoint().position);
   }
