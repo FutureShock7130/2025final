@@ -224,7 +224,7 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void L2() {
-        mElevator.setPosition(22.69420 * 0.6);
+        mElevator.setPosition(18.69420 * 0.6);
         if (mElevator.atTargetPosition()) {
             mGrabber.setPosition(0.463135);
         } else {
@@ -265,7 +265,10 @@ public class SuperStruct extends SubsystemBase {
 
     public void CS() {
         mElevator.setPosition(-0.001 * 0.6);
-        mGrabber.setPosition(0.289307);
+        if (mElevator.atTargetPosition()) {
+            mGrabber.setPosition(0.289307);
+        }
+        // mGrabber.setPosition(0.289307);
         mGrabber.intake();
         mIntake.setAngle(-0.390137);
 
@@ -317,7 +320,7 @@ public class SuperStruct extends SubsystemBase {
             if (!hasSetSafeHeight && !isMovingToDefault) {
                 // Only set target position once
                 savedElevatorPos = mElevator.getElevatorPosition();
-                targetUpPosition = savedElevatorPos + 10;
+                targetUpPosition = savedElevatorPos + 15;
                 mElevator.setPosition(targetUpPosition);
                 mGrabber.setPosition(0.618896);
                 hasSetSafeHeight = true;
@@ -365,7 +368,7 @@ public class SuperStruct extends SubsystemBase {
 
     public void ALGAE_STOWAGE() {
         mIntake.setAngle(-0.234619);
-        mIntake.setIntake(0.05);
+        mIntake.setIntake(0.0);
         mObjectDetection.stopFollowing();
     }
 

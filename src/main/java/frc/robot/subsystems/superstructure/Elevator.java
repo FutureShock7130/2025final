@@ -60,7 +60,7 @@ public class Elevator extends SubsystemBase {
   
   private final ProfiledPIDController pidController = 
       new ProfiledPIDController(
-          0.07,   // P gain
+          0.05,   // P gain
           0.0,   // I gain
           0.0,   // D gain
           constraints

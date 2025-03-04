@@ -182,4 +182,12 @@ public class RobotContainer {
     return autoChooser.getSelected();
   }
 
+  /**
+   * Get the drive subsystem
+   * @return The Drive subsystem
+   */
+  public Drive getDrive() {
+    return drive;
+  }
+
 }

@@ -26,6 +26,7 @@ import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.SuperStructState;
 import frc.robot.subsystems.superstructure.Elevator;
 import frc.robot.subsystems.superstructure.Grabber;
+import frc.robot.subsystems.DashBoard;
 
 /**
  * The methods in this class are called automatically corresponding to each
@@ -44,6 +45,7 @@ public class Robot extends TimedRobot {
   private Joystick ButtonBox2;
 
   private final RobotContainer m_robotContainer;
+  private final DashBoard m_dashboard;
 
   private final PathConstraints constraints = new PathConstraints(3, 3, 2 * Math.PI, 4 * Math.PI);
   /**
@@ -53,10 +55,12 @@ public class Robot extends TimedRobot {
    */
   public Robot() {
     m_robotContainer = new RobotContainer();
+    m_dashboard = DashBoard.getInstance(); // Get dashboard instance
     driver = new XboxController(0);
     ButtonBox1 = new Joystick(1);
     ButtonBox2 = new Joystick(2);
     CommandScheduler.getInstance().registerSubsystem(NavigationController.getInstance());
+    CommandScheduler.getInstance().registerSubsystem(m_dashboard); // Register dashboard as subsystem
   }
 
   public void RobotInit() {
@@ -76,6 +80,15 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
+    
+    // Update robot pose in dashboard if available
+    try {
+      // Now we can use the getDrive() method
+      Pose2d robotPose = m_robotContainer.getDrive().getPose();
+      m_dashboard.setRobotPose(robotPose);
+    } catch (Exception e) {
+      // Drive subsystem might not be ready yet, just ignore
+    }
   }
 
   /** This function is called once each time the robot enters Disabled mode. */

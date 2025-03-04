@@ -3,41 +3,41 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.666,
-        "y": 0.693
+        "x": 7.179545454545455,
+        "y": 2.973
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.1577868852459017,
-        "y": 1.2018954918032796
+        "x": 6.411732954545455,
+        "y": 2.6239914772727264
       },
       "isLocked": false,
-      "linkedName": "CSR"
+      "linkedName": "RLeft"
     },
     {
       "anchor": {
-        "x": 3.646,
-        "y": 2.905
+        "x": 5.325,
+        "y": 2.88
       },
       "prevControl": {
-        "x": 3.1687418032786883,
-        "y": 2.4206659836065567
+        "x": 5.683806818181819,
+        "y": 2.7336789772727275
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": "C"
+      "linkedName": "F"
     }
   ],
   "rotationTargets": [
     {
-      "waypointRelativePos": 0.4517133956386287,
-      "rotationDegrees": 59.99999999999999
+      "waypointRelativePos": 0.15905511811023418,
+      "rotationDegrees": 160.0
     }
   ],
   "constraintZones": [
     {
       "name": "Constraints Zone",
-      "minWaypointRelativePos": 0.7,
+      "minWaypointRelativePos": 0.64,
       "maxWaypointRelativePos": 1.0,
       "constraints": {
         "maxVelocity": 1.5,
@@ -53,8 +53,8 @@
   "eventMarkers": [
     {
       "name": "DEFAULT",
-      "waypointRelativePos": 0.0676767676767678,
-      "endWaypointRelativePos": null,
+      "waypointRelativePos": 0,
+      "endWaypointRelativePos": 0.2043935052531036,
       "command": {
         "type": "named",
         "data": {
@@ -64,23 +64,37 @@
     },
     {
       "name": "L4",
-      "waypointRelativePos": 0.3787878787878762,
-      "endWaypointRelativePos": null,
+      "waypointRelativePos": 0.6447241045498525,
+      "endWaypointRelativePos": 1.0,
       "command": {
-        "type": "named",
+        "type": "sequential",
         "data": {
-          "name": "L4"
-        }
-      }
-    },
-    {
-      "name": "PLACE",
-      "waypointRelativePos": 1.0,
-      "endWaypointRelativePos": null,
-      "command": {
-        "type": "named",
-        "data": {
-          "name": "PLACE"
+          "commands": [
+            {
+              "type": "named",
+              "data": {
+                "name": "L4"
+              }
+            },
+            {
+              "type": "wait",
+              "data": {
+                "waitTime": 3.0
+              }
+            },
+            {
+              "type": "named",
+              "data": {
+                "name": "PLACE"
+              }
+            },
+            {
+              "type": "wait",
+              "data": {
+                "waitTime": 0.5
+              }
+            }
+          ]
         }
       }
     }
@@ -95,13 +109,13 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 59.99999999999999
+    "rotation": 119.99999999999999
   },
   "reversed": false,
-  "folder": "CSR",
+  "folder": null,
   "idealStartingState": {
     "velocity": 0,
-    "rotation": -126.0
+    "rotation": 180.0
   },
   "useDefaultConstraints": true
 }

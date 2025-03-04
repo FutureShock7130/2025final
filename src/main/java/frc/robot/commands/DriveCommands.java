@@ -2,6 +2,7 @@
 package frc.robot.commands;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
@@ -16,6 +17,7 @@ import java.util.function.DoubleSupplier;
 
 public class DriveCommands {
   private static final double DEADBAND = 0.1;
+  private static final SlewRateLimiter SLEW_RATE_LIMITER = new SlewRateLimiter(3);
 
   private DriveCommands() {}
   
@@ -33,8 +35,10 @@ public class DriveCommands {
         () -> {
           // Apply deadband
           double linearMagnitude =
+          SLEW_RATE_LIMITER.calculate(
               MathUtil.applyDeadband(
-                  Math.hypot(xSupplier.getAsDouble(), ySupplier.getAsDouble()), DEADBAND);
+                  Math.hypot(
+                    xSupplier.getAsDouble(), ySupplier.getAsDouble()), DEADBAND));
           Rotation2d linearDirection =
               new Rotation2d(xSupplier.getAsDouble(), ySupplier.getAsDouble());
           double omega = MathUtil.applyDeadband(omegaSupplier.getAsDouble(), DEADBAND);
