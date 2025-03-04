@@ -50,7 +50,7 @@ public class Grabber extends SubsystemBase {
     );
 
     private final ArmFeedforward grabberFF = new ArmFeedforward(
-            0.01,
+            0.0,
             0.02,
             0.1);
 

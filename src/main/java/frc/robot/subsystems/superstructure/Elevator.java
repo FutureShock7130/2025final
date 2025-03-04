@@ -38,8 +38,7 @@ public class Elevator extends SubsystemBase {
   private final SparkMax leftMotor;
   private final SparkMax rightMotor;
   
-  private static final double kG = 0.01;  // Voltage needed to overcome gravity
-  private static final double kDownSpeedMultiplier = 0.9; // Reduces speed when decending
+  private static final double kDownSpeedMultiplier = 1; // Reduces speed when decending
 
   // Shuffleboard entries
   private final ShuffleboardTab elevatorTab = Shuffleboard.getTab("Elevator");
@@ -54,8 +53,8 @@ public class Elevator extends SubsystemBase {
   // Profiled PID Controller for smooth motionS
   private final TrapezoidProfile.Constraints constraints = 
       new TrapezoidProfile.Constraints(
-          120,   
-          100
+          150,   
+          150
       );
   
   private final ProfiledPIDController pidController = 
@@ -149,7 +148,7 @@ public class Elevator extends SubsystemBase {
    * @param speed Speed from -1.0 to 1.0
    */
   public void setElevatorSpeed(double speed) {
-    double gravityCompensation = kG;
+    double gravityCompensation = 0;
     
     // Reduce speed when moving down
     if (speed < 0) {
@@ -206,8 +205,8 @@ public class Elevator extends SubsystemBase {
 
     public void setPosition(double position) {
     pidController.setGoal(position);
-    setleftVoltage(MathUtil.clamp(pidController.calculate(leftMotor.getEncoder().getPosition()), -0.8, 0.8));
-    setrightVoltage(MathUtil.clamp(pidController.calculate(rightMotor.getEncoder().getPosition()), -0.8, 0.8));
+    setleftVoltage(MathUtil.clamp(pidController.calculate(leftMotor.getEncoder().getPosition()), -0.9, 0.9));
+    setrightVoltage(MathUtil.clamp(pidController.calculate(rightMotor.getEncoder().getPosition()), -0.9, 0.9));
   }
 
 
