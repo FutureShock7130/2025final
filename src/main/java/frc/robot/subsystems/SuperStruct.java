@@ -12,6 +12,9 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.SuperStructState;
+import frc.robot.subsystems.SuperStructPosition.ElevatorPos;
+import frc.robot.subsystems.SuperStructPosition.GrabberPos;
+import frc.robot.subsystems.SuperStructPosition.IntakePos;
 import frc.robot.subsystems.superstructure.Elevator;
 import frc.robot.subsystems.superstructure.Grabber;
 import frc.robot.subsystems.superstructure.Intake;
@@ -213,64 +216,66 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void L1() {
-        mElevator.setPosition(-0.001 * 0.6);
+        mElevator.setPosition(ElevatorPos.L1);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.463135);
+            mGrabber.setPosition(GrabberPos.L1_L2_L3);
         } else {
-            mGrabber.setPosition(0.618896);
+            mGrabber.setPosition(GrabberPos.Default);
         }
-        mIntake.setAngle(-0.390137);
+        mIntake.setAngle(IntakePos.Default);
 
     }
 
     public void L2() {
-        mElevator.setPosition(18.69420 * 0.6);
+        mElevator.setPosition(ElevatorPos.L2);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.463135);
+            mGrabber.setPosition(GrabberPos.L1_L2_L3);
         } else {
-            mGrabber.setPosition(0.618896);
+            mGrabber.setPosition(GrabberPos.Default);
         }
-        mIntake.setAngle(-0.390137);
+        mIntake.setAngle(IntakePos.Default);
 
     }
 
     public void L3() {
-        mElevator.setPosition(69.420 * 0.6);
+        mElevator.setPosition(ElevatorPos.L3);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.463135);
+            mGrabber.setPosition(GrabberPos.L1_L2_L3);
         } else {
-            mGrabber.setPosition(0.618896);
+            mGrabber.setPosition(GrabberPos.Default);
         }
-        mIntake.setAngle(-0.390137);
+        mIntake.setAngle(IntakePos.Default);
 
     }
 
     public void L4() {
-        mElevator.setPosition(165 * 0.6);
+        mElevator.setPosition(ElevatorPos.L4);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.52074);
+            mGrabber.setPosition(GrabberPos.L4);
         } else {
-            mGrabber.setPosition(0.618896);
+            mGrabber.setPosition(GrabberPos.Default);
         }
-        mIntake.setAngle(-0.390137);
+        mIntake.setAngle(IntakePos.Default);
 
     }
 
-    public void TRAVEL() {
-        mElevator.setPosition(-0.2 * 0.6); // ground
-        mGrabber.setPosition(0.618896); // default
-        mIntake.setAngle(-0.390137);
+    // public void TRAVEL() {
+    //     mElevator.setPosition(-0.2 * 0.6); // ground
+    //     mGrabber.setPosition(0.618896); // default
+    //     mIntake.setAngle(IntakePos.Default);
 
-    }
+    // }
 
     public void CS() {
-        mElevator.setPosition(-0.001 * 0.6);
+        mElevator.setPosition(ElevatorPos.CS);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.289307);
+            mGrabber.setPosition(GrabberPos.CS);
+        } else {
+            mGrabber.setPosition(GrabberPos.Default);
         }
         // mGrabber.setPosition(0.289307);
         mGrabber.intake();
-        mIntake.setAngle(-0.390137);
+        mIntake.setAngle(IntakePos.Default);
 
     }
 
@@ -322,13 +327,13 @@ public class SuperStruct extends SubsystemBase {
                 savedElevatorPos = mElevator.getElevatorPosition();
                 targetUpPosition = savedElevatorPos + 15;
                 mElevator.setPosition(targetUpPosition);
-                mGrabber.setPosition(0.618896);
+                mGrabber.setPosition(GrabberPos.Default);
                 hasSetSafeHeight = true;
                 SmartDashboard.putString("Movement Phase", "Moving Up");
             }
             else if (hasSetSafeHeight && mElevator.atTargetPosition() && !isMovingToDefault) {
                 // Once we reach the up position, start moving down
-                mElevator.setPosition(-0.02 * 0.6);
+                mElevator.setPosition(ElevatorPos.Default);
                 isMovingToDefault = true;
                 SmartDashboard.putString("Movement Phase", "Moving to Default");
             }
@@ -346,34 +351,34 @@ public class SuperStruct extends SubsystemBase {
             // Direct to default if not from L-level
             hasSetSafeHeight = false;
             isMovingToDefault = false;
-            mGrabber.setPosition(0.618896);
-            mElevator.setPosition(-0.02 * 0.6);
+            mGrabber.setPosition(GrabberPos.Default);
+            mElevator.setPosition(ElevatorPos.Default);
             SmartDashboard.putString("Movement Phase", "Direct to Default");
         }
 
         // Common actions
         mGrabber.stop();
         mGrabber.resetcounter();
-        mIntake.setAngle(-0.390137);
+        mIntake.setAngle(IntakePos.Default);
         mIntake.setIntake(0);
         mled.rainbowmarquee();
         mObjectDetection.stopFollowing();
     }
 
     public void grabberDefault() {
-        mGrabber.setPosition(0.618896);
+        mGrabber.setPosition(GrabberPos.Default);
         mGrabber.stop();
         mGrabber.resetcounter();
     }
 
     public void ALGAE_STOWAGE() {
-        mIntake.setAngle(-0.234619);
+        mIntake.setAngle(IntakePos.Down);
         mIntake.setIntake(0.01);
         mObjectDetection.stopFollowing();
     }
 
     public void ALGAE_INTAKE() {
-        mIntake.setAngle(-0.234619);
+        mIntake.setAngle(IntakePos.Down);
         mIntake.setIntake(0.5);
         // mObjectDetection.startFollowing();
     }
@@ -385,9 +390,9 @@ public class SuperStruct extends SubsystemBase {
 
     public void HIT_ALGAE() {
         mGrabber.hitAlgea();
-        mGrabber.setPosition(0.412295);
+        mGrabber.setPosition(GrabberPos.HIT_ALGAE);
 
-        mIntake.setAngle(-0.390137);
+        mIntake.setAngle(IntakePos.Default);
     }
 
     /**
@@ -437,9 +442,9 @@ public class SuperStruct extends SubsystemBase {
             case L4:
                 L4();
                 break;
-            case TRAVEL:
-                TRAVEL();
-                break;
+            // case TRAVEL:
+            //     TRAVEL();
+            //     break;
             case CS:
                 CS();
                 break;
