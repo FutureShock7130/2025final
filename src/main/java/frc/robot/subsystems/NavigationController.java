@@ -58,6 +58,8 @@ public class NavigationController extends SubsystemBase {
     private DestinationState nextDestination = null;
     private Command activePathCommand = null;
     private final PathConstraints constraints;
+    private final PathConstraints fastConstraints;
+    private final PathConstraints slowConstraints;
 
     private static NavigationController mInstance = null;
 
@@ -78,6 +80,8 @@ public class NavigationController extends SubsystemBase {
         
         // Initialize path constraints 
         this.constraints = new PathConstraints(3, 3, 2 * Math.PI, 4 * Math.PI);
+        this.fastConstraints = new PathConstraints(3.5, 3.5, 2 * Math.PI, 4 * Math.PI);
+        this.slowConstraints = new PathConstraints(1.5, 1.5, 2 * Math.PI, 4 * Math.PI);
     }
     
     @Override
@@ -89,8 +93,27 @@ public class NavigationController extends SubsystemBase {
 
         // Check if we completed a step in a multi-step navigation
         if (activePathCommand == null && nextDestination != null) {
-            // Start the next step
-            startPathfinding(nextDestination);
+            // Start the next step - use slow constraints for the second part
+            PathConstraints secondStageConstraints = slowConstraints;
+            
+            // All second-stage paths should use slow constraints for precise positioning
+            Pose2d targetPose = getPoseForDestination(nextDestination);
+            activePathCommand = AutoBuilder.pathfindToPose(targetPose, secondStageConstraints)
+                .until(() -> driverWantsControl())
+                .finallyDo((interrupted) -> {
+                    if (!interrupted) {
+                        currentDestination = DestinationState.MANUAL_DRIVING;
+                    } else {
+                        currentDestination = DestinationState.MANUAL_DRIVING;
+                    }
+                    activePathCommand = null;
+                });
+            
+            // Schedule the command
+            activePathCommand.schedule();
+            
+            // Update current destination
+            currentDestination = nextDestination;
             nextDestination = null;
         }
 
@@ -147,42 +170,56 @@ public class NavigationController extends SubsystemBase {
         // Cancel any existing pathfinding
         cancelPathfinding();
         
+        PathConstraints currentConstraints = constraints;
+        
         if (destination == DestinationState.PATHFINDING_TO_AB_THEN_A) {
             nextDestination = DestinationState.PATHFINDING_TO_A;
             destination = DestinationState.PATHFINDING_TO_AB;
+            currentConstraints = fastConstraints; // Use faster constraints for first part
         } else if (destination == DestinationState.PATHFINDING_TO_AB_THEN_B) {
             nextDestination = DestinationState.PATHFINDING_TO_B;
             destination = DestinationState.PATHFINDING_TO_AB;
+            currentConstraints = fastConstraints; // Use faster constraints for first part
         } else if (destination == DestinationState.PATHFINDING_TO_CD_THEN_C) {
             nextDestination = DestinationState.PATHFINDING_TO_C;
             destination = DestinationState.PATHFINDING_TO_CD;
+            currentConstraints = fastConstraints; // Use faster constraints for first part
         } else if (destination == DestinationState.PATHFINDING_TO_CD_THEN_D) {
             nextDestination = DestinationState.PATHFINDING_TO_D;
             destination = DestinationState.PATHFINDING_TO_CD;
+            currentConstraints = fastConstraints; // Use faster constraints for first part
         } else if (destination == DestinationState.PATHFINDING_TO_EF_THEN_E) {
             nextDestination = DestinationState.PATHFINDING_TO_E;
             destination = DestinationState.PATHFINDING_TO_EF;
+            currentConstraints = fastConstraints; // Use faster constraints for first part
         } else if (destination == DestinationState.PATHFINDING_TO_EF_THEN_F) {
             nextDestination = DestinationState.PATHFINDING_TO_F;
             destination = DestinationState.PATHFINDING_TO_EF;
+            currentConstraints = fastConstraints; // Use faster constraints for first part
         } else if (destination == DestinationState.PATHFINDING_TO_GH_THEN_G) {
             nextDestination = DestinationState.PATHFINDING_TO_G;
             destination = DestinationState.PATHFINDING_TO_GH;
+            currentConstraints = fastConstraints; // Use faster constraints for first part
         } else if (destination == DestinationState.PATHFINDING_TO_GH_THEN_H) {
             nextDestination = DestinationState.PATHFINDING_TO_H;
             destination = DestinationState.PATHFINDING_TO_GH;
+            currentConstraints = fastConstraints; // Use faster constraints for first part
         } else if (destination == DestinationState.PATHFINDING_TO_IJ_THEN_I) {
             nextDestination = DestinationState.PATHFINDING_TO_I;
             destination = DestinationState.PATHFINDING_TO_IJ;
+            currentConstraints = fastConstraints; // Use faster constraints for first part
         } else if (destination == DestinationState.PATHFINDING_TO_IJ_THEN_J) {
             nextDestination = DestinationState.PATHFINDING_TO_J;
             destination = DestinationState.PATHFINDING_TO_IJ;
+            currentConstraints = fastConstraints; // Use faster constraints for first part
         } else if (destination == DestinationState.PATHFINDING_TO_KL_THEN_K) {
             nextDestination = DestinationState.PATHFINDING_TO_K;
             destination = DestinationState.PATHFINDING_TO_KL;
+            currentConstraints = fastConstraints; // Use faster constraints for first part
         } else if (destination == DestinationState.PATHFINDING_TO_KL_THEN_L) {
             nextDestination = DestinationState.PATHFINDING_TO_L;
             destination = DestinationState.PATHFINDING_TO_KL;
+            currentConstraints = fastConstraints; // Use faster constraints for first part
         }
         
         // Find the target pose based on the destination
@@ -190,7 +227,7 @@ public class NavigationController extends SubsystemBase {
 
         
         // Create the pathfinding command
-        activePathCommand = AutoBuilder.pathfindToPose(targetPose, constraints)
+        activePathCommand = AutoBuilder.pathfindToPose(targetPose, currentConstraints)
             .until(() -> driverWantsControl())
             .finallyDo((interrupted) -> {
                 if (!interrupted) {
