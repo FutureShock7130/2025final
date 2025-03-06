@@ -59,17 +59,17 @@ public final class Constants {
         public static final Pose2d Right = new Pose2d(new Translation2d(8.068, 5.067), Rotation2d.fromDegrees(180));
         // REEF scoring pose
         public static final Pose2d A = new Pose2d(new Translation2d(3.177, 4.191), Rotation2d.fromDegrees(0));
-        public static final Pose2d B = new Pose2d(new Translation2d(3.199, 3.854), Rotation2d.fromDegrees(0));
+        public static final Pose2d B = new Pose2d(new Translation2d(3.235, 3.876), Rotation2d.fromDegrees(0));
         public static final Pose2d C = new Pose2d(new Translation2d(3.722, 2.987), Rotation2d.fromDegrees(60));
-        public static final Pose2d D = new Pose2d(new Translation2d(4.038, 2.836), Rotation2d.fromDegrees(60));
+        public static final Pose2d D = new Pose2d(new Translation2d(3.969, 2.886), Rotation2d.fromDegrees(60));
         public static final Pose2d E = new Pose2d(new Translation2d(4.984, 2.865), Rotation2d.fromDegrees(120));
-        public static final Pose2d F = new Pose2d(new Translation2d(5.235, 3.016), Rotation2d.fromDegrees(120));
-        public static final Pose2d G = new Pose2d(new Translation2d(5.737, 3.833), Rotation2d.fromDegrees(180));
+        public static final Pose2d F = new Pose2d(new Translation2d(5.246, 3.055), Rotation2d.fromDegrees(120));
+        public static final Pose2d G = new Pose2d(new Translation2d(5.725, 3.916), Rotation2d.fromDegrees(180));
         public static final Pose2d H = new Pose2d(new Translation2d(5.701, 4.191), Rotation2d.fromDegrees(180));
-        public static final Pose2d I = new Pose2d(new Translation2d(5.249, 5.016), Rotation2d.fromDegrees(-120));
-        public static final Pose2d J = new Pose2d(new Translation2d(4.953, 5.176), Rotation2d.fromDegrees(-120));
-        public static final Pose2d K = new Pose2d(new Translation2d(3.991, 5.205), Rotation2d.fromDegrees(-60));
-        public static final Pose2d L = new Pose2d(new Translation2d(3.699, 5.036), Rotation2d.fromDegrees(-60));
+        public static final Pose2d I = new Pose2d(new Translation2d(5.255, 5.017), Rotation2d.fromDegrees(-120));
+        public static final Pose2d J = new Pose2d(new Translation2d(4.981, 5.157), Rotation2d.fromDegrees(-120));
+        public static final Pose2d K = new Pose2d(new Translation2d(4.007, 5.228), Rotation2d.fromDegrees(-60));
+        public static final Pose2d L = new Pose2d(new Translation2d(3.767, 5.039), Rotation2d.fromDegrees(-60));
         public static final Pose2d AB = new Pose2d(new Translation2d(2.264, 3.976), Rotation2d.fromDegrees(0));
         public static final Pose2d CD = new Pose2d(new Translation2d(3.435, 2.126), Rotation2d.fromDegrees(60));
         public static final Pose2d EF = new Pose2d(new Translation2d(5.701, 2.019), Rotation2d.fromDegrees(120));
