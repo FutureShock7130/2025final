@@ -215,7 +215,7 @@ public class SuperStruct extends SubsystemBase {
     public void L1() {
         mElevator.setPosition(-0.001 * 0.6);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.463135);
+            mGrabber.setPosition(0.460205);
         } else {
             mGrabber.setPosition(0.618896);
         }
@@ -226,7 +226,7 @@ public class SuperStruct extends SubsystemBase {
     public void L2() {
         mElevator.setPosition(18.69420 * 0.6);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.463135);
+            mGrabber.setPosition(0.460205);
         } else {
             mGrabber.setPosition(0.618896);
         }
@@ -235,9 +235,9 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void L3() {
-        mElevator.setPosition(69.420 * 0.6);
+        mElevator.setPosition(68.620 * 0.6);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.463135);
+            mGrabber.setPosition(0.460205);
         } else {
             mGrabber.setPosition(0.618896);
         }
@@ -248,7 +248,7 @@ public class SuperStruct extends SubsystemBase {
     public void L4() {
         mElevator.setPosition(165 * 0.6);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.52074);
+            mGrabber.setPosition(0.511719);
         } else {
             mGrabber.setPosition(0.618896);
         }
@@ -320,7 +320,8 @@ public class SuperStruct extends SubsystemBase {
             if (!hasSetSafeHeight && !isMovingToDefault) {
                 // Only set target position once
                 savedElevatorPos = mElevator.getElevatorPosition();
-                targetUpPosition = savedElevatorPos + 15;
+                int raiseDistance = mPreviousState==SuperStructState.L4 ? 23 : 15;
+                targetUpPosition = savedElevatorPos + raiseDistance;
                 mElevator.setPosition(targetUpPosition);
                 mGrabber.setPosition(0.618896);
                 hasSetSafeHeight = true;
@@ -390,6 +391,12 @@ public class SuperStruct extends SubsystemBase {
         mIntake.setAngle(-0.390137);
     }
 
+    public void GENSHINIMPACT() {
+        mElevator.setPosition(129);
+        if (mElevator.atTargetPosition()) {
+            mGrabber.setPosition(0.618896);
+        }
+    }
     /**
      * Start following a target
      * Uses the ObjectDetection subsystem to follow targets
@@ -469,6 +476,9 @@ public class SuperStruct extends SubsystemBase {
                 break;
             case GRABBER_DEFAULT:
                 grabberDefault();
+                break;
+            case GENSHINIMPACT:
+                GENSHINIMPACT();
                 break;
         }
     }

@@ -271,7 +271,7 @@ public class Grabber extends SubsystemBase {
     }
 
     public void placeL1() {
-        rightIntake.set(-0.2);
+        rightIntake.set(-0.1);
         leftIntake.set(0.3);
     }
 

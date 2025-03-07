@@ -59,7 +59,7 @@ public class Elevator extends SubsystemBase {
   
   private final ProfiledPIDController pidController = 
       new ProfiledPIDController(
-          0.05,   // P gain
+          0.06,   // P gain
           0.0,   // I gain
           0.0,   // D gain
           constraints
@@ -116,7 +116,7 @@ public class Elevator extends SubsystemBase {
     // Create soft limit config for elevator
     SoftLimitConfig softLimitConfig = new SoftLimitConfig();
     softLimitConfig
-        .forwardSoftLimit(185 * 0.6)     // in rotations
+        .forwardSoftLimit(198 * 0.6)     // in rotations
         .forwardSoftLimitEnabled(softLimit)
         .reverseSoftLimit(0.0)     
         .reverseSoftLimitEnabled(softLimit);
@@ -205,8 +205,8 @@ public class Elevator extends SubsystemBase {
 
     public void setPosition(double position) {
     pidController.setGoal(position);
-    setleftVoltage(MathUtil.clamp(pidController.calculate(leftMotor.getEncoder().getPosition()), -0.9, 0.9));
-    setrightVoltage(MathUtil.clamp(pidController.calculate(rightMotor.getEncoder().getPosition()), -0.9, 0.9));
+    setleftVoltage(MathUtil.clamp(pidController.calculate(leftMotor.getEncoder().getPosition()) * 1.0, -0.9, 0.9));
+    setrightVoltage(MathUtil.clamp(pidController.calculate(rightMotor.getEncoder().getPosition()) * 1.0, -0.9, 0.9));
   }
 
 

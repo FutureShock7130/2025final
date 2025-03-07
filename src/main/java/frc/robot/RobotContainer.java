@@ -118,6 +118,7 @@ public class RobotContainer {
     NamedCommands.registerCommand("PLACE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.PLACEMENT), m_grabber).withTimeout(1));
     NamedCommands.registerCommand("INTAKE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.CS), m_grabber).withTimeout(2.5));
     NamedCommands.registerCommand("GRABBERDEFAULT", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.GRABBER_DEFAULT), m_grabber).withTimeout(0.5));
+    NamedCommands.registerCommand("GENSHIN", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.GENSHINIMPACT), m_elevator).withTimeout(1));
 
     // Set up auto routines
     autoChooser = AutoBuilder.buildAutoChooser();
