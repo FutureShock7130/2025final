@@ -11,7 +11,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "Mid-I"
+                  "pathName": "RMid-F"
                 }
               },
               {
@@ -110,7 +110,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "I-CSL"
+                  "pathName": "F-CSR"
                 }
               }
             ]
@@ -123,7 +123,7 @@
               {
                 "type": "path",
                 "data": {
-                  "pathName": "CSL-K"
+                  "pathName": "CSR-C"
                 }
               },
               {

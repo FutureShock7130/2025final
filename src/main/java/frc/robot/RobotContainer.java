@@ -158,7 +158,7 @@ public class RobotContainer {
             () -> -controller.getLeftY(),
             () -> -controller.getLeftX(),
             () -> -controller.getRightX(),
-            () -> controller.rightBumper().getAsBoolean() ? 0.3 : 1
+            () -> controller.rightBumper().getAsBoolean() ? 0.3 : 0.8
             ));
  
     controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));

@@ -241,8 +241,8 @@ public class Grabber extends SubsystemBase {
         } else if (rightRPM < 200 || leftRPM < 200) {
             if (stallCounter < 100) { // Wait ~0.5 seconds (25 * 20ms) before stopping
                 stallCounter++;
-                rightIntake.set(0.4);
-                leftIntake.set(-0.4);
+                rightIntake.set(0.45);
+                leftIntake.set(-0.45);
                 // hasCoral = false;
             } else {
                 rightIntake.set(-0.0);
@@ -259,8 +259,8 @@ public class Grabber extends SubsystemBase {
     }
 
     public void placeCoral() {
-        rightIntake.set(-0.3);
-        leftIntake.set(0.3);
+        rightIntake.set(-0.4);
+        leftIntake.set(0.4);
         
         double rightRPM = Math.abs(rightIntake.getEncoder().getVelocity());
         double leftRPM = Math.abs(leftIntake.getEncoder().getVelocity());
@@ -272,7 +272,7 @@ public class Grabber extends SubsystemBase {
 
     public void placeL1() {
         rightIntake.set(-0.1);
-        leftIntake.set(0.3);
+        leftIntake.set(0.4);
     }
 
     public void hitAlgea() {

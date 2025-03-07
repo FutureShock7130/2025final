@@ -6,6 +6,8 @@
     "A",
     "B",
     "C",
+    "CSL",
+    "CSR",
     "D",
     "E",
     "F",
@@ -21,14 +23,16 @@
     "MA",
     "MC",
     "Mid",
+    "LEAVE",
     "PRO",
-    "CSR",
-    "CSL",
     "RA",
     "RC",
     "Right"
   ],
-  "autoFolders": [],
+  "autoFolders": [
+    "LEAVE",
+    "DAMN"
+  ],
   "defaultMaxVel": 3.5,
   "defaultMaxAccel": 2.5,
   "defaultMaxAngVel": 720.0,

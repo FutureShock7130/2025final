@@ -54,7 +54,7 @@ public class Elevator extends SubsystemBase {
   private final TrapezoidProfile.Constraints constraints = 
       new TrapezoidProfile.Constraints(
           150,   
-          150
+          250
       );
   
   private final ProfiledPIDController pidController = 
@@ -119,7 +119,7 @@ public class Elevator extends SubsystemBase {
         .forwardSoftLimit(198 * 0.6)     // in rotations
         .forwardSoftLimitEnabled(softLimit)
         .reverseSoftLimit(0.0)     
-        .reverseSoftLimitEnabled(softLimit);
+        .reverseSoftLimitEnabled(false);
     
     neoConfig
         .smartCurrentLimit(50)
@@ -209,6 +209,11 @@ public class Elevator extends SubsystemBase {
     setrightVoltage(MathUtil.clamp(pidController.calculate(rightMotor.getEncoder().getPosition()) * 1.0, -0.9, 0.9));
   }
 
+  public void resetPosition() {
+    rightMotor.getEncoder().setPosition(0);
+    leftMotor.getEncoder().setPosition(0);
+  }
+
 
   public double getElevatorPosition() {
     return leftMotor.getEncoder().getPosition();
@@ -221,14 +226,7 @@ public class Elevator extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // Check for negative position and reset if needed
-    if (leftMotor.getEncoder().getPosition() < 0) {
-      leftMotor.getEncoder().setPosition(0.0);
-    }
-    if (rightMotor.getEncoder().getPosition() < 0) {
-      rightMotor.getEncoder().setPosition(0.0);
-    }
-
+ 
 
     // Update values instead of creating new widgets
     speedEntry.setDouble(leftMotor.get());

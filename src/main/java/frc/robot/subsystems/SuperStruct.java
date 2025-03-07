@@ -93,7 +93,7 @@ public class SuperStruct extends SubsystemBase {
         // () -> setState(SuperStructState.PLACEMENT),
         // this));
 
-        new CommandJoystick(2).button(12)
+        new CommandJoystick(2).button(2)
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.PLACEMENT),
                         this));
@@ -108,10 +108,10 @@ public class SuperStruct extends SubsystemBase {
                         () -> setState(SuperStructState.PAUSE),
                         this));
 
-        new CommandJoystick(1).button(11)
-                .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.ABORT),
-                        this));
+        // new CommandJoystick(1).button(11)
+        // .onTrue(Commands.runOnce(
+        // () -> setState(SuperStructState.ABORT),
+        // this));
 
         new CommandJoystick(2).button(6)
                 .onTrue(Commands.runOnce(
@@ -121,6 +121,11 @@ public class SuperStruct extends SubsystemBase {
         new CommandJoystick(2).button(9)
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.HIT_ALGAE),
+                        this));
+
+        new CommandJoystick(1).button(11)
+                .onTrue(Commands.runOnce(
+                        () -> setState(SuperStructState.ELEDROP),
                         this));
 
         new JoystickButton(driver.getHID(), 1)
@@ -143,10 +148,11 @@ public class SuperStruct extends SubsystemBase {
                         () -> setState(SuperStructState.ALGAE_PLACEMENT),
                         this));
 
-        new JoystickButton(driver.getHID(), 7)
+        new CommandJoystick(2).button(6)
                 .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.DEFAULT),
+                        () -> setState(SuperStructState.RESET),
                         this));
+
 
         // Object detection - Follow target (Xbox controller Y button)
         // new JoystickButton(driver.getHID(), XboxController.Button.kY.value)
@@ -263,6 +269,11 @@ public class SuperStruct extends SubsystemBase {
 
     }
 
+    public void RESET() {
+        mElevator.stop();
+        mElevator.resetPosition();
+    }
+
     public void CS() {
         mElevator.setPosition(-0.001 * 0.6);
         if (mElevator.atTargetPosition()) {
@@ -311,7 +322,7 @@ public class SuperStruct extends SubsystemBase {
     public void DEFAULT() {
         // Debug current state
         SmartDashboard.putNumber("Current Elevator Position", mElevator.getElevatorPosition());
-        
+
         // Check if coming from an L-level
         boolean comingFromLLevel = isLLevel(mPreviousState);
         SmartDashboard.putBoolean("Coming From L-Level", comingFromLLevel);
@@ -320,20 +331,18 @@ public class SuperStruct extends SubsystemBase {
             if (!hasSetSafeHeight && !isMovingToDefault) {
                 // Only set target position once
                 savedElevatorPos = mElevator.getElevatorPosition();
-                int raiseDistance = mPreviousState==SuperStructState.L4 ? 23 : 15;
+                int raiseDistance = mPreviousState == SuperStructState.L4 ? 30 : 15;
                 targetUpPosition = savedElevatorPos + raiseDistance;
                 mElevator.setPosition(targetUpPosition);
                 mGrabber.setPosition(0.618896);
                 hasSetSafeHeight = true;
                 SmartDashboard.putString("Movement Phase", "Moving Up");
-            }
-            else if (hasSetSafeHeight && mElevator.atTargetPosition() && !isMovingToDefault) {
+            } else if (hasSetSafeHeight && mElevator.atTargetPosition() && !isMovingToDefault) {
                 // Once we reach the up position, start moving down
                 mElevator.setPosition(-0.02 * 0.6);
                 isMovingToDefault = true;
                 SmartDashboard.putString("Movement Phase", "Moving to Default");
-            }
-            else if (isMovingToDefault && mElevator.atTargetPosition()) {
+            } else if (isMovingToDefault && mElevator.atTargetPosition()) {
                 // Reset flags once we reach default
                 hasSetSafeHeight = false;
                 isMovingToDefault = false;
@@ -397,6 +406,11 @@ public class SuperStruct extends SubsystemBase {
             mGrabber.setPosition(0.618896);
         }
     }
+
+    public void ELEDROP() {
+        mElevator.setVoltage(-0.3);
+    }
+
     /**
      * Start following a target
      * Uses the ObjectDetection subsystem to follow targets
@@ -479,6 +493,12 @@ public class SuperStruct extends SubsystemBase {
                 break;
             case GENSHINIMPACT:
                 GENSHINIMPACT();
+                break;
+            case RESET:
+                RESET();
+                break;
+            case ELEDROP:
+                ELEDROP();
                 break;
         }
     }

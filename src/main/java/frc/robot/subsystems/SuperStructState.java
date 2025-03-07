@@ -23,5 +23,7 @@ public enum SuperStructState {
     FOLLOW_TARGET,    // Enable target following with ObjectDetection subsystem
     STOP_FOLLOWING,
     HIT_ALGAE,    // Stop target following
-    GRABBER_DEFAULT
+    GRABBER_DEFAULT,
+    RESET,
+    ELEDROP
 } 
