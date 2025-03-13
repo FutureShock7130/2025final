@@ -112,8 +112,6 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
     }
-
-    StateMachine.getInstance().setCommandedState(SuperStructState.L2);
   }
 
   /** This function is called periodically during autonomous. */
