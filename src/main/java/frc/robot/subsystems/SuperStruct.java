@@ -93,7 +93,7 @@ public class SuperStruct extends SubsystemBase {
         // () -> setState(SuperStructState.PLACEMENT),
         // this));
 
-        new CommandJoystick(2).button(2)
+        new CommandJoystick(2).button(7)
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.PLACEMENT),
                         this));
@@ -103,7 +103,7 @@ public class SuperStruct extends SubsystemBase {
                         () -> setState(SuperStructState.DEFAULT),
                         this));
 
-        new CommandJoystick(2).button(7)
+        new CommandJoystick(2).button(2)
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.PAUSE),
                         this));
@@ -113,10 +113,10 @@ public class SuperStruct extends SubsystemBase {
         // () -> setState(SuperStructState.ABORT),
         // this));
 
-        new CommandJoystick(2).button(6)
-                .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.IVECHANGEDMYMIND),
-                        this));
+        // new CommandJoystick(2).button(6)
+        //         .onTrue(Commands.runOnce(
+        //                 () -> setState(SuperStructState.IVECHANGEDMYMIND),
+        //                 this));
 
         new CommandJoystick(2).button(9)
                 .onTrue(Commands.runOnce(
@@ -219,53 +219,32 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void L1() {
-        mElevator.setPosition(-0.001 * 0.6);
-        if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.460205);
-        } else {
-            mGrabber.setPosition(0.618896);
-        }
-        mIntake.setAngle(-0.390137);
+        mElevator.setPosition(25);
+        // mIntake.setAngle(-0.390137);
 
     }
 
     public void L2() {
-        mElevator.setPosition(18.69420 * 0.6);
-        if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.460205);
-        } else {
-            mGrabber.setPosition(0.618896);
-        }
-        mIntake.setAngle(-0.390137);
+        mElevator.setPosition(38.7);
+        // mIntake.setAngle(-0.390137);
 
     }
 
     public void L3() {
-        mElevator.setPosition(68.620 * 0.6);
-        if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.460205);
-        } else {
-            mGrabber.setPosition(0.618896);
-        }
-        mIntake.setAngle(-0.390137);
+        mElevator.setPosition(69);
+        // mIntake.setAngle(-0.390137);
 
     }
 
     public void L4() {
-        mElevator.setPosition(165 * 0.6);
-        if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.511719);
-        } else {
-            mGrabber.setPosition(0.618896);
-        }
-        mIntake.setAngle(-0.390137);
+        mElevator.setPosition(113);
+        // mIntake.setAngle(-0.390137);
 
     }
 
     public void TRAVEL() {
         mElevator.setPosition(-0.2 * 0.6); // ground
-        mGrabber.setPosition(0.618896); // default
-        mIntake.setAngle(-0.390137);
+        // mIntake.setAngle(-0.390137);
 
     }
 
@@ -276,13 +255,14 @@ public class SuperStruct extends SubsystemBase {
 
     public void CS() {
         mElevator.setPosition(-0.001 * 0.6);
-        if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.289307);
-        }
-        // mGrabber.setPosition(0.289307);
         mGrabber.intake();
-        mIntake.setAngle(-0.390137);
+        mIntake.setIntake(-0.2);
 
+        // Check if coral is detected and update LEDs accordingly
+        if (mGrabber.hasCoral()) {
+            // Set LED to green when coral is detected
+            mled.color(0, 255, 0);  // RGB values for green
+        }
     }
 
     public void PLACEMENT() {
@@ -291,6 +271,10 @@ public class SuperStruct extends SubsystemBase {
         } else {
             mGrabber.placeCoral();
         }
+    }
+
+    public void CORALFORCEINTAKE() {
+        mGrabber.forceCoralIntake();
     }
 
     /**
@@ -302,109 +286,61 @@ public class SuperStruct extends SubsystemBase {
         // save previos state
         mPreviousState = mCommandedState;
 
+        // If we're transitioning out of CS state, reset LED colors
+        if (mCommandedState == SuperStructState.CS && state != SuperStructState.CS) {
+            // Reset LED color when leaving CS state
+            if (!state.equals(SuperStructState.DEFAULT)) {
+                // If not going to DEFAULT (which has its own LED pattern)
+                mled.nocolor();
+            }
+        }
+
         // Set the new state
         mStateMachine.setCommandedState(state);
     }
 
-    /**
-     * Checks if the given state is one of the L-levels
-     */
-    private boolean isLLevel(SuperStructState state) {
-        return state == SuperStructState.L1 ||
-                state == SuperStructState.L2 ||
-                state == SuperStructState.L3 ||
-                state == SuperStructState.L4 ||
-                state == SuperStructState.CS ||
-                state == SuperStructState.PLACEMENT ||
-                state == SuperStructState.HIT_ALGAE;
-    }
+ 
 
     public void DEFAULT() {
-        // Debug current state
-        SmartDashboard.putNumber("Current Elevator Position", mElevator.getElevatorPosition());
-
-        // Check if coming from an L-level
-        boolean comingFromLLevel = isLLevel(mPreviousState);
-        SmartDashboard.putBoolean("Coming From L-Level", comingFromLLevel);
-
-        if (comingFromLLevel) {
-            if (!hasSetSafeHeight && !isMovingToDefault) {
-                // Only set target position once
-                savedElevatorPos = mElevator.getElevatorPosition();
-                int raiseDistance = mPreviousState == SuperStructState.L4 ? 30 : 15;
-                targetUpPosition = savedElevatorPos + raiseDistance;
-                mElevator.setPosition(targetUpPosition);
-                mGrabber.setPosition(0.618896);
-                hasSetSafeHeight = true;
-                SmartDashboard.putString("Movement Phase", "Moving Up");
-            } else if (hasSetSafeHeight && mElevator.atTargetPosition() && !isMovingToDefault) {
-                // Once we reach the up position, start moving down
-                mElevator.setPosition(-0.02 * 0.6);
-                isMovingToDefault = true;
-                SmartDashboard.putString("Movement Phase", "Moving to Default");
-            } else if (isMovingToDefault && mElevator.atTargetPosition()) {
-                // Reset flags once we reach default
-                hasSetSafeHeight = false;
-                isMovingToDefault = false;
-                SmartDashboard.putString("Movement Phase", "At Default");
-            }
-
-            // Debug info
-            SmartDashboard.putNumber("Target Up Position", targetUpPosition);
-            SmartDashboard.putBoolean("At Target Position", mElevator.atTargetPosition());
-        } else {
-            // Direct to default if not from L-level
-            hasSetSafeHeight = false;
-            isMovingToDefault = false;
-            mGrabber.setPosition(0.618896);
-            mElevator.setPosition(-0.02 * 0.6);
-            SmartDashboard.putString("Movement Phase", "Direct to Default");
-        }
-
-        // Common actions
         mGrabber.stop();
         mGrabber.resetcounter();
-        mIntake.setAngle(-0.390137);
+        mElevator.setPosition(-0.001);
+        // mIntake.setAngle(-0.390137);
         mIntake.setIntake(0);
         mled.rainbowmarquee();
         mObjectDetection.stopFollowing();
     }
 
     public void grabberDefault() {
-        mGrabber.setPosition(0.618896);
         mGrabber.stop();
         mGrabber.resetcounter();
     }
 
     public void ALGAE_STOWAGE() {
-        mIntake.setAngle(-0.234619);
-        mIntake.setIntake(0.01);
+        // mIntake.setAngle(-0.234619);
+        // mIntake.setIntake(0.01);
         mObjectDetection.stopFollowing();
     }
 
     public void ALGAE_INTAKE() {
-        mIntake.setAngle(-0.234619);
-        mIntake.setIntake(0.5);
+        // mIntake.setAngle(-0.234619);
+        // mIntake.setIntake(0.5);
         // mObjectDetection.startFollowing();
     }
 
     public void ALGAE_PLACEMENT() {
 
-        mIntake.setIntake(-0.6);
+        // mIntake.setIntake(-0.6);
     }
 
     public void HIT_ALGAE() {
         mGrabber.hitAlgea();
-        mGrabber.setPosition(0.412295);
 
-        mIntake.setAngle(-0.390137);
+        // mIntake.setAngle(-0.390137);
     }
 
     public void GENSHINIMPACT() {
         mElevator.setPosition(129);
-        if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.618896);
-        }
     }
 
     public void ELEDROP() {
@@ -510,10 +446,13 @@ public class SuperStruct extends SubsystemBase {
 
         // Update state
         updateState();
-
-        SmartDashboard.putString("Commanded State", mCommandedState.toString());
-        SmartDashboard.putString("Previous State", mPreviousState.toString());
-        SmartDashboard.putBoolean("From L-Level",
-                isLLevel(mPreviousState) && mCommandedState == SuperStructState.DEFAULT);
+        
+        // Continuously check for coral detection in CS state
+        if (mCommandedState == SuperStructState.CS) {
+            if (mGrabber.hasCoral()) {
+                // Set LED to green when coral is detected in CS state
+                mled.color(0, 255, 0);  // Bright green
+            }
+        }
     }
 }

@@ -139,6 +139,21 @@ public class Module {
     io.setTurnBrakeMode(enabled);
   }
 
+  /**
+   * Apply a braking factor to slow down the module
+   * @param factor 0.0 to 1.0, where 1.0 is maximum braking
+   */
+  public void applyBrakingFactor(double factor) {
+    // Clamp the factor between 0 and 1
+    factor = Math.max(0.0, Math.min(1.0, factor));
+    
+    // If we have a speed setpoint, scale it down based on the braking factor
+    if (speedSetpoint != null) {
+      double reducedSpeed = speedSetpoint * (1.0 - factor);
+      io.setDriveVoltage(driveFeedforward.calculate(reducedSpeed));
+    }
+  }
+
   /** Returns the current turn angle of the module. */
   public Rotation2d getAngle() {
     if (turnRelativeOffset == null) {

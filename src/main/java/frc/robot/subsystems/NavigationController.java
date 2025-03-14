@@ -2,17 +2,23 @@ package frc.robot.subsystems;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
+// import com.pathplanner.lib.util.ReplanningConfig;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.commands.DriveCommands;
+import frc.robot.subsystems.drive.Drive;
 
 public class NavigationController extends SubsystemBase {
     
-    private enum DestinationState {
+    public enum DestinationState {
         MANUAL_DRIVING,
         PATHFINDING_TO_A,
         PATHFINDING_TO_B,
@@ -60,6 +66,9 @@ public class NavigationController extends SubsystemBase {
     private final PathConstraints constraints;
     private final PathConstraints fastConstraints;
     private final PathConstraints slowConstraints;
+    
+    // Drive subsystem reference
+    private Drive driveSubsystem;
 
     private static NavigationController mInstance = null;
 
@@ -80,8 +89,16 @@ public class NavigationController extends SubsystemBase {
         
         // Initialize path constraints 
         this.constraints = new PathConstraints(3, 3, 2 * Math.PI, 4 * Math.PI);
-        this.fastConstraints = new PathConstraints(3.5, 3.5, 2 * Math.PI, 4 * Math.PI);
+        this.fastConstraints = new PathConstraints(4, 5, 2 * Math.PI, 4 * Math.PI);
         this.slowConstraints = new PathConstraints(1.5, 1.5, 2 * Math.PI, 4 * Math.PI);
+    }
+    
+    /**
+     * Set the drive subsystem reference
+     * Must be called before using path following
+     */
+    public void setDriveSubsystem(Drive drive) {
+        this.driveSubsystem = drive;
     }
     
     @Override
@@ -98,7 +115,9 @@ public class NavigationController extends SubsystemBase {
             
             // All second-stage paths should use slow constraints for precise positioning
             Pose2d targetPose = getPoseForDestination(nextDestination);
-            activePathCommand = AutoBuilder.pathfindToPose(targetPose, secondStageConstraints)
+            
+            // Use createAccuratePathCommand for better terminal accuracy
+            activePathCommand = createAccuratePathCommand(driveSubsystem, targetPose)
                 .until(() -> driverWantsControl())
                 .finallyDo((interrupted) -> {
                     if (!interrupted) {
@@ -166,7 +185,7 @@ public class NavigationController extends SubsystemBase {
     /**
      * Starts pathfinding to the specified destination
      */
-    private void startPathfinding(DestinationState destination) {
+    public void startPathfinding(DestinationState destination) {
         // Cancel any existing pathfinding
         cancelPathfinding();
         
@@ -225,21 +244,66 @@ public class NavigationController extends SubsystemBase {
         // Find the target pose based on the destination
         Pose2d targetPose = getPoseForDestination(destination);
 
+        // Use faster constraints for intermediate points
+        if (destination == DestinationState.PATHFINDING_TO_AB ||
+            destination == DestinationState.PATHFINDING_TO_CD ||
+            destination == DestinationState.PATHFINDING_TO_EF ||
+            destination == DestinationState.PATHFINDING_TO_GH ||
+            destination == DestinationState.PATHFINDING_TO_IJ ||
+            destination == DestinationState.PATHFINDING_TO_KL) {
+            currentConstraints = fastConstraints;
+        }
         
         // Create the pathfinding command
-        activePathCommand = AutoBuilder.pathfindToPose(targetPose, currentConstraints)
-            .until(() -> driverWantsControl())
-            .finallyDo((interrupted) -> {
-                if (!interrupted) {
-                    if (nextDestination == null) {
+        boolean useAccurateNavigation = 
+            destination == DestinationState.PATHFINDING_TO_A ||
+            destination == DestinationState.PATHFINDING_TO_B ||
+            destination == DestinationState.PATHFINDING_TO_C ||
+            destination == DestinationState.PATHFINDING_TO_D ||
+            destination == DestinationState.PATHFINDING_TO_E ||
+            destination == DestinationState.PATHFINDING_TO_F ||
+            destination == DestinationState.PATHFINDING_TO_G ||
+            destination == DestinationState.PATHFINDING_TO_H ||
+            destination == DestinationState.PATHFINDING_TO_I ||
+            destination == DestinationState.PATHFINDING_TO_J ||
+            destination == DestinationState.PATHFINDING_TO_K ||
+            destination == DestinationState.PATHFINDING_TO_L ||
+            destination == DestinationState.PATHFINDING_TO_CSL ||
+            destination == DestinationState.PATHFINDING_TO_CSR;
+            
+        // Use accurate navigation for important destinations
+        if (useAccurateNavigation && driveSubsystem != null) {
+            SmartDashboard.putString("Navigation/Status", "Using enhanced accurate navigation");
+            activePathCommand = createAccuratePathCommand(driveSubsystem, targetPose)
+                .until(() -> driverWantsControl())
+                .finallyDo((interrupted) -> {
+                    if (!interrupted) {
+                        if (nextDestination == null) {
+                            currentDestination = DestinationState.MANUAL_DRIVING;
+                        }
+                    } else {
+                        nextDestination = null;
                         currentDestination = DestinationState.MANUAL_DRIVING;
                     }
-                } else {
-                    nextDestination = null;
-                    currentDestination = DestinationState.MANUAL_DRIVING;
-                }
-                activePathCommand = null;
-            });
+                    activePathCommand = null;
+                    SmartDashboard.putString("Navigation/Status", "Ready");
+                });
+        } else {
+            // Use standard pathfinding for other destinations
+            activePathCommand = AutoBuilder.pathfindToPose(targetPose, currentConstraints)
+                .until(() -> driverWantsControl())
+                .finallyDo((interrupted) -> {
+                    if (!interrupted) {
+                        if (nextDestination == null) {
+                            currentDestination = DestinationState.MANUAL_DRIVING;
+                        }
+                    } else {
+                        nextDestination = null;
+                        currentDestination = DestinationState.MANUAL_DRIVING;
+                    }
+                    activePathCommand = null;
+                });
+        }
         
         // Schedule the command
         activePathCommand.schedule();
@@ -317,5 +381,23 @@ public class NavigationController extends SubsystemBase {
                Math.abs(driver.getLeftY()) > 0.3 ||
                Math.abs(driver.getRightX()) > 0.3 ||
                Math.abs(driver.getRightY()) > 0.3;
+    }
+
+    /**
+     * Creates a path command to a target pose with improved accuracy
+     * Uses vision-based localization and terminal pose correction
+     */
+    public Command createAccuratePathCommand(Drive drive, Pose2d targetPose) {
+        // Build the path command
+        Command pathCommand = AutoBuilder.pathfindToPose(
+            targetPose, 
+            constraints,
+            0.0 // Goal end velocity
+        );
+        
+        // Combine with our terminal pose accuracy command
+        return pathCommand
+            .andThen(DriveCommands.improvePathEndAccuracy(drive, targetPose))
+            .withName("AccuratePath");
     }
 } 

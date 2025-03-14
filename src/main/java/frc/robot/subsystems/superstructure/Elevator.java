@@ -4,7 +4,6 @@
 
 package frc.robot.subsystems.superstructure;
 
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import com.revrobotics.spark.SparkBase.PersistMode;
@@ -16,23 +15,13 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import com.ctre.phoenix6.hardware.CANcoder;
 import edu.wpi.first.networktables.GenericEntry;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import com.ctre.phoenix6.configs.CANcoderConfiguration;
-import com.ctre.phoenix6.signals.SensorDirectionValue;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
-import java.util.Map;
 
 public class Elevator extends SubsystemBase {
   private final SparkMax leftMotor;
@@ -43,12 +32,10 @@ public class Elevator extends SubsystemBase {
   // Shuffleboard entries
   private final ShuffleboardTab elevatorTab = Shuffleboard.getTab("Elevator");
 
-
   // Add these with other instance variables at the top
   private final GenericEntry speedEntry;
   private final GenericEntry leftRotationsEntry;
   private final GenericEntry rightRotationsEntry;
-
 
   // Profiled PID Controller for smooth motionS
   private final TrapezoidProfile.Constraints constraints = 
@@ -81,12 +68,9 @@ public class Elevator extends SubsystemBase {
     leftMotor = new SparkMax(25, MotorType.kBrushless);  // Update ID as needed
     rightMotor = new SparkMax(26, MotorType.kBrushless); // Update ID as needed
     
+    configureNEO(leftMotor, false, true);  //master ccw positive
+    configureNEO(rightMotor, true, true);  //slave cw positive
     
-    configureNEO(leftMotor, false,true);  //master ccw positive
-    configureNEO(rightMotor, true,true);  //slave cw positive
-    
-    
-
     // Configure PID Controller
     pidController.setTolerance(2); 
     pidController.setIZone(Double.POSITIVE_INFINITY);
@@ -130,17 +114,11 @@ public class Elevator extends SubsystemBase {
         .apply(softLimitConfig)
         .inverted(inverted)
         .disableFollowerMode();
-
-    // if (motor == rightMotor) {
-    //     neoConfig.follow(leftMotor, true);
-    // }
     
     motor.setCANTimeout(250);
     motor.configure(neoConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     motor.getEncoder().setPosition(0.0);  // Reset encoder to zero
   }
-
-
 
   /** 
    * Sets the elevator speed. Positive values move up, negative values move down.
@@ -203,7 +181,7 @@ public class Elevator extends SubsystemBase {
     setElevatorSpeed(0.0);
   }
 
-    public void setPosition(double position) {
+  public void setPosition(double position) {
     pidController.setGoal(position);
     setleftVoltage(MathUtil.clamp(pidController.calculate(leftMotor.getEncoder().getPosition()) * 1.0, -0.9, 0.9));
     setrightVoltage(MathUtil.clamp(pidController.calculate(rightMotor.getEncoder().getPosition()) * 1.0, -0.9, 0.9));
@@ -214,11 +192,9 @@ public class Elevator extends SubsystemBase {
     leftMotor.getEncoder().setPosition(0);
   }
 
-
   public double getElevatorPosition() {
     return leftMotor.getEncoder().getPosition();
   }
-
 
   public boolean atTargetPosition() {
     return pidController.atGoal();
@@ -226,8 +202,6 @@ public class Elevator extends SubsystemBase {
 
   @Override
   public void periodic() {
- 
-
     // Update values instead of creating new widgets
     speedEntry.setDouble(leftMotor.get());
     SmartDashboard.putNumber("elevator applied output", leftMotor.getAppliedOutput());
@@ -237,11 +211,6 @@ public class Elevator extends SubsystemBase {
     SmartDashboard.putNumber("pid setpont le", pidController.getSetpoint().position);
     leftRotationsEntry.setDouble(leftMotor.getEncoder().getPosition());
     rightRotationsEntry.setDouble(rightMotor.getEncoder().getPosition());
-
-    // Track maximum rotations
-    double leftRotations = Math.abs(leftMotor.getEncoder().getPosition());
-    double rightRotations = Math.abs(rightMotor.getEncoder().getPosition());
-
   }
 }
 

@@ -42,7 +42,7 @@ import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 
 
 public class Drive extends SubsystemBase {
-  private static final double MAX_LINEAR_SPEED = 4;
+  private static final double MAX_LINEAR_SPEED = 4.5;
   private static final double TRACK_WIDTH_X = Units.inchesToMeters(25.0);
   private static final double TRACK_WIDTH_Y = Units.inchesToMeters(25.0);
   private static final double DRIVE_BASE_RADIUS =
@@ -127,8 +127,8 @@ public class Drive extends SubsystemBase {
             this::getRobotRelativeSpeeds, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
             (speeds, feedforwards) -> runVelocity(speeds), // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds. Also optionally outputs individual module feedforwards
             new PPHolonomicDriveController( // PPHolonomicController is the built in path following controller for holonomic drive trains
-                    new PIDConstants(2.3, 0.0, 0.03), // Translation PID constants
-                    new PIDConstants(3.1, 0.0, 0.0) // Rotation PID constants
+                    new PIDConstants(3.5, 0.05, 0.15), // Translation PID constants - improved P and added I,D
+                    new PIDConstants(4.0, 0.01, 0.2) // Rotation PID constants - improved P and added I,D
             ),
             config, // The robot configurat ion
             () -> {
@@ -230,10 +230,22 @@ public class Drive extends SubsystemBase {
     // Update pose estimator with vision data
     Pose2d visionPose = vision.getLatestPose();
     if (visionPose != null) {
-      poseEstimator.addVisionMeasurement(
-          visionPose,
-          Timer.getFPGATimestamp()
-      );
+      // Get vision measurement standard deviations (higher values = less trust)
+      var stdDevs = vision.getEstimationStdDevs();
+      
+      // Only use vision measurements that are reasonably trustworthy
+      if (stdDevs.get(0, 0) < 1.0) {
+        poseEstimator.addVisionMeasurement(
+            visionPose,
+            Timer.getFPGATimestamp(),
+            stdDevs
+        );
+        
+        // Show vision pose on field
+        SmartDashboard.putNumber("Vision/X Position (m)", visionPose.getX());
+        SmartDashboard.putNumber("Vision/Y Position (m)", visionPose.getY());
+        SmartDashboard.putNumber("Vision/Rotation (deg)", visionPose.getRotation().getDegrees());
+      }
     }
 
     // Pose2d currentPose = getPose();
@@ -382,5 +394,26 @@ public class Drive extends SubsystemBase {
     setPose(new Pose2d(new Translation2d(), new Rotation2d()));
   }
 
-  
+  /**
+   * Applies more braking as the robot approaches its target
+   * This improves terminal pose accuracy
+   */
+  public void applyTargetBraking(Pose2d targetPose, double distanceThreshold) {
+    Pose2d currentPose = getPose();
+    double distance = currentPose.getTranslation().getDistance(targetPose.getTranslation());
+    
+    // Apply more braking as we get closer to the target
+    if (distance < distanceThreshold) {
+      // Scale from 0 to 1 based on how close we are to the target
+      double brakingFactor = 1.0 - (distance / distanceThreshold);
+      
+      // Apply braking factor to the modules
+      for (var module : modules) {
+        module.setBrakeMode(true);
+        module.applyBrakingFactor(brakingFactor);
+      }
+      
+      SmartDashboard.putNumber("Path/Braking Factor", brakingFactor);
+    }
+  }
 }

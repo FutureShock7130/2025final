@@ -68,7 +68,7 @@ public class Swerve implements ModuleIO {
         // turnTalon = new TalonFX(1);
         turnSparkMax = new SparkMax(2, MotorType.kBrushless);
         cancoder = new CANcoder(3,"GTX7130");
-        absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(-0.119141)); // MUST BE CALIBRATED
+        absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(-0.117676)); // MUST BE CALIBRATED
         break;
       case 1:
         driveTalon = new TalonFX(31,"GTX7130");  //rf
@@ -76,7 +76,7 @@ public class Swerve implements ModuleIO {
         
         turnSparkMax = new SparkMax(32, MotorType.kBrushless);
         cancoder = new CANcoder(0,"GTX7130");
-        absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(0.470215)); // MUST BE CALIBRATED
+        absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(0.476074)); // MUST BE CALIBRATED
         break;
       case 2:
         driveTalon = new TalonFX(21,"GTX7130"); //lr
@@ -84,7 +84,7 @@ public class Swerve implements ModuleIO {
         turnSparkMax = new SparkMax(22, MotorType.kBrushless);
         
         cancoder = new CANcoder(2,"GTX7130");
-        absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(-0.291260)); // MUST BE CALIBRATED
+        absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(-0.288795)); // MUST BE CALIBRATED
         break;
       case 3:
         driveTalon = new TalonFX(11,"GTX7130"); //rr
@@ -92,7 +92,7 @@ public class Swerve implements ModuleIO {
         turnSparkMax = new SparkMax(12, MotorType.kBrushless);
         
         cancoder = new CANcoder(1,"GTX7130");
-        absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(-0.036621 + 0.5)); // MUST BE CALIBRATED
+        absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(0.458008)); // MUST BE CALIBRATED
         break;
       default:
         throw new RuntimeException("Invalid module index");

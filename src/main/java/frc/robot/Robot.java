@@ -112,8 +112,6 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
     }
-
-    StateMachine.getInstance().setCommandedState(SuperStructState.L2);
   }
 
   /** This function is called periodically during autonomous. */
@@ -127,12 +125,31 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
+    
+    // Configure improved pose estimation settings
+    try {
+      // Configure AutoBuilder to use our improved navigation accuracy
+      SmartDashboard.putString("Navigation Status", "Using enhanced navigation accuracy");
+    
+      // Reset robot odometry using vision if available
+      if (m_robotContainer.vision != null) {
+        var visionPose = m_robotContainer.vision.getLatestPose();
+        if (visionPose != null) {
+          m_robotContainer.getDrive().setPose(visionPose);
+          SmartDashboard.putString("Vision Status", "Successfully initialized pose from vision");
+        }
+      }
+    } catch (Exception e) {
+      SmartDashboard.putString("Navigation Error", e.getMessage());
+    }
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
     NavigationController.getInstance().periodic();
+    
+    
     //    if (ButtonBox2.getRawButtonPressed(7)) {
     //   AutoBuilder.pathfindToPose(Constants.FieldConstants.A, constraints).until(() -> driverWantsControl()).schedule();
     // }

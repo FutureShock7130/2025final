@@ -3,7 +3,6 @@ package frc.robot.subsystems.superstructure;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
-import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Default;
 import com.revrobotics.spark.*;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
@@ -18,21 +17,16 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.networktables.GenericEntry;
 import java.util.Map;
 
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.controller.ArmFeedforward;
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.trajectory.TrapezoidProfile;
+// import edu.wpi.first.math.MathUtil;
+// import edu.wpi.first.math.controller.ArmFeedforward;
+// import edu.wpi.first.math.controller.PIDController;
+// import edu.wpi.first.math.controller.ProfiledPIDController;
+// import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DigitalInput;
 
 public class Grabber extends SubsystemBase {
     private final SparkMax rightIntake;
     private final SparkMax leftIntake;
-    private final SparkMax rightangle;
-    private final SparkMax leftangle;
-    private final CANcoder grabberEncoder;
-    private static final double DEFAULT_KG = 0.00;
-    private static final double cancderoffset = 0.2;
     private int startupCounter = 0;
     private int stallCounter = 0;
 
@@ -42,17 +36,6 @@ public class Grabber extends SubsystemBase {
     // private final ShuffleboardTab motorTab = Shuffleboard.getTab("Motor
     // Controls");
 
-    private final ProfiledPIDController pidController;
-    // Add with other instance variables
-    private final TrapezoidProfile.Constraints constraints = new TrapezoidProfile.Constraints(
-            1.3, // Max velocity in rotations per second
-            1.5 // Max acceleration in rotations per second squared
-    );
-
-    private final ArmFeedforward grabberFF = new ArmFeedforward(
-            0.0,
-            0.02,
-            0.1);
 
     private final DigitalInput intakeLimitSwitch;
     private boolean hasCoral;
@@ -69,61 +52,25 @@ public class Grabber extends SubsystemBase {
     public Grabber() {
         rightIntake = new SparkMax(28, MotorType.kBrushless);
         leftIntake = new SparkMax(29, MotorType.kBrushless);
-        leftangle = new SparkMax(35, MotorType.kBrushless);
-        rightangle = new SparkMax(36, MotorType.kBrushless);
-        grabberEncoder = new CANcoder(27, "rio");
 
         intakeLimitSwitch = new DigitalInput(9);
 
-        // Initialize PID controller
-        pidController = new ProfiledPIDController(
-                3.5, // kP
-                0.0, // kI
-                0.001, // kD
-                constraints // Motion constraints
-        );
-
+      
         CANcoderConfiguration encoderConfig = new CANcoderConfiguration();
         encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
         encoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
         encoderConfig.MagnetSensor.MagnetOffset = 0.3;
-        grabberEncoder.getConfigurator().apply(encoderConfig);
-
-        pidController.reset(grabberEncoder.getAbsolutePosition().getValueAsDouble());
-        pidController.setIZone(0.0005);
-        pidController.disableContinuousInput();
-        pidController.setIntegratorRange(0, 0);
-        pidController.setGoal(grabberEncoder.getAbsolutePosition().getValueAsDouble());
-        pidController.calculate(grabberEncoder.getAbsolutePosition().getValueAsDouble());
-        pidController.setTolerance(0.2);
 
         configureNEO550(rightIntake);
         configureNEO550(leftIntake);
-        configureNEO(leftangle); // Configure leader first
 
-        // Configure follower
-        SparkMaxConfig followerConfig = new SparkMaxConfig();
-        followerConfig
-                .smartCurrentLimit(30)
-                .idleMode(IdleMode.kBrake)
-                .voltageCompensation(12.0)
-                .follow(leftangle, true); // Set to follow leftangle
-
-        rightangle.setCANTimeout(250);
-        rightangle.configure(followerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
-        leftangle.getEncoder().setPosition(0.0);
 
         hasCoral = false;
     }
 
     @Override
     public void periodic() {
-        double baseKG = DEFAULT_KG;
-        double currentAngle = grabberEncoder.getAbsolutePosition().getValueAsDouble();
-
-        // Calculate kG based on angle (now in volts)
-        double kG = (currentAngle <= 0) ? -baseKG * 12.0 : baseKG * 12.0;
+        SmartDashboard.putBoolean("limitswitch", intakeLimitSwitch.get());
     }
 
     // Copy your configuration methods
@@ -164,58 +111,7 @@ public class Grabber extends SubsystemBase {
         motor.configure(neoConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     }
 
-    /**
-     * Sets the target position for the grabber
-     * 
-     * @param position Target angle in degrees
-     * @return true if position is within valid range
-     */
-    public void setPosition(double position) {
-        // pidController.reset(grabberEncoder.getAbsolutePosition().getValueAsDouble());
-        pidController.setGoal(position);
-        set(MathUtil.clamp(pidController.calculate(grabberEncoder.getAbsolutePosition().getValueAsDouble()), -0.3,
-                0.3));
-    }
-
-    /**
-     * Sets the angle motor output based on voltage
-     * clamped between -1 ~ 1
-     * 
-     * @param output Target voltage percentage
-     */
-    public void set(double output) {
-        double currentAngle = grabberEncoder.getAbsolutePosition().getValueAsDouble();
-
-        // Convert position to radians for ArmFeedforward
-        double positionRadians = (currentAngle - cancderoffset) * Math.PI * 2; // Adjust scaling as needed
-
-        // Calculate feedforward voltage
-        double ffVolts = grabberFF.calculate(positionRadians, output);
-
-        // Combine feedforward with commanded output
-        double totalVoltage = (MathUtil.clamp(output + ffVolts, -1, 1) * 12.0);
-
-        leftangle.setVoltage(totalVoltage);
-    }
-
-    public double calculateKG(double position) {
-        double kG = Math.cos((position - 0.2) * 15.5) * 0.01 + 0.01;
-        return kG;
-    }
-
-    /**
-     * @return true if grabber is at the target position
-     */
-    public boolean atTargetPosition() {
-        return pidController.atSetpoint();
-    }
-
-    /**
-     * @return current angle of the grabber in degrees
-     */
-    public double getCurrentAngle() {
-        return grabberEncoder.getAbsolutePosition().getValueAsDouble();
-    }
+    
 
     public void resetcounter() {
         startupCounter = 0;
@@ -223,34 +119,35 @@ public class Grabber extends SubsystemBase {
     }
 
     public void intake() {
-        // if (!intakeLimitSwitch.get()) {
-        // rightIntake.set(0);
-        // leftIntake.set(0);
-
-        // }else{
-        // rightIntake.set(-0.5);
-        // leftIntake.set(0.5);
-        // }
-        double rightRPM = Math.abs(rightIntake.getEncoder().getVelocity());
-        double leftRPM = Math.abs(leftIntake.getEncoder().getVelocity());
-
-        if (startupCounter < 20) { // Startup delay
-            rightIntake.set(0.4);
-            leftIntake.set(-0.4);
-            startupCounter++;
-        } else if (rightRPM < 200 || leftRPM < 200) {
-            if (stallCounter < 100) { // Wait ~0.5 seconds (25 * 20ms) before stopping
-                stallCounter++;
-                rightIntake.set(0.45);
-                leftIntake.set(-0.45);
-                // hasCoral = false;
-            } else {
-                rightIntake.set(-0.0);
-                leftIntake.set(0.0);
-                // hasCoral = true;
-                return;
-            }
+        if (!intakeLimitSwitch.get()) {
+        rightIntake.set(0);
+        leftIntake.set(0);
+        return;
+        }else{
+        rightIntake.set(-0.2);
+        leftIntake.set(0.2);
+        
         }
+        // double rightRPM = Math.abs(rightIntake.getEncoder().getVelocity());
+        // double leftRPM = Math.abs(leftIntake.getEncoder().getVelocity());
+
+        // if (startupCounter < 20) { // Startup delay
+        //     rightIntake.set(0.4);
+        //     leftIntake.set(-0.4);
+        //     startupCounter++;
+        // } else if (rightRPM < 200 || leftRPM < 200) {
+        //     if (stallCounter < 100) { // Wait ~0.5 seconds (25 * 20ms) before stopping
+        //         stallCounter++;
+        //         rightIntake.set(0.45);
+        //         leftIntake.set(-0.45);
+        //         // hasCoral = false;
+        //     } else {
+        //         rightIntake.set(-0.0);
+        //         leftIntake.set(0.0);
+        //         // hasCoral = true;
+        //         return;
+        //     }
+        // }
 
     }
 
@@ -270,6 +167,11 @@ public class Grabber extends SubsystemBase {
         // }
     }
 
+    public void forceCoralIntake() {
+        rightIntake.set(0.45);
+        leftIntake.set(-0.45);
+    }
+
     public void placeL1() {
         rightIntake.set(-0.1);
         leftIntake.set(0.4);
@@ -287,6 +189,6 @@ public class Grabber extends SubsystemBase {
     }
 
     public boolean hasCoral() {
-        return hasCoral;
+        return intakeLimitSwitch.get();
     }
 }

@@ -140,6 +140,9 @@ public class RobotContainer {
 
     // Set drive subsystem for ObjectDetection
     m_ObjectDetection.setDriveSubsystem(drive);
+    
+    // Set drive subsystem for NavigationController
+    m_navigationController.setDriveSubsystem(drive);
 
     SmartDashboard.putData("auto", autoChooser);
    
@@ -158,7 +161,7 @@ public class RobotContainer {
             () -> -controller.getLeftY(),
             () -> -controller.getLeftX(),
             () -> -controller.getRightX(),
-            () -> controller.rightBumper().getAsBoolean() ? 0.3 : 0.8
+            () -> controller.rightBumper().getAsBoolean() ? 0.3 : 1
             ));
  
     controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));
@@ -189,6 +192,33 @@ public class RobotContainer {
    */
   public Drive getDrive() {
     return drive;
+  }
+
+  /**
+   * Helper method to create an accurate path to a target position
+   * @param targetPose The target pose to navigate to
+   * @return A Command to follow the path with improved accuracy
+   */
+  public Command createAccuratePath(Pose2d targetPose) {
+    return m_navigationController.createAccuratePathCommand(drive, targetPose);
+  }
+  
+  /**
+   * Use path following with enhanced accuracy to reach a specific field location
+   * @param target A FieldConstants location to navigate to
+   * @return Command to execute the path
+   */
+  public Command navigateAccuratelyTo(Pose2d target) {
+    return Commands.sequence(
+      // Command to announce we're starting navigation
+      Commands.runOnce(() -> SmartDashboard.putString("Navigation", "Navigating to target")),
+      
+      // Execute the accurate path
+      createAccuratePath(target),
+      
+      // Command to announce we've arrived
+      Commands.runOnce(() -> SmartDashboard.putString("Navigation", "Arrived at target"))
+    );
   }
 
 }
