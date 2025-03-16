@@ -234,12 +234,12 @@ public class Drive extends SubsystemBase {
       var stdDevs = vision.getEstimationStdDevs();
       
       // Only use vision measurements that are reasonably trustworthy
-      if (stdDevs.get(0, 0) < 1.0) {
+      // if (stdDevs.get(0, 0) < 2.0) {
         poseEstimator.addVisionMeasurement(
             visionPose,
-            Timer.getFPGATimestamp(),
-            stdDevs
-        );
+            Timer.getFPGATimestamp());
+            
+        
         
         // Show vision pose on field
         SmartDashboard.putNumber("Vision/X Position (m)", visionPose.getX());
@@ -258,7 +258,7 @@ public class Drive extends SubsystemBase {
     // SmartDashboard.putNumber("Robot Speed/X (m/s)", speeds.vxMetersPerSecond);
     // SmartDashboard.putNumber("Robot Speed/Y (m/s)", speeds.vyMetersPerSecond);
     // SmartDashboard.putNumber("Robot Speed/Rotation (rad/s)", speeds.omegaRadiansPerSecond);
-  }
+  
 
   /**
    * Runs the drive at the desired velocity.

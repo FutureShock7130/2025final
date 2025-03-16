@@ -40,6 +40,7 @@ import frc.robot.subsystems.drive.GyroIO;
 import frc.robot.subsystems.drive.GyroIOPigeon2;
 import frc.robot.subsystems.drive.ModuleIO;
 import frc.robot.subsystems.drive.Swerve;
+import frc.robot.subsystems.superstructure.AlgaeRemover;
 import frc.robot.subsystems.superstructure.Elevator;
 import frc.robot.subsystems.superstructure.Grabber;
 // import frc.robot.subsystems.superstructure.Intake;
@@ -62,7 +63,7 @@ public class RobotContainer {
   public final Vision vision = new Vision();
   private final Elevator m_elevator;
   private final Grabber m_grabber;
-  // private final Intake m_intake;
+  private final AlgaeRemover mAlgaeRemover;
   public final SuperStruct m_SuperStruct;
   private final NavigationController m_navigationController;
   // private final LED m_led;
@@ -81,6 +82,7 @@ public class RobotContainer {
     m_grabber = Grabber.getInstance();
     // m_intake = Intake.getInstance();
     m_SuperStruct = SuperStruct.getInstance();  
+    mAlgaeRemover = AlgaeRemover.getInstance();
     m_navigationController = NavigationController.getInstance();
     // m_led = LED.getInstance();
     
@@ -109,6 +111,66 @@ public class RobotContainer {
                 vision);
         break;
     }
+    
+    // Connect the vision system to navigation controller for AprilTag based navigation
+    m_navigationController.setDriveSubsystem(drive);
+    m_navigationController.setVisionSystem(vision);
+    
+    // Set up ShuffleBoard tab for AprilTag navigation
+    ShuffleboardTab navigationTab = Shuffleboard.getTab("Navigation");
+    navigationTab.addString("AprilTag Nav Status", () -> {
+        if (vision != null && vision.hasTarget()) {
+            return "AprilTags Detected";
+        } else {
+            return "No AprilTags Detected";
+        }
+    });
+    
+    // Add auto-tag navigation buttons to ShuffleBoard
+    navigationTab.add("Go In Front of Tag", 
+        Commands.runOnce(() -> m_navigationController.startPathfinding(
+            NavigationController.DestinationState.PATHFINDING_TO_CLOSEST_TAG)))
+        .withPosition(0, 1)
+        .withSize(2, 1);
+        
+    navigationTab.add("Go Left of Tag", 
+        Commands.runOnce(() -> m_navigationController.startPathfinding(
+            NavigationController.DestinationState.PATHFINDING_TO_LEFT_OF_TAG)))
+        .withPosition(2, 1)
+        .withSize(2, 1);
+            
+    navigationTab.add("Go Right of Tag", 
+        Commands.runOnce(() -> m_navigationController.startPathfinding(
+            NavigationController.DestinationState.PATHFINDING_TO_RIGHT_OF_TAG)))
+        .withPosition(4, 1)
+        .withSize(2, 1);
+    
+    // Add indicator to show active mode
+    navigationTab.addString("Current Tag Navigation", () -> {
+        var dest = m_navigationController.getCurrentDestination();
+        if (dest == NavigationController.DestinationState.PATHFINDING_TO_CLOSEST_TAG)
+            return "In Front of Tag";
+        else if (dest == NavigationController.DestinationState.PATHFINDING_TO_LEFT_OF_TAG)
+            return "Left of Tag";
+        else if (dest == NavigationController.DestinationState.PATHFINDING_TO_RIGHT_OF_TAG)
+            return "Right of Tag";
+        else
+            return "None";
+    })
+    .withPosition(0, 2)
+    .withSize(2, 1);
+    
+    // Add instructions
+    navigationTab.addString("Controller Buttons", () -> 
+        "Y: In Front | Left Bumper: Left of Tag | Right Bumper: Right of Tag")
+        .withPosition(2, 2)
+        .withSize(4, 1);
+        
+    // Add info about auto-heading
+    navigationTab.addString("Auto-Heading Info", () -> 
+        "Robot will automatically face toward the AprilTag!")
+        .withPosition(0, 3)
+        .withSize(6, 1);
 
     NamedCommands.registerCommand("DEFAULT", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.DEFAULT), m_elevator));
     NamedCommands.registerCommand("L1", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L1), m_elevator));
@@ -161,7 +223,7 @@ public class RobotContainer {
             () -> -controller.getLeftY(),
             () -> -controller.getLeftX(),
             () -> -controller.getRightX(),
-            () -> controller.rightBumper().getAsBoolean() ? 0.3 : 1
+            () -> controller.rightBumper().getAsBoolean() ? 0.3 : 0.5
             ));
  
     controller.x().onTrue(Commands.runOnce(drive::stopWithX, drive));

@@ -86,7 +86,7 @@ public final class Constants {
         static {
             if (DriverStation.getAlliance().get() == Alliance.Blue) {
                 A = new Pose2d(new Translation2d(3.177, 4.191), Rotation2d.fromDegrees(0));
-                B = new Pose2d(new Translation2d(3.235, 3.876), Rotation2d.fromDegrees(0));
+                B = new Pose2d(new Translation2d(3.177, 3.876), Rotation2d.fromDegrees(0));
                 C = new Pose2d(new Translation2d(3.722, 2.987), Rotation2d.fromDegrees(60));
                 D = new Pose2d(new Translation2d(3.969, 2.886), Rotation2d.fromDegrees(60));
                 E = new Pose2d(new Translation2d(4.984, 2.865), Rotation2d.fromDegrees(120));
