@@ -93,7 +93,7 @@ public class SuperStruct extends SubsystemBase {
         // () -> setState(SuperStructState.PLACEMENT),
         // this));
 
-        new CommandJoystick(2).button(7)
+        new CommandJoystick(2).button(9)
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.PLACEMENT),
                         this));
@@ -118,10 +118,10 @@ public class SuperStruct extends SubsystemBase {
         //                 () -> setState(SuperStructState.IVECHANGEDMYMIND),
         //                 this));
 
-        new CommandJoystick(2).button(9)
-                .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.HIT_ALGAE),
-                        this));
+        // new CommandJoystick(2).button(9)
+        //         .onTrue(Commands.runOnce(
+        //                 () -> setState(SuperStructState.HIT_ALGAE),
+        //                 this));
 
         new CommandJoystick(1).button(11)
                 .onTrue(Commands.runOnce(

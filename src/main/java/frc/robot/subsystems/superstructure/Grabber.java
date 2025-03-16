@@ -159,8 +159,8 @@ public class Grabber extends SubsystemBase {
         rightIntake.set(-0.4);
         leftIntake.set(0.4);
         
-        double rightRPM = Math.abs(rightIntake.getEncoder().getVelocity());
-        double leftRPM = Math.abs(leftIntake.getEncoder().getVelocity());
+        // double rightRPM = Math.abs(rightIntake.getEncoder().getVelocity());
+        // double leftRPM = Math.abs(leftIntake.getEncoder().getVelocity());
 
         // if (rightRPM > 200 || leftRPM > 200) {
         //     hasCoral = false;
