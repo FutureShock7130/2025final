@@ -8,6 +8,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -59,16 +60,16 @@ public class Vision extends SubsystemBase {
         // Define transforms for each camera
         Map<String, Transform3d> robotToCamTransforms = new HashMap<>();
         robotToCamTransforms.put("CAM_1", new Transform3d(
-                new Translation3d(0.331964, -0.209447, 0.223367), // right camera
-                new Rotation3d(0.0, Math.toRadians(0), 0.0)));
+                new Translation3d(0.204506, -0.25855, 0.713104), // right camera
+                new Rotation3d(0.0, Math.toRadians(60), 0.0)));
 
         robotToCamTransforms.put("CAM_2", new Transform3d(
-                new Translation3d(0.331964, 0.209447, 0.223367), // left camera
-                new Rotation3d(0.0, Math.toRadians(0), Math.toRadians(0))));
+                new Translation3d(0.204506, 0.25855, 0.713104), // left camera
+                new Rotation3d(0.0, Math.toRadians(60), Math.toRadians(0))));
 
-        robotToCamTransforms.put("CAM_3", new Transform3d(
-                new Translation3d(-0.331964, -0.209447, 0.223367), // top camera
-                new Rotation3d(0.0, Math.toRadians(0), Math.toRadians(180))));
+        robotToCamTransforms.put("WEB_CAM", new Transform3d(
+                new Translation3d(0.331964, 0.0, Units.inchesToMeters(7.875)), // mid cam
+                new Rotation3d(0.0, Math.toRadians(0), Math.toRadians(0))));
 
         // Create cameras and estimators with their specific transforms
         for (Map.Entry<String, Transform3d> entry : robotToCamTransforms.entrySet()) {
@@ -272,6 +273,15 @@ public class Vision extends SubsystemBase {
         }
 
         return translations;
+    }
+
+    /**
+     * Get a specific camera by name
+     * @param cameraName The name of the camera to retrieve
+     * @return The camera instance, or null if not found
+     */
+    public PhotonCamera getCamera(String cameraName) {
+        return cameras.get(cameraName);
     }
 
     /**

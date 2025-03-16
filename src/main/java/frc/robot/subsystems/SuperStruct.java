@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.SuperStructState;
+import frc.robot.subsystems.superstructure.AlgaeRemover;
 import frc.robot.subsystems.superstructure.Elevator;
 import frc.robot.subsystems.superstructure.Grabber;
 import frc.robot.subsystems.superstructure.Intake;
@@ -32,6 +33,7 @@ public class SuperStruct extends SubsystemBase {
     Elevator mElevator;
     Grabber mGrabber;
     Intake mIntake;
+    AlgaeRemover mAlgaeRemover;
     StateMachine mStateMachine;
     ObjectDetection mObjectDetection;
     public SuperStructState mCommandedState;
@@ -178,6 +180,7 @@ public class SuperStruct extends SubsystemBase {
         mElevator = Elevator.getInstance();
         mGrabber = Grabber.getInstance();
         mIntake = Intake.getInstance();
+        mAlgaeRemover = AlgaeRemover.getInstance();
         mStateMachine = StateMachine.getInstance();
         mObjectDetection = ObjectDetection.getInstance();
         mled = LED.getInstance();
@@ -225,13 +228,13 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void L2() {
-        mElevator.setPosition(38.7);
+        mElevator.setPosition(43.7);
         // mIntake.setAngle(-0.390137);
 
     }
 
     public void L3() {
-        mElevator.setPosition(69);
+        mElevator.setPosition(76);
         // mIntake.setAngle(-0.390137);
 
     }
@@ -309,6 +312,7 @@ public class SuperStruct extends SubsystemBase {
         mIntake.setIntake(0);
         mled.rainbowmarquee();
         mObjectDetection.stopFollowing();
+        mAlgaeRemover.setSpeed(0);
     }
 
     public void grabberDefault() {
@@ -320,12 +324,15 @@ public class SuperStruct extends SubsystemBase {
         // mIntake.setAngle(-0.234619);
         // mIntake.setIntake(0.01);
         mObjectDetection.stopFollowing();
+        mAlgaeRemover.setSpeed(0.6);
     }
 
     public void ALGAE_INTAKE() {
         // mIntake.setAngle(-0.234619);
         // mIntake.setIntake(0.5);
         // mObjectDetection.startFollowing();
+        
+        mAlgaeRemover.setSpeed(-0.6);
     }
 
     public void ALGAE_PLACEMENT() {
