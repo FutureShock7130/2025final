@@ -173,9 +173,9 @@ public class NavigationController extends SubsystemBase {
                 if (currentDestination == DestinationState.MANUAL_DRIVING) {
                     if (driver.getYButton()) {
                         startPathfinding(DestinationState.PATHFINDING_TO_CLOSEST_TAG);
-                    } else if (driver.getLeftBumper()) {
+                    } else if (driver.getLeftTriggerAxis() > 0.6) {
                         startPathfinding(DestinationState.PATHFINDING_TO_LEFT_OF_TAG);
-                    } else if (driver.getRightBumper()) {
+                    } else if (driver.getRightTriggerAxis() > 0.6) {
                         startPathfinding(DestinationState.PATHFINDING_TO_RIGHT_OF_TAG);
                     }
                 }
@@ -231,11 +231,11 @@ public class NavigationController extends SubsystemBase {
        
         
         // Left/Right bumpers - navigate to left/right of the closest tag
-        if (driver.getLeftBumperPressed()) {
-            return DestinationState.PATHFINDING_TO_LEFT_OF_TAG;
-        } else if (driver.getRightBumperPressed()) {
-            return DestinationState.PATHFINDING_TO_RIGHT_OF_TAG;
-        }
+        // if (driver.getLeftBumperPressed()) {
+        //     return DestinationState.PATHFINDING_TO_LEFT_OF_TAG;
+        // } else if (driver.getRightBumperPressed()) {
+        //     return DestinationState.PATHFINDING_TO_RIGHT_OF_TAG;
+        // }
         
         return currentDestination;
     }
@@ -310,7 +310,7 @@ public class NavigationController extends SubsystemBase {
             return;
         } else if (destination == DestinationState.PATHFINDING_TO_LEFT_OF_TAG) {
             // Navigate to the left side of the closest tag
-            boolean success = navigateToClosestTag(0, 1.0, null);  // 1.0m to the left
+            boolean success = navigateToClosestTag(0.6, -0.164, null);  // 1.0m to the left
             if (success) {
                 SmartDashboard.putString("Navigation/Status", "Navigating to left of closest tag");
             } else {
@@ -319,7 +319,7 @@ public class NavigationController extends SubsystemBase {
             return;
         } else if (destination == DestinationState.PATHFINDING_TO_RIGHT_OF_TAG) {
             // Navigate to the right side of the closest tag
-            boolean success = navigateToClosestTag(0, -1.0, null);  // -1.0m to the left (= right)
+            boolean success = navigateToClosestTag(0.6, 0.164, null);  // -1.0m to the left (= right)
             if (success) {
                 SmartDashboard.putString("Navigation/Status", "Navigating to right of closest tag");
             } else {
