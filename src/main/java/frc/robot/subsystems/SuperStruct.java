@@ -59,7 +59,7 @@ public class SuperStruct extends SubsystemBase {
 
     // Add this field to the class
     private final frc.robot.subsystems.superstructure.AlgaeRemover algaeRemover = frc.robot.subsystems.superstructure.AlgaeRemover.getInstance();
-    private static final double ALGAE_SPEED = 0.4; // Speed for the algae remover
+    private static final double ALGAE_SPEED = 0.5; // Speed for the algae remover
     private static final double ALGAE_DURATION = 1.0; // Duration in seconds for the algae remover to run
     private boolean algaeCommandSent = false; // Track if we've already sent the command
     private double algaeStartTime = 0; // Track when the algae command was sent
@@ -385,7 +385,7 @@ public class SuperStruct extends SubsystemBase {
                 mled.color(0, 255, 0); // Green for up
             } else {
                 mled.color(255, 0, 0); // Red for down
-            }
+            } 
             
             // Debug output
             System.out.println("SMACK_ALGAE: Press #" + algaeButtonPressCount + 
