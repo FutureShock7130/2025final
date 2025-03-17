@@ -27,8 +27,8 @@ public class AlgaeRemover extends SubsystemBase {
   // Motor constants
   private static final int LEFT_MOTOR_CAN_ID = 61; // Left motor CAN ID
   private static final int RIGHT_MOTOR_CAN_ID = 62; // Right motor CAN ID
-  private static final double FORWARD_SOFT_LIMIT = 14; // Maximum forward rotation limit
-  private static final double REVERSE_SOFT_LIMIT = 1; // Minimum reverse rotation limit
+  private static final double FORWARD_SOFT_LIMIT = 14.5; // Maximum forward rotation limit
+  private static final double REVERSE_SOFT_LIMIT = 0.87; // Minimum reverse rotation limit
   private static final double DEFAULT_SPEED = 0.2; // Default speed for button control
   private static final double DEFAULT_DURATION = 2.0; // Default duration in seconds
   
