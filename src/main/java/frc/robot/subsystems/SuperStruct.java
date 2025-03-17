@@ -15,7 +15,7 @@ import frc.robot.subsystems.SuperStructState;
 import frc.robot.subsystems.superstructure.AlgaeRemover;
 import frc.robot.subsystems.superstructure.Elevator;
 import frc.robot.subsystems.superstructure.Grabber;
-import frc.robot.subsystems.superstructure.Intake;
+// import frc.robot.subsystems.superstructure.Intake;
 import edu.wpi.first.wpilibj.XboxController;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -32,7 +32,7 @@ import java.util.Map;
 public class SuperStruct extends SubsystemBase {
     Elevator mElevator;
     Grabber mGrabber;
-    Intake mIntake;
+    // Intake mIntake;
     AlgaeRemover mAlgaeRemover;
     StateMachine mStateMachine;
     ObjectDetection mObjectDetection;
@@ -95,7 +95,7 @@ public class SuperStruct extends SubsystemBase {
         // () -> setState(SuperStructState.PLACEMENT),
         // this));
 
-        new CommandJoystick(2).button(7)
+        new CommandJoystick(2).button(9)
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.PLACEMENT),
                         this));
@@ -120,10 +120,10 @@ public class SuperStruct extends SubsystemBase {
         //                 () -> setState(SuperStructState.IVECHANGEDMYMIND),
         //                 this));
 
-        new CommandJoystick(2).button(9)
-                .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.HIT_ALGAE),
-                        this));
+        // new CommandJoystick(2).button(9)
+        //         .onTrue(Commands.runOnce(
+        //                 () -> setState(SuperStructState.HIT_ALGAE),
+        //                 this));
 
         new CommandJoystick(1).button(11)
                 .onTrue(Commands.runOnce(
@@ -179,7 +179,7 @@ public class SuperStruct extends SubsystemBase {
     public SuperStruct() {
         mElevator = Elevator.getInstance();
         mGrabber = Grabber.getInstance();
-        mIntake = Intake.getInstance();
+        // mIntake = Intake.getInstance();
         mAlgaeRemover = AlgaeRemover.getInstance();
         mStateMachine = StateMachine.getInstance();
         mObjectDetection = ObjectDetection.getInstance();
@@ -259,7 +259,7 @@ public class SuperStruct extends SubsystemBase {
     public void CS() {
         mElevator.setPosition(-0.001 * 0.6);
         mGrabber.intake();
-        mIntake.setIntake(-0.2);
+        // mIntake.setIntake(-0.2);
 
         // Check if coral is detected and update LEDs accordingly
         if (mGrabber.hasCoral()) {
@@ -309,7 +309,7 @@ public class SuperStruct extends SubsystemBase {
         mGrabber.resetcounter();
         mElevator.setPosition(-0.001);
         // mIntake.setAngle(-0.390137);
-        mIntake.setIntake(0);
+        // mIntake.setIntake(0);
         mled.rainbowmarquee();
         mObjectDetection.stopFollowing();
         mAlgaeRemover.setSpeed(0);
