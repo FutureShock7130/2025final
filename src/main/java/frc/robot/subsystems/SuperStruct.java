@@ -57,6 +57,12 @@ public class SuperStruct extends SubsystemBase {
     private boolean isMovingToDefault = false;
     private double targetUpPosition = 0.0;
 
+    // Add this field to the class
+    private final frc.robot.subsystems.superstructure.AlgaeRemover algaeRemover = frc.robot.subsystems.superstructure.AlgaeRemover.getInstance();
+    private boolean DirectionUp = true; // Track the current direction, starting with up (true)
+    private static final double ALGAE_SPEED = 0.4; // Speed for the algae remover
+    private static final double ALGAE_DURATION = 1.0; // Duration in seconds for the algae remover to run
+
     public static synchronized SuperStruct getInstance() {
         if (mInstance == null) {
             mInstance = new SuperStruct();
@@ -132,7 +138,7 @@ public class SuperStruct extends SubsystemBase {
 
         new JoystickButton(driver.getHID(), 1)
                 .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.ALGAE_INTAKE),
+                        () -> setState(SuperStructState.SMACK_ALGAE),
                         this));
 
         new JoystickButton(driver.getHID(), 2)
@@ -324,7 +330,7 @@ public class SuperStruct extends SubsystemBase {
         // mIntake.setAngle(-0.234619);
         // mIntake.setIntake(0.01);
         mObjectDetection.stopFollowing();
-        mAlgaeRemover.setSpeed(0.6);
+        // mAlgaeRemover.setSpeed(0.6);
     }
 
     public void ALGAE_INTAKE() {
@@ -332,7 +338,7 @@ public class SuperStruct extends SubsystemBase {
         // mIntake.setIntake(0.5);
         // mObjectDetection.startFollowing();
         
-        mAlgaeRemover.setSpeed(-0.6);
+        // mAlgaeRemover.setSpeed(-0.6);
     }
 
     public void ALGAE_PLACEMENT() {
@@ -352,6 +358,17 @@ public class SuperStruct extends SubsystemBase {
 
     public void ELEDROP() {
         mElevator.setVoltage(-0.3);
+    }
+
+    public void SMACK_ALGAE() {
+        // First call: run upward, subsequent calls: alternate direction
+        double speed = DirectionUp ? ALGAE_SPEED : -ALGAE_SPEED;
+        
+        // Run for a specific time duration
+        algaeRemover.runForTime(speed, ALGAE_DURATION);
+        
+        // Invert direction for next call
+        DirectionUp = !DirectionUp;
     }
 
     /**
@@ -442,6 +459,9 @@ public class SuperStruct extends SubsystemBase {
                 break;
             case ELEDROP:
                 ELEDROP();
+                break;
+            case SMACK_ALGAE:
+                SMACK_ALGAE();
                 break;
         }
     }
