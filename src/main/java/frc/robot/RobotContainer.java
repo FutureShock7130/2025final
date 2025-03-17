@@ -29,7 +29,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.commands.DriveCommands;
-// import frc.robot.subsystems.LED;
+import frc.robot.subsystems.LED;
 import frc.robot.subsystems.NavigationController;
 import frc.robot.subsystems.ObjectDetection;
 import frc.robot.subsystems.StateMachine;
@@ -66,7 +66,7 @@ public class RobotContainer {
   private final AlgaeRemover mAlgaeRemover;
   public final SuperStruct m_SuperStruct;
   private final NavigationController m_navigationController;
-  // private final LED m_led;
+  public final LED m_led;
   private final ObjectDetection m_ObjectDetection = new ObjectDetection();
 
   // Controller
@@ -84,7 +84,7 @@ public class RobotContainer {
     m_SuperStruct = SuperStruct.getInstance();  
     mAlgaeRemover = AlgaeRemover.getInstance();
     m_navigationController = NavigationController.getInstance();
-    // m_led = LED.getInstance();
+    m_led = LED.getInstance();
     
     switch (Constants.currentMode) {
       case REAL:
@@ -181,6 +181,8 @@ public class RobotContainer {
     NamedCommands.registerCommand("INTAKE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.CS), m_grabber).withTimeout(2.5));
     NamedCommands.registerCommand("GRABBERDEFAULT", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.GRABBER_DEFAULT), m_grabber).withTimeout(0.5));
     NamedCommands.registerCommand("GENSHIN", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.GENSHINIMPACT), m_elevator).withTimeout(1));
+    NamedCommands.registerCommand("ALGAE_UP", Commands.run(() -> mAlgaeRemover.setRightSpeed(0.4), mAlgaeRemover).withTimeout(2));
+    NamedCommands.registerCommand("ALGAE_DOWN", Commands.run(() -> mAlgaeRemover.setRightSpeed(-0.4), mAlgaeRemover).withTimeout(2));
 
     // Set up auto routines
     autoChooser = AutoBuilder.buildAutoChooser();
@@ -244,7 +246,6 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    drive.setPose(new Pose2d());
     return autoChooser.getSelected();
   }
 

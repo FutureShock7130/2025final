@@ -5,6 +5,7 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.path.PathConstraints;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -48,6 +49,7 @@ public class Robot extends TimedRobot {
   private final DashBoard m_dashboard;
 
   private final PathConstraints constraints = new PathConstraints(3, 3, 2 * Math.PI, 4 * Math.PI);
+
   /**
    * This function is run when the robot is first started up and should be used
    * for any
@@ -64,7 +66,7 @@ public class Robot extends TimedRobot {
   }
 
   public void RobotInit() {
-    
+
   }
 
   /**
@@ -80,7 +82,7 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
-    
+
     // Update robot pose in dashboard if available
     try {
       // Now we can use the getDrive() method
@@ -98,6 +100,16 @@ public class Robot extends TimedRobot {
 
   @Override
   public void disabledPeriodic() {
+    Pose2d desiredPose = new PathPlannerAuto(m_robotContainer.getAutonomousCommand().getName()).getStartingPose();
+    if (desiredPose != null) {
+    if ((m_robotContainer.getDrive().getPose().getX() - desiredPose.getX()) < 0.05
+        && (m_robotContainer.getDrive().getPose().getY() - desiredPose.getY()) < 0.05 
+        && (m_robotContainer.getDrive().getPose().getRotation().minus(desiredPose.getRotation())).getDegrees() < 5) {
+          m_robotContainer.m_led.blink(0, 255, 0);
+    } else {
+      m_robotContainer.m_led.charge(0, 0, 255, 0);
+    }
+  }
   }
 
   /**
@@ -125,12 +137,12 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
-    
+
     // Configure improved pose estimation settings
     try {
       // Configure AutoBuilder to use our improved navigation accuracy
       SmartDashboard.putString("Navigation Status", "Using enhanced navigation accuracy");
-    
+
       // Reset robot odometry using vision if available
       if (m_robotContainer.vision != null) {
         var visionPose = m_robotContainer.vision.getLatestPose();
@@ -148,63 +160,75 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     NavigationController.getInstance().periodic();
-    
-    
-    //    if (ButtonBox2.getRawButtonPressed(7)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.A, constraints).until(() -> driverWantsControl()).schedule();
+
+    // if (ButtonBox2.getRawButtonPressed(7)) {
+    // AutoBuilder.pathfindToPose(Constants.FieldConstants.A, constraints).until(()
+    // -> driverWantsControl()).schedule();
     // }
-    
-   
+
     // if (ButtonBox2.getRawButtonPressed(8)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.B, constraints).until(() -> driverWantsControl()).schedule();
+    // AutoBuilder.pathfindToPose(Constants.FieldConstants.B, constraints).until(()
+    // -> driverWantsControl()).schedule();
     // }
 
     // if (ButtonBox1.getRawButtonPressed(7)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.C, constraints).until(() -> driverWantsControl()).schedule();
+    // AutoBuilder.pathfindToPose(Constants.FieldConstants.C, constraints).until(()
+    // -> driverWantsControl()).schedule();
     // }
 
     // if (ButtonBox1.getRawButtonPressed(12)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.D, constraints).until(() -> driverWantsControl()).schedule();
+    // AutoBuilder.pathfindToPose(Constants.FieldConstants.D, constraints).until(()
+    // -> driverWantsControl()).schedule();
     // }
 
     // if (ButtonBox1.getRawButtonPressed(5)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.E, constraints).until(() -> driverWantsControl()).schedule();
+    // AutoBuilder.pathfindToPose(Constants.FieldConstants.E, constraints).until(()
+    // -> driverWantsControl()).schedule();
     // }
 
     // if (ButtonBox1.getRawButtonPressed(6)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.F, constraints).until(() -> driverWantsControl()).schedule();
+    // AutoBuilder.pathfindToPose(Constants.FieldConstants.F, constraints).until(()
+    // -> driverWantsControl()).schedule();
     // }
 
     // if (ButtonBox1.getRawButtonPressed(3)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.G, constraints).until(() -> driverWantsControl()).schedule();
+    // AutoBuilder.pathfindToPose(Constants.FieldConstants.G, constraints).until(()
+    // -> driverWantsControl()).schedule();
     // }
 
     // if (ButtonBox1.getRawButtonPressed(4)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.H, constraints).until(() -> driverWantsControl()).schedule();
+    // AutoBuilder.pathfindToPose(Constants.FieldConstants.H, constraints).until(()
+    // -> driverWantsControl()).schedule();
     // }
 
     // if (ButtonBox1.getRawButtonPressed(1)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.I, constraints).until(() -> driverWantsControl()).schedule();
+    // AutoBuilder.pathfindToPose(Constants.FieldConstants.I, constraints).until(()
+    // -> driverWantsControl()).schedule();
     // }
 
     // if (ButtonBox1.getRawButtonPressed(2)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.J, constraints).until(() -> driverWantsControl()).schedule();
+    // AutoBuilder.pathfindToPose(Constants.FieldConstants.J, constraints).until(()
+    // -> driverWantsControl()).schedule();
     // }
 
     // if (ButtonBox2.getRawButtonPressed(5)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.K, constraints).until(() -> driverWantsControl()).schedule();
+    // AutoBuilder.pathfindToPose(Constants.FieldConstants.K, constraints).until(()
+    // -> driverWantsControl()).schedule();
     // }
 
     // if (ButtonBox2.getRawButtonPressed(6)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.L, constraints).until(() -> driverWantsControl()).schedule();
+    // AutoBuilder.pathfindToPose(Constants.FieldConstants.L, constraints).until(()
+    // -> driverWantsControl()).schedule();
     // }
 
     // if (driver.getLeftBumperButtonPressed()) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.CSL, constraints).until(() -> driverWantsControl()).schedule();
+    // AutoBuilder.pathfindToPose(Constants.FieldConstants.CSL,
+    // constraints).until(() -> driverWantsControl()).schedule();
     // }
 
     // if (driver.getRightBumperButtonPressed()) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.CSR, constraints).until(() -> driverWantsControl()).schedule();
+    // AutoBuilder.pathfindToPose(Constants.FieldConstants.CSR,
+    // constraints).until(() -> driverWantsControl()).schedule();
     // }
   }
 
@@ -231,9 +255,9 @@ public class Robot extends TimedRobot {
 
   public boolean driverWantsControl() {
     return Math.abs(driver.getLeftX()) > 0.3 ||
-            Math.abs(driver.getLeftY()) > 0.3 ||
-            Math.abs(driver.getRightX()) > 0.3 ||
-            Math.abs(driver.getRightY()) > 0.3;
-}
+        Math.abs(driver.getLeftY()) > 0.3 ||
+        Math.abs(driver.getRightX()) > 0.3 ||
+        Math.abs(driver.getRightY()) > 0.3;
+  }
 
 }
