@@ -25,11 +25,11 @@ import java.util.Map;
 
 public class AlgaeRemover extends SubsystemBase {
   // Motor constants
-  private static final int LEFT_MOTOR_CAN_ID = 62; // Left motor CAN ID
-  private static final int RIGHT_MOTOR_CAN_ID = 61; // Right motor CAN ID
-  private static final double FORWARD_SOFT_LIMIT = 14.5; // Maximum forward rotation limit
-  private static final double REVERSE_SOFT_LIMIT = 0.87; // Minimum reverse rotation limit
-  private static final double DEFAULT_SPEED = 0.02; // Default speed for button control
+  private static final int LEFT_MOTOR_CAN_ID = 61; // Left motor CAN ID
+  private static final int RIGHT_MOTOR_CAN_ID = 62; // Right motor CAN ID
+  private static final double FORWARD_SOFT_LIMIT = 14; // Maximum forward rotation limit
+  private static final double REVERSE_SOFT_LIMIT = 1; // Minimum reverse rotation limit
+  private static final double DEFAULT_SPEED = 0.2; // Default speed for button control
   private static final double DEFAULT_DURATION = 2.0; // Default duration in seconds
   
   // Motors
@@ -60,8 +60,9 @@ public class AlgaeRemover extends SubsystemBase {
     rightMotor = new SparkMax(RIGHT_MOTOR_CAN_ID, MotorType.kBrushless);
     
     // Configure motors
-    configureNEO(leftMotor, false, true);
-    configureNEO(rightMotor, true, true); // Right motor is inverted
+    
+    configureNEO(leftMotor, true, true);
+    configureNEO(rightMotor, false, true); // Right motor is inverted
     
     // Setup dashboard entries for both motors
     algaeTab.addString("Motor Status", () -> "Left: " + LEFT_MOTOR_CAN_ID + " | Right: " + RIGHT_MOTOR_CAN_ID)
@@ -172,7 +173,7 @@ public class AlgaeRemover extends SubsystemBase {
   /**
    * Command to run the left motor forward
    */
-  private Command getLeftForwardCommand() {
+  public Command getLeftForwardCommand() {
     return Commands.runEnd(
         // Run action
         () -> setLeftSpeed(customSpeedEntry.getDouble(DEFAULT_SPEED)),
@@ -186,7 +187,7 @@ public class AlgaeRemover extends SubsystemBase {
   /**
    * Command to run the left motor backward
    */
-  private Command getLeftBackwardCommand() {
+  public Command getLeftBackwardCommand() {
     return Commands.runEnd(
         // Run action
         () -> setLeftSpeed(-customSpeedEntry.getDouble(DEFAULT_SPEED)),
@@ -200,7 +201,7 @@ public class AlgaeRemover extends SubsystemBase {
   /**
    * Command to run the right motor forward
    */
-  private Command getRightForwardCommand() {
+  public Command getRightForwardCommand() {
     return Commands.runEnd(
         // Run action
         () -> setRightSpeed(customSpeedEntry.getDouble(DEFAULT_SPEED)),
@@ -214,7 +215,7 @@ public class AlgaeRemover extends SubsystemBase {
   /**
    * Command to run the right motor backward
    */
-  private Command getRightBackwardCommand() {
+  public Command getRightBackwardCommand() {
     return Commands.runEnd(
         // Run action
         () -> setRightSpeed(-customSpeedEntry.getDouble(DEFAULT_SPEED)),
@@ -228,7 +229,7 @@ public class AlgaeRemover extends SubsystemBase {
   /**
    * Command to run both motors forward
    */
-  private Command getBothForwardCommand() {
+  public Command getBothForwardCommand() {
     return Commands.runEnd(
         // Run action
         () -> setSpeed(customSpeedEntry.getDouble(DEFAULT_SPEED)),
@@ -242,7 +243,7 @@ public class AlgaeRemover extends SubsystemBase {
   /**
    * Command to run both motors backward
    */
-  private Command getBothBackwardCommand() {
+  public Command getBothBackwardCommand() {
     return Commands.runEnd(
         // Run action
         () -> setSpeed(-customSpeedEntry.getDouble(DEFAULT_SPEED)),
