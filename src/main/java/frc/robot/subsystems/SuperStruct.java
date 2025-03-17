@@ -387,12 +387,8 @@ public class SuperStruct extends SubsystemBase {
                 mled.color(255, 0, 0); // Red for down
             } 
             
-            // Debug output
-            System.out.println("SMACK_ALGAE: Press #" + algaeButtonPressCount + 
-                               " - Running at speed " + speed + 
-                               " (" + (directionUp ? "UP" : "DOWN") + ") for " + 
-                               ALGAE_DURATION + " seconds");
-    } 
+    
+    }
 
     public void SMACK_DOWN() {
         algaeRemover.runForTime(-ALGAE_SPEED, ALGAE_DURATION);
