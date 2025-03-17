@@ -59,9 +59,10 @@ public class SuperStruct extends SubsystemBase {
 
     // Add this field to the class
     private final frc.robot.subsystems.superstructure.AlgaeRemover algaeRemover = frc.robot.subsystems.superstructure.AlgaeRemover.getInstance();
-    private boolean DirectionUp = true; // Track the current direction, starting with up (true)
+    private boolean algaeDirectionUp = true; // Track the current direction, starting with up (true)
     private static final double ALGAE_SPEED = 0.4; // Speed for the algae remover
     private static final double ALGAE_DURATION = 1.0; // Duration in seconds for the algae remover to run
+    private boolean algaeCommandSent = false; // Track if we've already sent the command
 
     public static synchronized SuperStruct getInstance() {
         if (mInstance == null) {
@@ -303,6 +304,11 @@ public class SuperStruct extends SubsystemBase {
                 mled.nocolor();
             }
         }
+        
+        // Reset algaeCommandSent when changing to a different state
+        if (state != SuperStructState.SMACK_ALGAE) {
+            algaeCommandSent = false;
+        }
 
         // Set the new state
         mStateMachine.setCommandedState(state);
@@ -361,14 +367,23 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void SMACK_ALGAE() {
-        // First call: run upward, subsequent calls: alternate direction
-        double speed = DirectionUp ? ALGAE_SPEED : -ALGAE_SPEED;
-        
-        // Run for a specific time duration
-        algaeRemover.runForTime(speed, ALGAE_DURATION);
-        
-        // Invert direction for next call
-        DirectionUp = !DirectionUp;
+        // Only send the command once when entering this state
+        if (!algaeCommandSent) {
+            // Calculate direction based on toggle
+            double speed = algaeDirectionUp ? ALGAE_SPEED : -ALGAE_SPEED;
+            
+            // Run for a specific time duration
+            algaeRemover.setSpeed(speed);
+            
+            // Invert direction for next time this state is entered
+            algaeDirectionUp = !algaeDirectionUp;
+            
+            // Mark that we've sent the command
+            algaeCommandSent = true;
+            
+            // Debug output
+            System.out.println("SMACK_ALGAE: Running at speed " + speed + " for " + ALGAE_DURATION + " seconds");
+        }
     }
 
     /**
