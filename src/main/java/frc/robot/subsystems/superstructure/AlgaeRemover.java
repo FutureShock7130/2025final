@@ -25,19 +25,23 @@ import java.util.Map;
 
 public class AlgaeRemover extends SubsystemBase {
   // Motor constants
-  private static final int MOTOR_CAN_ID = 62; // Update this to match your CAN ID
+  private static final int LEFT_MOTOR_CAN_ID = 62; // Left motor CAN ID
+  private static final int RIGHT_MOTOR_CAN_ID = 61; // Right motor CAN ID
   private static final double FORWARD_SOFT_LIMIT = 14; // Maximum forward rotation limit
   private static final double REVERSE_SOFT_LIMIT = 1; // Minimum reverse rotation limit
   private static final double DEFAULT_SPEED = 0.02; // Default speed for button control
   private static final double DEFAULT_DURATION = 2.0; // Default duration in seconds
   
-  // Motor
-  private final SparkMax motor;
+  // Motors
+  private final SparkMax leftMotor;
+  private final SparkMax rightMotor;
   
   // Dashboard
   private final ShuffleboardTab algaeTab = Shuffleboard.getTab("AlgaeRemover");
-  private final GenericEntry motorPositionEntry;
-  private final GenericEntry motorSpeedEntry;
+  private final GenericEntry leftPositionEntry;
+  private final GenericEntry rightPositionEntry;
+  private final GenericEntry leftSpeedEntry;
+  private final GenericEntry rightSpeedEntry;
   private final GenericEntry customSpeedEntry;
   private final GenericEntry timeDurationEntry;
   private static AlgaeRemover mInstance = null;
@@ -51,20 +55,36 @@ public class AlgaeRemover extends SubsystemBase {
   
   /** Creates a new AlgaeRemover. */
   public AlgaeRemover() {
-    // Initialize motor
-    motor = new SparkMax(MOTOR_CAN_ID, MotorType.kBrushless);
+    // Initialize motors
+    leftMotor = new SparkMax(LEFT_MOTOR_CAN_ID, MotorType.kBrushless);
+    rightMotor = new SparkMax(RIGHT_MOTOR_CAN_ID, MotorType.kBrushless);
     
-    // Configure motor
-    configureNEO(motor, false, true);
+    // Configure motors
+    configureNEO(leftMotor, false, true);
+    configureNEO(rightMotor, true, true); // Right motor is inverted
     
-    // Setup dashboard entries
-    motorPositionEntry = algaeTab.add("Motor Position", 0.0)
+    // Setup dashboard entries for both motors
+    algaeTab.addString("Motor Status", () -> "Left: " + LEFT_MOTOR_CAN_ID + " | Right: " + RIGHT_MOTOR_CAN_ID)
         .withPosition(0, 0)
+        .withSize(4, 1);
+    
+    leftPositionEntry = algaeTab.add("Left Position", 0.0)
+        .withPosition(0, 1)
         .withSize(2, 1)
         .getEntry();
     
-    motorSpeedEntry = algaeTab.add("Motor Speed", 0.0)
-        .withPosition(0, 1)
+    rightPositionEntry = algaeTab.add("Right Position", 0.0)
+        .withPosition(2, 1)
+        .withSize(2, 1)
+        .getEntry();
+    
+    leftSpeedEntry = algaeTab.add("Left Speed", 0.0)
+        .withPosition(0, 2)
+        .withSize(2, 1)
+        .getEntry();
+    
+    rightSpeedEntry = algaeTab.add("Right Speed", 0.0)
+        .withPosition(2, 2)
         .withSize(2, 1)
         .getEntry();
     
@@ -72,68 +92,143 @@ public class AlgaeRemover extends SubsystemBase {
     customSpeedEntry = algaeTab.add("Custom Speed", DEFAULT_SPEED)
         .withWidget(BuiltInWidgets.kNumberSlider)
         .withProperties(Map.of("min", 0.0, "max", 1.0, "block increment", 0.05))
-        .withPosition(2, 0)
-        .withSize(2, 1)
+        .withPosition(0, 3)
+        .withSize(4, 1)
         .getEntry();
     
     // Add time duration slider (0.5 to 10.0 seconds)
     timeDurationEntry = algaeTab.add("Duration (s)", DEFAULT_DURATION)
         .withWidget(BuiltInWidgets.kNumberSlider)
         .withProperties(Map.of("min", 0.5, "max", 10.0, "block increment", 0.5))
-        .withPosition(0, 2)
-        .withSize(2, 1)
+        .withPosition(0, 4)
+        .withSize(4, 1)
         .getEntry();
     
-    // Add control buttons
-    algaeTab.add("Forward", getForwardCommand())
+    // Left motor controls
+    algaeTab.add("Left Forward", getLeftForwardCommand())
         .withWidget(BuiltInWidgets.kCommand)
-        .withProperties(Map.of("Label", "Run Forward ▶"))
-        .withPosition(2, 1)
+        .withProperties(Map.of("Label", "Left Forward ▶"))
+        .withPosition(0, 5)
         .withSize(1, 1);
     
-    algaeTab.add("Backward", getBackwardCommand())
+    algaeTab.add("Left Backward", getLeftBackwardCommand())
         .withWidget(BuiltInWidgets.kCommand)
-        .withProperties(Map.of("Label", "Run Backward ◀"))
-        .withPosition(3, 1)
+        .withProperties(Map.of("Label", "Left Backward ◀"))
+        .withPosition(1, 5)
         .withSize(1, 1);
     
-    algaeTab.add("Stop", getStopCommand())
+    // Right motor controls
+    algaeTab.add("Right Forward", getRightForwardCommand())
         .withWidget(BuiltInWidgets.kCommand)
-        .withProperties(Map.of("Label", "STOP ■"))
-        .withPosition(2, 2)
+        .withProperties(Map.of("Label", "Right Forward ▶"))
+        .withPosition(2, 5)
+        .withSize(1, 1);
+    
+    algaeTab.add("Right Backward", getRightBackwardCommand())
+        .withWidget(BuiltInWidgets.kCommand)
+        .withProperties(Map.of("Label", "Right Backward ◀"))
+        .withPosition(3, 5)
+        .withSize(1, 1);
+    
+    // Combined controls
+    algaeTab.add("Both Forward", getBothForwardCommand())
+        .withWidget(BuiltInWidgets.kCommand)
+        .withProperties(Map.of("Label", "Both Forward ▶▶"))
+        .withPosition(0, 6)
         .withSize(2, 1);
+    
+    algaeTab.add("Both Backward", getBothBackwardCommand())
+        .withWidget(BuiltInWidgets.kCommand)
+        .withProperties(Map.of("Label", "Both Backward ◀◀"))
+        .withPosition(2, 6)
+        .withSize(2, 1);
+    
+    algaeTab.add("Stop All", getStopCommand())
+        .withWidget(BuiltInWidgets.kCommand)
+        .withProperties(Map.of("Label", "STOP ALL ■"))
+        .withPosition(0, 7)
+        .withSize(4, 1);
     
     algaeTab.add("Reset Position", getResetCommand())
         .withWidget(BuiltInWidgets.kCommand)
-        .withProperties(Map.of("Label", "Reset Encoder"))
-        .withPosition(4, 0)
-        .withSize(1, 1);
+        .withProperties(Map.of("Label", "Reset Encoders"))
+        .withPosition(0, 8)
+        .withSize(4, 1);
     
-    // Add status indicator
-    algaeTab.addBoolean("Motor Running", () -> Math.abs(motor.get()) > 0.01)
+    // Add status indicators
+    algaeTab.addBoolean("Left Running", () -> Math.abs(leftMotor.get()) > 0.01)
         .withWidget(BuiltInWidgets.kBooleanBox)
         .withProperties(Map.of("colorWhenTrue", "Lime", "colorWhenFalse", "Red"))
         .withPosition(4, 1)
         .withSize(1, 1);
     
-    // Add timed operation buttons
-    algaeTab.add("Timed Forward", getTimedForwardCommand())
-        .withWidget(BuiltInWidgets.kCommand)
-        .withProperties(Map.of("Label", "Forward ⏱"))
-        .withPosition(2, 3)
-        .withSize(1, 1);
-    
-    algaeTab.add("Timed Backward", getTimedBackwardCommand())
-        .withWidget(BuiltInWidgets.kCommand)
-        .withProperties(Map.of("Label", "Backward ⏱"))
-        .withPosition(3, 3)
+    algaeTab.addBoolean("Right Running", () -> Math.abs(rightMotor.get()) > 0.01)
+        .withWidget(BuiltInWidgets.kBooleanBox)
+        .withProperties(Map.of("colorWhenTrue", "Lime", "colorWhenFalse", "Red"))
+        .withPosition(4, 2)
         .withSize(1, 1);
   }
   
   /**
-   * Command to run the motor forward at the speed set by the slider
+   * Command to run the left motor forward
    */
-  private Command getForwardCommand() {
+  private Command getLeftForwardCommand() {
+    return Commands.runEnd(
+        // Run action
+        () -> setLeftSpeed(customSpeedEntry.getDouble(DEFAULT_SPEED)),
+        // End action
+        this::stopLeft,
+        // Requirements
+        this
+    );
+  }
+  
+  /**
+   * Command to run the left motor backward
+   */
+  private Command getLeftBackwardCommand() {
+    return Commands.runEnd(
+        // Run action
+        () -> setLeftSpeed(-customSpeedEntry.getDouble(DEFAULT_SPEED)),
+        // End action
+        this::stopLeft,
+        // Requirements
+        this
+    );
+  }
+  
+  /**
+   * Command to run the right motor forward
+   */
+  private Command getRightForwardCommand() {
+    return Commands.runEnd(
+        // Run action
+        () -> setRightSpeed(customSpeedEntry.getDouble(DEFAULT_SPEED)),
+        // End action
+        this::stopRight,
+        // Requirements
+        this
+    );
+  }
+  
+  /**
+   * Command to run the right motor backward
+   */
+  private Command getRightBackwardCommand() {
+    return Commands.runEnd(
+        // Run action
+        () -> setRightSpeed(-customSpeedEntry.getDouble(DEFAULT_SPEED)),
+        // End action
+        this::stopRight,
+        // Requirements
+        this
+    );
+  }
+  
+  /**
+   * Command to run both motors forward
+   */
+  private Command getBothForwardCommand() {
     return Commands.runEnd(
         // Run action
         () -> setSpeed(customSpeedEntry.getDouble(DEFAULT_SPEED)),
@@ -145,9 +240,9 @@ public class AlgaeRemover extends SubsystemBase {
   }
   
   /**
-   * Command to run the motor backward at the speed set by the slider
+   * Command to run both motors backward
    */
-  private Command getBackwardCommand() {
+  private Command getBothBackwardCommand() {
     return Commands.runEnd(
         // Run action
         () -> setSpeed(-customSpeedEntry.getDouble(DEFAULT_SPEED)),
@@ -159,41 +254,17 @@ public class AlgaeRemover extends SubsystemBase {
   }
   
   /**
-   * Command to stop the motor
+   * Command to stop both motors
    */
   private Command getStopCommand() {
     return Commands.runOnce(this::stop, this);
   }
   
   /**
-   * Command to reset the encoder position
+   * Command to reset both encoder positions
    */
   private Command getResetCommand() {
     return Commands.runOnce(this::resetPosition, this);
-  }
-  
-  /**
-   * Command to run the motor forward for a specific time duration
-   */
-  private Command getTimedForwardCommand() {
-    return Commands.runOnce(() -> {
-      // Get the current duration from slider
-      double duration = timeDurationEntry.getDouble(DEFAULT_DURATION);
-      double speed = customSpeedEntry.getDouble(DEFAULT_SPEED);
-      runForTime(speed, duration);
-    }, this);
-  }
-  
-  /**
-   * Command to run the motor backward for a specific time duration
-   */
-  private Command getTimedBackwardCommand() {
-    return Commands.runOnce(() -> {
-      // Get the current duration from slider
-      double duration = timeDurationEntry.getDouble(DEFAULT_DURATION);
-      double speed = customSpeedEntry.getDouble(DEFAULT_SPEED);
-      runForTime(-speed, duration);
-    }, this);
   }
   
   /**
@@ -232,73 +303,169 @@ public class AlgaeRemover extends SubsystemBase {
   }
   
   /**
-   * Sets the algae remover motor speed
+   * Sets the left motor speed
+   * 
+   * @param speed Speed from -1.0 to 1.0
+   */
+  public void setLeftSpeed(double speed) {
+    leftMotor.set(speed);
+  }
+  
+  /**
+   * Sets the right motor speed
+   * 
+   * @param speed Speed from -1.0 to 1.0
+   */
+  public void setRightSpeed(double speed) {
+    rightMotor.set(speed);
+  }
+  
+  /**
+   * Sets both algae remover motor speeds to the same value
    * 
    * @param speed Speed from -1.0 to 1.0
    */
   public void setSpeed(double speed) {
-    motor.set(speed);
+    setLeftSpeed(speed);
+    setRightSpeed(speed);
   }
   
   /**
-   * Set motor voltage directly
+   * Set left motor voltage directly
+   * 
+   * @param voltage Voltage to apply
+   */
+  public void setLeftVoltage(double voltage) {
+    leftMotor.setVoltage(voltage);
+  }
+  
+  /**
+   * Set right motor voltage directly
+   * 
+   * @param voltage Voltage to apply
+   */
+  public void setRightVoltage(double voltage) {
+    rightMotor.setVoltage(voltage);
+  }
+  
+  /**
+   * Set both motor voltages to the same value
    * 
    * @param voltage Voltage to apply
    */
   public void setVoltage(double voltage) {
-    motor.setVoltage(voltage);
+    setLeftVoltage(voltage);
+    setRightVoltage(voltage);
   }
   
   /**
-   * Get the current position of the motor in rotations
+   * Get the current position of the left motor in rotations
    * 
    * @return Current position in rotations
    */
-  public double getPosition() {
-    return motor.getEncoder().getPosition();
+  public double getLeftPosition() {
+    return leftMotor.getEncoder().getPosition();
   }
   
   /**
-   * Reset the encoder position to zero
+   * Get the current position of the right motor in rotations
+   * 
+   * @return Current position in rotations
+   */
+  public double getRightPosition() {
+    return rightMotor.getEncoder().getPosition();
+  }
+  
+  /**
+   * Reset the encoder positions to zero
    */
   public void resetPosition() {
-    motor.getEncoder().setPosition(0.0);
+    leftMotor.getEncoder().setPosition(0.0);
+    rightMotor.getEncoder().setPosition(0.0);
   }
   
   /**
-   * Stop the motor
+   * Stop the left motor
+   */
+  public void stopLeft() {
+    leftMotor.set(0);
+  }
+  
+  /**
+   * Stop the right motor
+   */
+  public void stopRight() {
+    rightMotor.set(0);
+  }
+  
+  /**
+   * Stop both motors
    */
   public void stop() {
-    motor.set(0);
+    stopLeft();
+    stopRight();
   }
 
   @Override
   public void periodic() {
-    // Update dashboard
-    motorPositionEntry.setDouble(getPosition());
-    motorSpeedEntry.setDouble(motor.get());
+    // Update dashboard with both motor info
+    leftPositionEntry.setDouble(getLeftPosition());
+    rightPositionEntry.setDouble(getRightPosition());
+    leftSpeedEntry.setDouble(leftMotor.get());
+    rightSpeedEntry.setDouble(rightMotor.get());
   }
 
   /**
-   * Runs the motor at the specified speed for a set duration
+   * Runs both motors at the specified speed for a set duration
    * 
-   * @param speed Speed to run the motor (-1.0 to 1.0)
+   * @param speed Speed to run the motors (-1.0 to 1.0)
    * @param durationSeconds Time to run in seconds
    * @return Command that can be scheduled
    */
   public Command runForTimeCommand(double speed, double durationSeconds) {
     return Commands.sequence(
-        // First start the motor
+        // First start the motors
         Commands.runOnce(() -> setSpeed(speed), this),
         // Wait for the specified duration
         Commands.waitSeconds(durationSeconds),
-        // Then stop the motor
+        // Then stop the motors
         Commands.runOnce(this::stop, this)
     );
   }
   
   /**
-   * Runs the motor for the specified duration and automatically schedules the command
+   * Runs a specific motor for the specified duration
+   * 
+   * @param isLeft Whether to run the left motor (true) or right motor (false)
+   * @param speed Speed to run (-1.0 to 1.0)
+   * @param durationSeconds Duration in seconds
+   * @return Command that can be scheduled
+   */
+  public Command runMotorForTimeCommand(boolean isLeft, double speed, double durationSeconds) {
+    return Commands.sequence(
+        // First start the specified motor
+        Commands.runOnce(() -> {
+          if (isLeft) {
+            setLeftSpeed(speed);
+          } else {
+            setRightSpeed(speed);
+          }
+        }, this),
+        // Wait for the specified duration
+        Commands.waitSeconds(durationSeconds),
+        // Then stop the motor
+        Commands.runOnce(() -> {
+          if (isLeft) {
+            stopLeft();
+          } else {
+            stopRight();
+          }
+        }, this)
+    );
+  }
+  
+  /**
+   * Runs both motors for the specified duration and automatically schedules the command
    * 
    * @param speed Speed to run (-1.0 to 1.0)
    * @param durationSeconds Duration in seconds

@@ -25,5 +25,6 @@ public enum SuperStructState {
     HIT_ALGAE,    // Stop target following
     GRABBER_DEFAULT,
     RESET,
-    ELEDROP
+    ELEDROP,
+    SMACK_ALGAE
 } 
