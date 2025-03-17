@@ -26,5 +26,7 @@ public enum SuperStructState {
     GRABBER_DEFAULT,
     RESET,
     ELEDROP,
-    SMACK_ALGAE
+    SMACK_ALGAE,
+    SMACK_DOWN,
+    SMACK_UP
 } 
