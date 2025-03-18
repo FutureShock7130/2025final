@@ -46,13 +46,14 @@ public class Elevator extends SubsystemBase {
   
   private final ProfiledPIDController pidController = 
       new ProfiledPIDController(
-          0.06,   // P gain
+          0.03,   // P gain
           0.0,   // I gain
           0.0,   // D gain
           constraints
       );
   
-  private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(0.5, 2.307, 0.05);
+  private final SimpleMotorFeedforward leftfeedforward = new SimpleMotorFeedforward(0.6, 2.307, 0.05);
+  private final SimpleMotorFeedforward rightfeedforward = new SimpleMotorFeedforward(0.5, 2.307, 0.05);
 
   private static Elevator mInstance = null;
 
@@ -139,7 +140,7 @@ public class Elevator extends SubsystemBase {
 
   public void setVoltage(double voltagePercent) {
     double speed = MathUtil.clamp(voltagePercent, -1, 1);
-    double ff = feedforward.calculate(speed);
+    double ff = leftfeedforward.calculate(speed);
     double output = (speed * 12) + ff;
 
     // Reduce speed when moving down
@@ -152,7 +153,7 @@ public class Elevator extends SubsystemBase {
 
   public void setleftVoltage(double voltagePercent) {
     double speed = MathUtil.clamp(voltagePercent, -1, 1);
-    double ff = feedforward.calculate(speed);
+    double ff = leftfeedforward.calculate(speed);
     double output = (speed * 12) + ff;
 
     // Reduce speed when moving down
@@ -164,7 +165,7 @@ public class Elevator extends SubsystemBase {
 
   public void setrightVoltage(double voltagePercent) {
     double speed = MathUtil.clamp(voltagePercent, -1, 1);
-    double ff = feedforward.calculate(speed);
+    double ff = rightfeedforward.calculate(speed);
     double output = (speed * 12) + ff;
 
     // Reduce speed when moving down

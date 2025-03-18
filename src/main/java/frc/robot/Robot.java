@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.NavigationController;
 import frc.robot.subsystems.StateMachine;
+import frc.robot.subsystems.SuperStruct;
 import frc.robot.subsystems.SuperStructState;
 import frc.robot.subsystems.superstructure.Elevator;
 import frc.robot.subsystems.superstructure.Grabber;
@@ -98,10 +99,12 @@ public class Robot extends TimedRobot {
   /** This function is called once each time the robot enters Disabled mode. */
   @Override
   public void disabledInit() {
+    StateMachine.getInstance().setCommandedState(SuperStructState.DISABLE);
   }
 
   @Override
   public void disabledPeriodic() {
+    StateMachine.getInstance().setCommandedState(SuperStructState.DISABLE);
     Pose2d desiredPose = new PathPlannerAuto(m_robotContainer.getAutonomousCommand().getName()).getStartingPose();
     if (desiredPose != null) {
     if ((m_robotContainer.getDrive().getPose().getX() - desiredPose.getX()) < 0.03
@@ -115,6 +118,8 @@ public class Robot extends TimedRobot {
           m_robotContainer.m_led.color(255, 0, 0);
         }
       }
+    } else {
+      m_robotContainer.m_led.blink(200, 200, 200);
     }
   }
 
