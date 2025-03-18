@@ -78,10 +78,10 @@ public class SuperStruct extends SubsystemBase {
                         () -> setState(SuperStructState.L3),
                         this));
 
-        new CommandJoystick(2).button(5)
-                .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.L4),
-                        this));
+        // new CommandJoystick(2).button(5)
+        //         .onTrue(Commands.runOnce(
+        //                 () -> setState(SuperStructState.L4),
+        //                 this));
 
         new JoystickButton(driver.getHID(), 5)
                 .onTrue(Commands.runOnce(
@@ -93,7 +93,7 @@ public class SuperStruct extends SubsystemBase {
         // () -> setState(SuperStructState.PLACEMENT),
         // this));
 
-        new CommandJoystick(2).button(2)
+        new CommandJoystick(2).button(7)
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.PLACEMENT),
                         this));
@@ -103,7 +103,7 @@ public class SuperStruct extends SubsystemBase {
                         () -> setState(SuperStructState.DEFAULT),
                         this));
 
-        new CommandJoystick(2).button(7)
+        new CommandJoystick(2).button(2)
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.PAUSE),
                         this));
@@ -113,10 +113,10 @@ public class SuperStruct extends SubsystemBase {
         // () -> setState(SuperStructState.ABORT),
         // this));
 
-        new CommandJoystick(2).button(6)
-                .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.IVECHANGEDMYMIND),
-                        this));
+        // new CommandJoystick(2).button(6)
+        //         .onTrue(Commands.runOnce(
+        //                 () -> setState(SuperStructState.IVECHANGEDMYMIND),
+        //                 this));
 
         new CommandJoystick(2).button(9)
                 .onTrue(Commands.runOnce(
@@ -293,6 +293,10 @@ public class SuperStruct extends SubsystemBase {
         }
     }
 
+    public void CORALFORCEINTAKE() {
+        mGrabber.forceCoralIntake();
+    }
+
     /**
      * Sets a new state and updates the previous state tracker
      * 
@@ -314,7 +318,7 @@ public class SuperStruct extends SubsystemBase {
                 state == SuperStructState.L2 ||
                 state == SuperStructState.L3 ||
                 state == SuperStructState.L4 ||
-                state == SuperStructState.CS ||
+                // state == SuperStructState.CS ||
                 state == SuperStructState.PLACEMENT ||
                 state == SuperStructState.HIT_ALGAE;
     }

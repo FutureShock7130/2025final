@@ -33,7 +33,7 @@
                     {
                       "type": "named",
                       "data": {
-                        "name": "L4"
+                        "name": "L1"
                       }
                     },
                     {
@@ -57,13 +57,7 @@
                     {
                       "type": "named",
                       "data": {
-                        "name": "GENSHIN"
-                      }
-                    },
-                    {
-                      "type": "wait",
-                      "data": {
-                        "waitTime": 0.4
+                        "name": "DEFAULT"
                       }
                     }
                   ]
@@ -145,7 +139,7 @@
                     {
                       "type": "named",
                       "data": {
-                        "name": "L4"
+                        "name": "L3"
                       }
                     },
                     {
@@ -169,7 +163,7 @@
                     {
                       "type": "named",
                       "data": {
-                        "name": "GENSHIN"
+                        "name": "DEFAULT"
                       }
                     },
                     {

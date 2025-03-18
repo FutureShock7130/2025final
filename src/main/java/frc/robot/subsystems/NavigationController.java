@@ -2,17 +2,31 @@ package frc.robot.subsystems;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
+// import com.pathplanner.lib.util.ReplanningConfig;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.Vision;
+import frc.robot.commands.DriveCommands;
+import frc.robot.subsystems.drive.Drive;
+
+import java.util.Map;
+import org.photonvision.PhotonCamera;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class NavigationController extends SubsystemBase {
     
-    private enum DestinationState {
+    public enum DestinationState {
         MANUAL_DRIVING,
         PATHFINDING_TO_A,
         PATHFINDING_TO_B,
@@ -45,7 +59,12 @@ public class NavigationController extends SubsystemBase {
         PATHFINDING_TO_KL_THEN_L,
         PATHFINDING_TO_KL,
         PATHFINDING_TO_CSL,
-        PATHFINDING_TO_CSR
+        PATHFINDING_TO_CSR,
+        
+        // AprilTag navigation states (simplified)
+        PATHFINDING_TO_CLOSEST_TAG,      // In front of the closest tag
+        PATHFINDING_TO_LEFT_OF_TAG,      // Left of the closest tag
+        PATHFINDING_TO_RIGHT_OF_TAG      // Right of the closest tag
     }
     
     // Controllers
@@ -60,6 +79,12 @@ public class NavigationController extends SubsystemBase {
     private final PathConstraints constraints;
     private final PathConstraints fastConstraints;
     private final PathConstraints slowConstraints;
+    
+    // Drive subsystem reference
+    private Drive driveSubsystem;
+    
+    // Vision system reference
+    private Vision visionSystem;
 
     private static NavigationController mInstance = null;
 
@@ -80,8 +105,24 @@ public class NavigationController extends SubsystemBase {
         
         // Initialize path constraints 
         this.constraints = new PathConstraints(3, 3, 2 * Math.PI, 4 * Math.PI);
-        this.fastConstraints = new PathConstraints(3.5, 3.5, 2 * Math.PI, 4 * Math.PI);
-        this.slowConstraints = new PathConstraints(1.5, 1.5, 2 * Math.PI, 4 * Math.PI);
+        this.fastConstraints = new PathConstraints(4, 8, 2 * Math.PI, 4 * Math.PI);
+        this.slowConstraints = new PathConstraints(2, 1, 2 * Math.PI, 4 * Math.PI);
+    }
+    
+    /**
+     * Set the drive subsystem reference
+     * Must be called before using path following
+     */
+    public void setDriveSubsystem(Drive drive) {
+        this.driveSubsystem = drive;
+    }
+    
+    /**
+     * Set the vision system reference
+     * Must be called to enable AprilTag-based navigation
+     */
+    public void setVisionSystem(Vision vision) {
+        this.visionSystem = vision;
     }
     
     @Override
@@ -98,7 +139,9 @@ public class NavigationController extends SubsystemBase {
             
             // All second-stage paths should use slow constraints for precise positioning
             Pose2d targetPose = getPoseForDestination(nextDestination);
-            activePathCommand = AutoBuilder.pathfindToPose(targetPose, secondStageConstraints)
+            
+            // Use createAccuratePathCommand for better terminal accuracy
+            activePathCommand = createAccuratePathCommand(driveSubsystem, targetPose)
                 .until(() -> driverWantsControl())
                 .finallyDo((interrupted) -> {
                     if (!interrupted) {
@@ -116,6 +159,8 @@ public class NavigationController extends SubsystemBase {
             currentDestination = nextDestination;
             nextDestination = null;
         }
+
+        
 
         // Check button presses to set new destinations
         DestinationState newDestination = checkButtonPresses();
@@ -158,7 +203,39 @@ public class NavigationController extends SubsystemBase {
         //     return DestinationState.PATHFINDING_TO_CSL;
         // } else if (driver.getRightBumperPressed()) {
         //     return DestinationState.PATHFINDING_TO_CSR;
+        }// Check for visible AprilTags and show on dashboard, even when not navigating
+        if (visionSystem != null) {
+            int closestTag = findClosestVisibleTag();
+            if (closestTag >= 0) {
+                // Found a tag!
+                SmartDashboard.putBoolean("Navigation/TagVisible", true);
+                SmartDashboard.putNumber("Navigation/ClosestTagID", closestTag);
+                
+                // If one of the auto-tag buttons is held and we're in manual driving,
+                // automatically start the navigation
+                if (currentDestination == DestinationState.MANUAL_DRIVING) {
+                    if (driver.getYButton()) {
+                        startPathfinding(DestinationState.PATHFINDING_TO_CLOSEST_TAG);
+                    } else if (driver.getLeftTriggerAxis() > 0.6) {
+                        startPathfinding(DestinationState.PATHFINDING_TO_LEFT_OF_TAG);
+                    } else if (driver.getRightTriggerAxis() > 0.6) {
+                        startPathfinding(DestinationState.PATHFINDING_TO_RIGHT_OF_TAG);
+                    }
+                }
+            } else {
+                SmartDashboard.putBoolean("Navigation/TagVisible", false);
+                SmartDashboard.putNumber("Navigation/ClosestTagID", -1);
+            }
         }
+        
+       
+        
+        // Left/Right bumpers - navigate to left/right of the closest tag
+        // if (driver.getLeftBumperPressed()) {
+        //     return DestinationState.PATHFINDING_TO_LEFT_OF_TAG;
+        // } else if (driver.getRightBumperPressed()) {
+        //     return DestinationState.PATHFINDING_TO_RIGHT_OF_TAG;
+        // }
         
         return currentDestination;
     }
@@ -166,7 +243,7 @@ public class NavigationController extends SubsystemBase {
     /**
      * Starts pathfinding to the specified destination
      */
-    private void startPathfinding(DestinationState destination) {
+    public void startPathfinding(DestinationState destination) {
         // Cancel any existing pathfinding
         cancelPathfinding();
         
@@ -220,26 +297,98 @@ public class NavigationController extends SubsystemBase {
             nextDestination = DestinationState.PATHFINDING_TO_L;
             destination = DestinationState.PATHFINDING_TO_KL;
             currentConstraints = fastConstraints; // Use faster constraints for first part
+        } else if (destination == DestinationState.PATHFINDING_TO_CLOSEST_TAG) {
+            // Navigate directly in front of the closest tag
+            boolean success = navigateToClosestTag(1.5, 0.0, null);
+            if (success) {
+                SmartDashboard.putString("Navigation/Status", "Navigating to closest tag");
+            } else {
+                SmartDashboard.putString("Navigation/Status", "No AprilTags visible");
+            }
+            return;
+        } else if (destination == DestinationState.PATHFINDING_TO_LEFT_OF_TAG) {
+            // Navigate to the left side of the closest tag
+            boolean success = navigateToClosestTag(0.55, -0.164, null);  // 1.0m to the left
+            if (success) {
+                SmartDashboard.putString("Navigation/Status", "Navigating to left of closest tag");
+            } else {
+                SmartDashboard.putString("Navigation/Status", "No AprilTags visible");
+            }
+            return;
+        } else if (destination == DestinationState.PATHFINDING_TO_RIGHT_OF_TAG) {
+            // Navigate to the right side of the closest tag
+            boolean success = navigateToClosestTag(0.55, 0.164, null);  // -1.0m to the left (= right)
+            if (success) {
+                SmartDashboard.putString("Navigation/Status", "Navigating to right of closest tag");
+            } else {
+                SmartDashboard.putString("Navigation/Status", "No AprilTags visible");
+            }
+            return;
         }
         
         // Find the target pose based on the destination
         Pose2d targetPose = getPoseForDestination(destination);
 
+        // Use faster constraints for intermediate points
+        if (destination == DestinationState.PATHFINDING_TO_AB ||
+            destination == DestinationState.PATHFINDING_TO_CD ||
+            destination == DestinationState.PATHFINDING_TO_EF ||
+            destination == DestinationState.PATHFINDING_TO_GH ||
+            destination == DestinationState.PATHFINDING_TO_IJ ||
+            destination == DestinationState.PATHFINDING_TO_KL) {
+            currentConstraints = fastConstraints;
+        }
         
         // Create the pathfinding command
-        activePathCommand = AutoBuilder.pathfindToPose(targetPose, currentConstraints)
-            .until(() -> driverWantsControl())
-            .finallyDo((interrupted) -> {
-                if (!interrupted) {
-                    if (nextDestination == null) {
+        boolean useAccurateNavigation = 
+            destination == DestinationState.PATHFINDING_TO_A ||
+            destination == DestinationState.PATHFINDING_TO_B ||
+            destination == DestinationState.PATHFINDING_TO_C ||
+            destination == DestinationState.PATHFINDING_TO_D ||
+            destination == DestinationState.PATHFINDING_TO_E ||
+            destination == DestinationState.PATHFINDING_TO_F ||
+            destination == DestinationState.PATHFINDING_TO_G ||
+            destination == DestinationState.PATHFINDING_TO_H ||
+            destination == DestinationState.PATHFINDING_TO_I ||
+            destination == DestinationState.PATHFINDING_TO_J ||
+            destination == DestinationState.PATHFINDING_TO_K ||
+            destination == DestinationState.PATHFINDING_TO_L ||
+            destination == DestinationState.PATHFINDING_TO_CSL ||
+            destination == DestinationState.PATHFINDING_TO_CSR;
+            
+        // Use accurate navigation for important destinations
+        if (useAccurateNavigation && driveSubsystem != null) {
+            SmartDashboard.putString("Navigation/Status", "Using enhanced accurate navigation");
+            activePathCommand = createAccuratePathCommand(driveSubsystem, targetPose)
+                .until(() -> driverWantsControl())
+                .finallyDo((interrupted) -> {
+                    if (!interrupted) {
+                        if (nextDestination == null) {
+                            currentDestination = DestinationState.MANUAL_DRIVING;
+                        }
+                    } else {
+                        nextDestination = null;
                         currentDestination = DestinationState.MANUAL_DRIVING;
                     }
-                } else {
-                    nextDestination = null;
-                    currentDestination = DestinationState.MANUAL_DRIVING;
-                }
-                activePathCommand = null;
-            });
+                    activePathCommand = null;
+                    SmartDashboard.putString("Navigation/Status", "Ready");
+                });
+        } else {
+            // Use standard pathfinding for other destinations
+            activePathCommand = AutoBuilder.pathfindToPose(targetPose, currentConstraints)
+                .until(() -> driverWantsControl())
+                .finallyDo((interrupted) -> {
+                    if (!interrupted) {
+                        if (nextDestination == null) {
+                            currentDestination = DestinationState.MANUAL_DRIVING;
+                        }
+                    } else {
+                        nextDestination = null;
+                        currentDestination = DestinationState.MANUAL_DRIVING;
+                    }
+                    activePathCommand = null;
+                });
+        }
         
         // Schedule the command
         activePathCommand.schedule();
@@ -317,5 +466,182 @@ public class NavigationController extends SubsystemBase {
                Math.abs(driver.getLeftY()) > 0.3 ||
                Math.abs(driver.getRightX()) > 0.3 ||
                Math.abs(driver.getRightY()) > 0.3;
+    }
+
+    /**
+     * Creates a path command to a target pose with improved accuracy
+     * Uses vision-based localization and terminal pose correction
+     */
+    public Command createAccuratePathCommand(Drive drive, Pose2d targetPose) {
+        // Build the path command
+        Command pathCommand = AutoBuilder.pathfindToPose(
+            targetPose, 
+            constraints,
+            0.0 // Goal end velocity
+        );
+        
+        // Combine with our terminal pose accuracy command
+        return pathCommand
+            .andThen(DriveCommands.improvePathEndAccuracy(drive, targetPose))
+            .withName("AccuratePath");
+    }
+    
+    /**
+     * Creates a path command to a target pose relative to an AprilTag
+     * @param tagId The ID of the AprilTag to navigate relative to
+     * @param relativeOffset The offset from the tag (x forward, y left)
+     * @param targetHeading The desired heading at the target position
+     */
+    public Command createTagRelativePathCommand(Drive drive, int tagId, Translation2d relativeOffset, Rotation2d targetHeading) {
+        // Check if vision system is available
+        if (visionSystem == null) {
+            SmartDashboard.putString("Navigation/Error", "Vision system not connected");
+            return Commands.none();
+        }
+        
+        // Get the tag pose from the field layout
+        var tagPose = Constants.Vision.kTagLayout.getTagPose(tagId);
+        
+        if (tagPose.isEmpty()) {
+            SmartDashboard.putString("Navigation/Error", "Tag ID " + tagId + " not found in field layout");
+            return Commands.none();
+        }
+        
+        // Calculate the target pose by applying the relative offset to the tag pose
+        Pose2d tagPose2d = tagPose.get().toPose2d();
+        
+        // Transform the offset based on tag rotation
+        Translation2d rotatedOffset = new Translation2d(
+            relativeOffset.getX() * tagPose2d.getRotation().getCos() - relativeOffset.getY() * tagPose2d.getRotation().getSin(),
+            relativeOffset.getX() * tagPose2d.getRotation().getSin() + relativeOffset.getY() * tagPose2d.getRotation().getCos()
+        );
+        
+        // Apply the offset to the tag position
+        Pose2d targetPose = new Pose2d(
+            tagPose2d.getX() + rotatedOffset.getX(),
+            tagPose2d.getY() + rotatedOffset.getY(),
+            targetHeading
+        );
+        
+        SmartDashboard.putString("Navigation/TagRelativeTarget", "Tag: " + tagId + 
+                                ", X: " + targetPose.getX() + 
+                                ", Y: " + targetPose.getY());
+        
+        // Create a path to this target pose
+        return createAccuratePathCommand(drive, targetPose);
+    }
+    
+    /**
+     * Navigate to a position relative to the specified AprilTag
+     * @param tagId The ID of the AprilTag to navigate relative to
+     * @param xOffset Forward offset from tag in meters (positive is in front of tag)
+     * @param yOffset Left offset from tag in meters (positive is to the left of tag)
+     * @param headingDegrees Desired robot heading in degrees
+     */
+    public void navigateToTagRelative(int tagId, double xOffset, double yOffset, double headingDegrees) {
+        // Cancel existing navigation
+        cancelPathfinding();
+        
+        Translation2d offset = new Translation2d(xOffset, yOffset);
+        Rotation2d heading = Rotation2d.fromDegrees(headingDegrees);
+        
+        // Create and schedule the command
+        activePathCommand = createTagRelativePathCommand(driveSubsystem, tagId, offset, heading)
+            .until(() -> driverWantsControl())
+            .finallyDo((interrupted) -> {
+                activePathCommand = null;
+                currentDestination = DestinationState.MANUAL_DRIVING;
+                SmartDashboard.putString("Navigation/Status", "Ready");
+            });
+        
+        activePathCommand.schedule();
+        currentDestination = DestinationState.MANUAL_DRIVING; // We'll need to extend the enum for tags
+    }
+    
+    /**
+     * Find the closest visible AprilTag and return its ID
+     * @return The ID of the closest visible tag, or -1 if no tags are visible
+     */
+    public int findClosestVisibleTag() {
+        if (visionSystem == null) {
+            return -1;
+        }
+        
+        // Get all visible tag translations
+        Map<String, Translation3d> tagTranslations = visionSystem.getAllTagTranslations();
+        
+        // Find the closest tag based on distance
+        double closestDistance = Double.MAX_VALUE;
+        int closestTagId = -1;
+        
+        for (Map.Entry<String, Translation3d> entry : tagTranslations.entrySet()) {
+            String cameraName = entry.getKey();
+            // Get the camera that detected this tag
+            PhotonCamera camera = visionSystem.getCamera(cameraName);
+            var result = camera.getLatestResult();
+            
+            if (result.hasTargets()) {
+                // Find the tag with the smallest distance (closest)
+                PhotonTrackedTarget target = result.getBestTarget();
+                int tagId = target.getFiducialId();
+                double distance = entry.getValue().getNorm();
+                
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestTagId = tagId;
+                }
+            }
+        }
+        
+        return closestTagId;
+    }
+    
+    /**
+     * Navigate to the closest visible AprilTag
+     * @param xOffset Forward offset from tag in meters (positive is in front of tag)
+     * @param yOffset Left offset from tag in meters (positive is to the left of tag)
+     * @param headingDegrees Desired robot heading in degrees, or null to automatically face the tag
+     * @return True if navigation started, false if no tags were visible
+     */
+    public boolean navigateToClosestTag(double xOffset, double yOffset, Double headingDegrees) {
+        // Find the closest visible tag
+        int tagId = findClosestVisibleTag();
+        
+        if (tagId < 0) {
+            // No tags visible
+            SmartDashboard.putString("Navigation/Error", "No AprilTags visible");
+            return false;
+        }
+        
+        // Get the tag pose to calculate heading
+        if (headingDegrees == null) {
+            // Auto-calculate heading to face the tag
+            var tagPose = Constants.Vision.kTagLayout.getTagPose(tagId);
+            if (tagPose.isPresent()) {
+                // Get the tag's rotation, then invert it (to face it)
+                Rotation2d tagRotation = tagPose.get().toPose2d().getRotation();
+                double autoHeading = tagRotation.getDegrees() + 180.0; // Add 180° to face the tag
+                
+                // Navigate to the tag with auto-calculated heading
+                navigateToTagRelative(tagId, xOffset, yOffset, autoHeading);
+                SmartDashboard.putNumber("Navigation/AutoHeading", autoHeading);
+                return true;
+            }
+        }
+        
+        // Use specified heading (or default to 180° if auto failed)
+        double heading = (headingDegrees != null) ? headingDegrees : 180.0;
+        
+        // Navigate to the tag with specified or default heading
+        navigateToTagRelative(tagId, xOffset, yOffset, heading);
+        return true;
+    }
+
+    /**
+     * Get the current destination state
+     * @return The current destination state
+     */
+    public DestinationState getCurrentDestination() {
+        return currentDestination;
     }
 } 

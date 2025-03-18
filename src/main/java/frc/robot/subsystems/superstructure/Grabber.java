@@ -270,6 +270,11 @@ public class Grabber extends SubsystemBase {
         // }
     }
 
+    public void forceCoralIntake() {
+        rightIntake.set(0.45);
+        leftIntake.set(-0.45);
+    }
+
     public void placeL1() {
         rightIntake.set(-0.1);
         leftIntake.set(0.4);
