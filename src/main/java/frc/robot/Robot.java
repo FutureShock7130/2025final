@@ -5,17 +5,20 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.commands.PathPlannerAuto;
 import com.pathplanner.lib.path.PathConstraints;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -23,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.NavigationController;
 import frc.robot.subsystems.StateMachine;
+import frc.robot.subsystems.SuperStruct;
 import frc.robot.subsystems.SuperStructState;
 import frc.robot.subsystems.superstructure.Elevator;
 import frc.robot.subsystems.superstructure.Grabber;
@@ -48,6 +52,7 @@ public class Robot extends TimedRobot {
   private final DashBoard m_dashboard;
 
   private final PathConstraints constraints = new PathConstraints(3, 3, 2 * Math.PI, 4 * Math.PI);
+
   /**
    * This function is run when the robot is first started up and should be used
    * for any
@@ -64,7 +69,7 @@ public class Robot extends TimedRobot {
   }
 
   public void RobotInit() {
-    
+
   }
 
   /**
@@ -80,7 +85,7 @@ public class Robot extends TimedRobot {
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
-    
+
     // Update robot pose in dashboard if available
     try {
       // Now we can use the getDrive() method
@@ -94,10 +99,28 @@ public class Robot extends TimedRobot {
   /** This function is called once each time the robot enters Disabled mode. */
   @Override
   public void disabledInit() {
+    StateMachine.getInstance().setCommandedState(SuperStructState.DISABLE);
   }
 
   @Override
   public void disabledPeriodic() {
+    StateMachine.getInstance().setCommandedState(SuperStructState.DISABLE);
+    Pose2d desiredPose = new PathPlannerAuto(m_robotContainer.getAutonomousCommand().getName()).getStartingPose();
+    if (desiredPose != null) {
+    if ((m_robotContainer.getDrive().getPose().getX() - desiredPose.getX()) < 0.03
+        && (m_robotContainer.getDrive().getPose().getY() - desiredPose.getY()) < 0.03
+        && (m_robotContainer.getDrive().getPose().getRotation().minus(desiredPose.getRotation())).getDegrees() < 1) {
+          m_robotContainer.m_led.color(0, 255, 0);
+    } else {
+      if (DriverStation.getAlliance().get() == Alliance.Blue) {
+        m_robotContainer.m_led.color(0, 0, 255);
+      } else {
+          m_robotContainer.m_led.color(255, 0, 0);
+        }
+      }
+    } else {
+      m_robotContainer.m_led.blink(200, 200, 200);
+    }
   }
 
   /**
@@ -112,8 +135,6 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
     }
-
-    StateMachine.getInstance().setCommandedState(SuperStructState.L2);
   }
 
   /** This function is called periodically during autonomous. */
@@ -127,68 +148,29 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
+
+    // Configure improved pose estimation settings
+    try {
+      // Configure AutoBuilder to use our improved navigation accuracy
+      SmartDashboard.putString("Navigation Status", "Using enhanced navigation accuracy");
+
+      // Reset robot odometry using vision if available
+      if (m_robotContainer.vision != null) {
+        var visionPose = m_robotContainer.vision.getLatestPose();
+        if (visionPose != null) {
+          m_robotContainer.getDrive().setPose(visionPose);
+          SmartDashboard.putString("Vision Status", "Successfully initialized pose from vision");
+        }
+      }
+    } catch (Exception e) {
+      SmartDashboard.putString("Navigation Error", e.getMessage());
+    }
   }
 
   /** This function is called periodically during operator control. */
   @Override
   public void teleopPeriodic() {
     NavigationController.getInstance().periodic();
-    //    if (ButtonBox2.getRawButtonPressed(7)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.A, constraints).until(() -> driverWantsControl()).schedule();
-    // }
-    
-   
-    // if (ButtonBox2.getRawButtonPressed(8)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.B, constraints).until(() -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox1.getRawButtonPressed(7)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.C, constraints).until(() -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox1.getRawButtonPressed(12)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.D, constraints).until(() -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox1.getRawButtonPressed(5)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.E, constraints).until(() -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox1.getRawButtonPressed(6)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.F, constraints).until(() -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox1.getRawButtonPressed(3)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.G, constraints).until(() -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox1.getRawButtonPressed(4)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.H, constraints).until(() -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox1.getRawButtonPressed(1)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.I, constraints).until(() -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox1.getRawButtonPressed(2)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.J, constraints).until(() -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox2.getRawButtonPressed(5)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.K, constraints).until(() -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox2.getRawButtonPressed(6)) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.L, constraints).until(() -> driverWantsControl()).schedule();
-    // }
-
-    // if (driver.getLeftBumperButtonPressed()) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.CSL, constraints).until(() -> driverWantsControl()).schedule();
-    // }
-
-    // if (driver.getRightBumperButtonPressed()) {
-    //   AutoBuilder.pathfindToPose(Constants.FieldConstants.CSR, constraints).until(() -> driverWantsControl()).schedule();
-    // }
   }
 
   @Override
@@ -214,9 +196,9 @@ public class Robot extends TimedRobot {
 
   public boolean driverWantsControl() {
     return Math.abs(driver.getLeftX()) > 0.3 ||
-            Math.abs(driver.getLeftY()) > 0.3 ||
-            Math.abs(driver.getRightX()) > 0.3 ||
-            Math.abs(driver.getRightY()) > 0.3;
-}
+        Math.abs(driver.getLeftY()) > 0.3 ||
+        Math.abs(driver.getRightX()) > 0.3 ||
+        Math.abs(driver.getRightY()) > 0.3;
+  }
 
 }

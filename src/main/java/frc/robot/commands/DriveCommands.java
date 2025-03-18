@@ -1,4 +1,3 @@
-
 package frc.robot.commands;
 
 import edu.wpi.first.math.MathUtil;
@@ -69,5 +68,17 @@ public class DriveCommands {
         drive);
   }
 
-    
+  /**
+   * Command to improve terminal pose accuracy by gradually applying braking
+   * as the robot approaches its target.
+   */
+  public static Command improvePathEndAccuracy(Drive drive, Pose2d targetPose) {
+    return Commands.run(
+            () -> {
+              // Apply braking with a threshold of 0.5 meters
+              drive.applyTargetBraking(targetPose, 0.5);
+            },
+            drive)
+        .withName("ImprovePathEndAccuracy");
+  }
 }

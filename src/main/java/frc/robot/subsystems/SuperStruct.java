@@ -12,9 +12,10 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.SuperStructState;
+import frc.robot.subsystems.superstructure.AlgaeRemover;
 import frc.robot.subsystems.superstructure.Elevator;
 import frc.robot.subsystems.superstructure.Grabber;
-import frc.robot.subsystems.superstructure.Intake;
+// import frc.robot.subsystems.superstructure.Intake;
 import edu.wpi.first.wpilibj.XboxController;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -31,10 +32,12 @@ import java.util.Map;
 public class SuperStruct extends SubsystemBase {
     Elevator mElevator;
     Grabber mGrabber;
-    Intake mIntake;
+    // Intake mIntake;
+    AlgaeRemover mAlgaeRemover;
     StateMachine mStateMachine;
     ObjectDetection mObjectDetection;
     public SuperStructState mCommandedState;
+    public SuperStructState mPreviousState;
     LED mled;
 
     private final CommandXboxController driver;
@@ -48,12 +51,20 @@ public class SuperStruct extends SubsystemBase {
     private final PathConstraints constraints = new PathConstraints(3, 3, 2 * Math.PI, 4 * Math.PI);
 
     // Add a field to track the previous state
-    private SuperStructState mPreviousState = SuperStructState.DEFAULT;
+    // private SuperStructState mPreviousState = SuperStructState.DEFAULT;
 
     private double savedElevatorPos = 0.0;
     private boolean hasSetSafeHeight = false;
     private boolean isMovingToDefault = false;
     private double targetUpPosition = 0.0;
+
+    // Add this field to the class
+    private final frc.robot.subsystems.superstructure.AlgaeRemover algaeRemover = frc.robot.subsystems.superstructure.AlgaeRemover.getInstance();
+    private static final double ALGAE_SPEED = 0.5; // Speed for the algae remover
+    private static final double ALGAE_DURATION = 1.0; // Duration in seconds for the algae remover to run
+    private boolean algaeCommandSent = false; // Track if we've already sent the command
+    private double algaeStartTime = 0; // Track when the algae command was sent
+    private int algaeButtonPressCount = 0; // Counter for button presses
 
     public static synchronized SuperStruct getInstance() {
         if (mInstance == null) {
@@ -78,10 +89,10 @@ public class SuperStruct extends SubsystemBase {
                         () -> setState(SuperStructState.L3),
                         this));
 
-        // new CommandJoystick(2).button(5)
-        //         .onTrue(Commands.runOnce(
-        //                 () -> setState(SuperStructState.L4),
-        //                 this));
+        new CommandJoystick(2).button(5)
+                .onTrue(Commands.runOnce(
+                        () -> setState(SuperStructState.L4),
+                        this));
 
         new JoystickButton(driver.getHID(), 5)
                 .onTrue(Commands.runOnce(
@@ -93,7 +104,7 @@ public class SuperStruct extends SubsystemBase {
         // () -> setState(SuperStructState.PLACEMENT),
         // this));
 
-        new CommandJoystick(2).button(7)
+        new CommandJoystick(2).button(9)
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.PLACEMENT),
                         this));
@@ -118,10 +129,10 @@ public class SuperStruct extends SubsystemBase {
         //                 () -> setState(SuperStructState.IVECHANGEDMYMIND),
         //                 this));
 
-        new CommandJoystick(2).button(9)
-                .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.HIT_ALGAE),
-                        this));
+        // new CommandJoystick(2).button(9)
+        //         .onTrue(Commands.runOnce(
+        //                 () -> setState(SuperStructState.HIT_ALGAE),
+        //                 this));
 
         new CommandJoystick(1).button(11)
                 .onTrue(Commands.runOnce(
@@ -130,7 +141,11 @@ public class SuperStruct extends SubsystemBase {
 
         new JoystickButton(driver.getHID(), 1)
                 .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.ALGAE_INTAKE),
+                        () -> {
+                            // Increment press counter when the button is pressed
+                            algaeButtonPressCount++;
+                            setState(SuperStructState.SMACK_ALGAE);
+                        },
                         this));
 
         new JoystickButton(driver.getHID(), 2)
@@ -152,7 +167,6 @@ public class SuperStruct extends SubsystemBase {
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.RESET),
                         this));
-
 
         // Object detection - Follow target (Xbox controller Y button)
         // new JoystickButton(driver.getHID(), XboxController.Button.kY.value)
@@ -177,7 +191,7 @@ public class SuperStruct extends SubsystemBase {
     public SuperStruct() {
         mElevator = Elevator.getInstance();
         mGrabber = Grabber.getInstance();
-        mIntake = Intake.getInstance();
+        // mIntake = Intake.getInstance();
         mStateMachine = StateMachine.getInstance();
         mObjectDetection = ObjectDetection.getInstance();
         mled = LED.getInstance();
@@ -225,7 +239,7 @@ public class SuperStruct extends SubsystemBase {
         } else {
             mGrabber.setPosition(0.618896);
         }
-        mIntake.setAngle(-0.390137);
+        // mIntake.setAngle(-0.390137);
 
     }
 
@@ -236,7 +250,7 @@ public class SuperStruct extends SubsystemBase {
         } else {
             mGrabber.setPosition(0.618896);
         }
-        mIntake.setAngle(-0.390137);
+        // mIntake.setAngle(-0.390137);
 
     }
 
@@ -247,7 +261,7 @@ public class SuperStruct extends SubsystemBase {
         } else {
             mGrabber.setPosition(0.618896);
         }
-        mIntake.setAngle(-0.390137);
+        // mIntake.setAngle(-0.390137);
 
     }
 
@@ -258,14 +272,14 @@ public class SuperStruct extends SubsystemBase {
         } else {
             mGrabber.setPosition(0.618896);
         }
-        mIntake.setAngle(-0.390137);
+        // mIntake.setAngle(-0.390137);
 
     }
 
     public void TRAVEL() {
         mElevator.setPosition(-0.2 * 0.6); // ground
         mGrabber.setPosition(0.618896); // default
-        mIntake.setAngle(-0.390137);
+        // mIntake.setAngle(-0.390137);
 
     }
 
@@ -281,7 +295,7 @@ public class SuperStruct extends SubsystemBase {
         }
         // mGrabber.setPosition(0.289307);
         mGrabber.intake();
-        mIntake.setAngle(-0.390137);
+        // mIntake.setAngle(-0.390137);
 
     }
 
@@ -368,8 +382,8 @@ public class SuperStruct extends SubsystemBase {
         // Common actions
         mGrabber.stop();
         mGrabber.resetcounter();
-        mIntake.setAngle(-0.390137);
-        mIntake.setIntake(0);
+        // mIntake.setAngle(-0.390137);
+        // mIntake.setIntake(0);
         mled.rainbowmarquee();
         mObjectDetection.stopFollowing();
     }
@@ -381,27 +395,27 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void ALGAE_STOWAGE() {
-        mIntake.setAngle(-0.234619);
-        mIntake.setIntake(0.01);
+        // mIntake.setAngle(-0.234619);
+        // mIntake.setIntake(0.01);
         mObjectDetection.stopFollowing();
     }
 
     public void ALGAE_INTAKE() {
-        mIntake.setAngle(-0.234619);
-        mIntake.setIntake(0.5);
+        // mIntake.setAngle(-0.234619);
+        // mIntake.setIntake(0.5);
         // mObjectDetection.startFollowing();
     }
 
     public void ALGAE_PLACEMENT() {
 
-        mIntake.setIntake(-0.6);
+        // mIntake.setIntake(-0.6);
     }
 
     public void HIT_ALGAE() {
-        mGrabber.hitAlgea();
-        mGrabber.setPosition(0.412295);
+        // mGrabber.hitAlgea();
+        // mGrabber.setPosition(0.412295);
 
-        mIntake.setAngle(-0.390137);
+        // mIntake.setAngle(-0.390137);
     }
 
     public void GENSHINIMPACT() {
@@ -413,6 +427,24 @@ public class SuperStruct extends SubsystemBase {
 
     public void ELEDROP() {
         mElevator.setVoltage(-0.3);
+    }
+
+    public void SMACK_ALGAE() {
+        // Determine direction based on button press count (odd = up, even = down)
+        boolean directionUp = (algaeButtonPressCount % 2 == 1); // Odd = up, Even = down
+        double speed = directionUp ? ALGAE_SPEED : -ALGAE_SPEED;
+
+        // Run for a specific time duration
+        algaeRemover.runForTime(speed, ALGAE_DURATION);
+
+    }
+
+    public void SMACK_DOWN() {
+        algaeRemover.runForTime(-ALGAE_SPEED, ALGAE_DURATION);
+    }
+
+    public void SMACK_UP() {
+        algaeRemover.runForTime(ALGAE_SPEED, ALGAE_DURATION);
     }
 
     /**
@@ -431,6 +463,10 @@ public class SuperStruct extends SubsystemBase {
 
         // Stop other systems when we're following
         mGrabber.stop();
+    }
+
+    public void DISABLE() {
+        
     }
 
     /**
@@ -504,6 +540,18 @@ public class SuperStruct extends SubsystemBase {
             case ELEDROP:
                 ELEDROP();
                 break;
+            case SMACK_ALGAE:
+                SMACK_ALGAE();
+                break;
+            case SMACK_DOWN:
+                SMACK_DOWN();
+                break;
+            case SMACK_UP:
+                SMACK_UP();
+                break;
+            case DISABLE:
+                DISABLE();
+                break;
         }
     }
 
@@ -515,9 +563,95 @@ public class SuperStruct extends SubsystemBase {
         // Update state
         updateState();
 
-        SmartDashboard.putString("Commanded State", mCommandedState.toString());
-        SmartDashboard.putString("Previous State", mPreviousState.toString());
-        SmartDashboard.putBoolean("From L-Level",
-                isLLevel(mPreviousState) && mCommandedState == SuperStructState.DEFAULT);
+        // Only update LED indicators every 100ms (10 times per second) to save
+        // resources
+        // This is fast enough for visual feedback but reduces CPU usage
+        if ((System.currentTimeMillis() % 100) < 20) { // Only run ~20% of the time
+            // Track elevator position progress on LED sections 2 and 3
+            if (mCommandedState == SuperStructState.L1 ||
+                    mCommandedState == SuperStructState.L2 ||
+                    mCommandedState == SuperStructState.L3 ||
+                    mCommandedState == SuperStructState.L4 ||
+                    mCommandedState == SuperStructState.GENSHINIMPACT ||
+                    mCommandedState == SuperStructState.DEFAULT) { // Also track when going to default position
+
+                double currentPosition = mElevator.getElevatorPosition();
+                double targetPosition = getTargetElevatorPosition();
+
+                // Handle both upward and downward movement
+                boolean isMovingDown = currentPosition > targetPosition
+                        && Math.abs(currentPosition - targetPosition) > 1.0;
+
+                // Calculate completion percentage differently based on direction
+                double percentComplete;
+                boolean atTarget = Math.abs(currentPosition - targetPosition) <= 1.0;
+
+                if (isMovingDown) {
+                    // For downward movement - calculate progress from start to target
+                    // We want to show 0% at the start position and 100% when reaching target
+
+                    // Estimate starting position based on the previous state or use current
+                    // position
+                    double startPosition = 0;
+
+                    // If going to default (0), assume we're coming from one of the levels
+                    if (mCommandedState == SuperStructState.DEFAULT) {
+                        // Use a reasonable starting height (max of current or 100)
+                        startPosition = Math.max(currentPosition, 100.0);
+                    } else {
+                        // For other downward movements, assume we started at position 130
+                        // (slightly higher than highest target)
+                        startPosition = 130.0;
+                    }
+
+                    if (startPosition > targetPosition) {
+                        // Map from [startPosition, targetPosition] to [0, 1]
+                        // This gives us 0% at start position and 100% at target position
+                        percentComplete = Math.min(
+                                1.0 - ((currentPosition - targetPosition) / (startPosition - targetPosition)), 1.0);
+                    } else {
+                        percentComplete = 1.0; // Already at or below target
+                    }
+
+                    // Use pink color for downward movement (255, 105, 180)
+                    // For downward motion: section 2 fills right-to-left, section 3 fills
+                    // left-to-right (opposite directions)
+                    mled.sectionChargePercentage(2, 255, 0, 255, percentComplete, atTarget, true); // Fill right-to-left
+                    mled.sectionChargePercentage(3, 255, 0, 255, percentComplete, atTarget, false); // Fill
+                                                                                                    // left-to-right
+                } else {
+                    // For upward movement, also use pink (255, 105, 180)
+                    // For upward motion: section 2 fills left-to-right, section 3 fills
+                    // right-to-left (opposite directions)
+                    if (targetPosition > 0.1) { // Avoid division by zero
+                        percentComplete = Math.min(currentPosition / targetPosition, 1.0);
+                        mled.sectionChargePercentage(2, 255, 0, 255, percentComplete, atTarget, false); // Fill
+                                                                                                        // left-to-right
+                        mled.sectionChargePercentage(3, 255, 0, 255, percentComplete, atTarget, true); // Fill
+                                                                                                       // right-to-left
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Get the target elevator position based on current state
+     * 
+     * @return The target position for the current state
+     */
+    private double getTargetElevatorPosition() {
+        switch (mCommandedState) {
+            case L1:
+                return 25.0;
+            case L2:
+                return 43.7;
+            case L3:
+                return 76.0;
+            case L4:
+                return 113.0;
+            default:
+                return 0.0;
+        }
     }
 }
