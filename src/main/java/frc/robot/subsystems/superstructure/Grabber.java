@@ -156,8 +156,8 @@ public class Grabber extends SubsystemBase {
     }
 
     public void placeCoral() {
-        rightIntake.set(-0.4);
-        leftIntake.set(0.4);
+        rightIntake.set(-0.5);
+        leftIntake.set(0.5);
         
         // double rightRPM = Math.abs(rightIntake.getEncoder().getVelocity());
         // double leftRPM = Math.abs(leftIntake.getEncoder().getVelocity());
