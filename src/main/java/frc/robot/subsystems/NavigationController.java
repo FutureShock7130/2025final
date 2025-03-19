@@ -160,30 +160,7 @@ public class NavigationController extends SubsystemBase {
             nextDestination = null;
         }
 
-        // Check for visible AprilTags and show on dashboard, even when not navigating
-        if (visionSystem != null) {
-            int closestTag = findClosestVisibleTag();
-            if (closestTag >= 0) {
-                // Found a tag!
-                SmartDashboard.putBoolean("Navigation/TagVisible", true);
-                SmartDashboard.putNumber("Navigation/ClosestTagID", closestTag);
-                
-                // If one of the auto-tag buttons is held and we're in manual driving,
-                // automatically start the navigation
-                if (currentDestination == DestinationState.MANUAL_DRIVING) {
-                    if (driver.getYButton()) {
-                        startPathfinding(DestinationState.PATHFINDING_TO_CLOSEST_TAG);
-                    } else if (driver.getLeftTriggerAxis() > 0.6) {
-                        startPathfinding(DestinationState.PATHFINDING_TO_LEFT_OF_TAG);
-                    } else if (driver.getRightTriggerAxis() > 0.6) {
-                        startPathfinding(DestinationState.PATHFINDING_TO_RIGHT_OF_TAG);
-                    }
-                }
-            } else {
-                SmartDashboard.putBoolean("Navigation/TagVisible", false);
-                SmartDashboard.putNumber("Navigation/ClosestTagID", -1);
-            }
-        }
+        
 
         // Check button presses to set new destinations
         DestinationState newDestination = checkButtonPresses();
@@ -226,6 +203,29 @@ public class NavigationController extends SubsystemBase {
         //     return DestinationState.PATHFINDING_TO_CSL;
         // } else if (driver.getRightBumperPressed()) {
         //     return DestinationState.PATHFINDING_TO_CSR;
+        }// Check for visible AprilTags and show on dashboard, even when not navigating
+        if (visionSystem != null) {
+            int closestTag = findClosestVisibleTag();
+            if (closestTag >= 0) {
+                // Found a tag!
+                SmartDashboard.putBoolean("Navigation/TagVisible", true);
+                SmartDashboard.putNumber("Navigation/ClosestTagID", closestTag);
+                
+                // If one of the auto-tag buttons is held and we're in manual driving,
+                // automatically start the navigation
+                if (currentDestination == DestinationState.MANUAL_DRIVING) {
+                    if (driver.getYButton()) {
+                        startPathfinding(DestinationState.PATHFINDING_TO_CLOSEST_TAG);
+                    } else if (driver.getLeftTriggerAxis() > 0.6) {
+                        startPathfinding(DestinationState.PATHFINDING_TO_LEFT_OF_TAG);
+                    } else if (driver.getRightTriggerAxis() > 0.6) {
+                        startPathfinding(DestinationState.PATHFINDING_TO_RIGHT_OF_TAG);
+                    }
+                }
+            } else {
+                SmartDashboard.putBoolean("Navigation/TagVisible", false);
+                SmartDashboard.putNumber("Navigation/ClosestTagID", -1);
+            }
         }
         
        
@@ -297,9 +297,7 @@ public class NavigationController extends SubsystemBase {
             nextDestination = DestinationState.PATHFINDING_TO_L;
             destination = DestinationState.PATHFINDING_TO_KL;
             currentConstraints = fastConstraints; // Use faster constraints for first part
-        }
-        
-        if (destination == DestinationState.PATHFINDING_TO_CLOSEST_TAG) {
+        } else if (destination == DestinationState.PATHFINDING_TO_CLOSEST_TAG) {
             // Navigate directly in front of the closest tag
             boolean success = navigateToClosestTag(1.5, 0.0, null);
             if (success) {
