@@ -162,7 +162,33 @@ public class NavigationController extends SubsystemBase {
             nextDestination = null;
         }
 
-        
+        // Always check for correct position near AprilTags during manual driving
+        // This allows the driver to see feedback while making adjustments
+        if (currentDestination == DestinationState.MANUAL_DRIVING) {
+            // Check if we're at the correct distance from left or right side of any tag
+            if (isAtTargetPosition(0.55, -0.164, 0.1)) {
+                // Blink green when at left position of tag
+                LED.getInstance().blinkSection1(0, 255, 0, 1.5);
+                SmartDashboard.putString("Position", "At left side of tag");
+            } else if (isAtTargetPosition(0.55, 0.164, 0.1)) {
+                // Blink green when at right position of tag
+                LED.getInstance().blinkSection1(0, 255, 0, 1.5);
+                SmartDashboard.putString("Position", "At right side of tag");
+            } else {
+                // Check if we're close but not quite at the target position
+                boolean nearLeftPosition = isAtTargetPosition(0.55, -0.164, 0.3);
+                boolean nearRightPosition = isAtTargetPosition(0.55, 0.164, 0.3);
+                
+                if (nearLeftPosition || nearRightPosition) {
+                    // Yellow when near but not exactly at position - needs adjustment
+                    LED.getInstance().blinkSection1(255, 255, 0, 1.0);
+                    SmartDashboard.putString("Position", "Near tag position - adjusting");
+                } else {
+                    // No special position feedback
+                    SmartDashboard.putString("Position", "Not near tag position");
+                }
+            }
+        }
 
         // Check button presses to set new destinations
         DestinationState newDestination = checkButtonPresses();
@@ -314,7 +340,7 @@ public class NavigationController extends SubsystemBase {
             if (success) {
                 SmartDashboard.putString("Navigation/Status", "Navigating to left of closest tag");
                 // Check if we're at the correct distance
-                if (isAtTargetPosition(0.55, -0.164, 0.1)) {
+                if (isAtTargetPosition(0.55, -0.164, 0.01)) {
                     // Blink green when at correct position
                     LED.getInstance().blinkSection1(0, 255, 0, 1.5);
                 }
@@ -328,7 +354,7 @@ public class NavigationController extends SubsystemBase {
             if (success) {
                 SmartDashboard.putString("Navigation/Status", "Navigating to right of closest tag");
                 // Check if we're at the correct distance
-                if (isAtTargetPosition(0.55, 0.164, 0.1)) {
+                if (isAtTargetPosition(0.55, 0.164, 0.01)) {
                     // Blink green when at correct position
                     LED.getInstance().blinkSection1(0, 255, 0, 1.5);
                 }

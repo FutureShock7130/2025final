@@ -327,7 +327,7 @@ public class SuperStruct extends SubsystemBase {
         mElevator.setPosition(-0.0);
         mObjectDetection.stopFollowing();
         mAlgaeRemover.setSpeed(0);
-        mled.blinkSection1(255, 165, 0, 1.5);
+        // mled.blinkSection1(255, 165, 0, 1.5);
     }
 
     public void grabberDefault() {
