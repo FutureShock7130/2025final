@@ -109,29 +109,19 @@ public class Robot extends TimedRobot {
     StateMachine.getInstance().setCommandedState(SuperStructState.DISABLE);
     Pose2d desiredPose = new PathPlannerAuto(m_robotContainer.getAutonomousCommand().getName()).getStartingPose();
     if (desiredPose != null) {
-      double x = m_robotContainer.getDrive().getPose().getX() - desiredPose.getX();
-      double y = m_robotContainer.getDrive().getPose().getY() - desiredPose.getY();
-      double omega = m_robotContainer.getDrive().getPose().getRotation().getDegrees()
-          - desiredPose.getRotation().getDegrees();
-      if (Math.abs(x) < 0.05
-          && Math.abs(y) < 0.05
-          && Math.abs(omega) < 2) {
-        m_robotContainer.m_led.color(0, 255, 0);
+    if (Math.abs(m_robotContainer.getDrive().getPose().getX() - desiredPose.getX()) < 0.03
+        && Math.abs(m_robotContainer.getDrive().getPose().getY() - desiredPose.getY()) < 0.03
+        && Math.abs((m_robotContainer.getDrive().getPose().getRotation().minus(desiredPose.getRotation())).getDegrees()) < 1) {
+          m_robotContainer.m_led.color(0, 255, 0);
+    } else {
+      if (DriverStation.getAlliance().get() == Alliance.Blue) {
+        m_robotContainer.m_led.color(0, 0, 255);
       } else {
-        if (mIter < 50) {
-          mIter++;
-        } else {
-          System.out.println("X:" + x + "Y:" + y + "Heading:" + omega);
-          mIter = 0;
-        }
-        if (DriverStation.getAlliance().get() == Alliance.Blue) {
-          m_robotContainer.m_led.color(0, 0, 255);
-        } else {
           m_robotContainer.m_led.color(255, 0, 0);
         }
       }
     } else {
-      m_robotContainer.m_led.marquee(200, 200, 200);
+      m_robotContainer.m_led.marquee(255, 0, 255, 10, 1.5);
     }
   }
 

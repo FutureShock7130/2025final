@@ -50,7 +50,7 @@ public class SuperStruct extends SubsystemBase {
     private final PathConstraints constraints = new PathConstraints(3, 3, 2 * Math.PI, 4 * Math.PI);
 
     // Add a field to track the previous state
-    // private SuperStructState mPreviousState = SuperStructState.DEFAULT;
+    private SuperStructState mPreviousState = SuperStructState.DEFAULT;
 
     private double savedElevatorPos = 0.0;
     private boolean hasSetSafeHeight = false;
@@ -252,7 +252,7 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void L4() {
-        mElevator.setPosition(113);
+        // mElevator.setPosition(113);
         // mIntake.setAngle(-0.390137);
 
     }
@@ -273,7 +273,7 @@ public class SuperStruct extends SubsystemBase {
         mGrabber.intake();
         // mIntake.setIntake(-0.2);
         // Check if coral is detected and update LEDs accordingly
-        if (!mGrabber.hasCoral()) {
+        if (mGrabber.hasCoral()) {
             // Set LED to green when coral is detected
             mled.color(0, 0, 255);  // RGB values for green
         }else{
@@ -282,12 +282,12 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void PLACEMENT() {
-        // if (mPreviousState == SuperStructState.L1) {
-        //     mGrabber.placeL1();
-        // } else {
+        if (mPreviousState == SuperStructState.L1) {
+            mGrabber.placeL1();
+        } else {
             mGrabber.placeCoral();
-        // }
-        mled.blink(200, 0, 200);
+        }
+        mled.blinkSection1(255, 0, 255, 1.5);
     }
 
     public void CORALFORCEINTAKE() {
@@ -301,16 +301,14 @@ public class SuperStruct extends SubsystemBase {
      */
     public void setState(SuperStructState state) {
         // save previos state
-        // mPreviousState = mCommandedState;
+        mPreviousState = mCommandedState;
 
-        // If we're transitioning out of CS state, reset LED colors
-        if (mCommandedState == SuperStructState.CS && state != SuperStructState.CS) {
-            // Reset LED color when leaving CS state
-            if (!state.equals(SuperStructState.DEFAULT)) {
-                // If not going to DEFAULT (which has its own LED pattern)
-                mled.nocolor();
-            }
+        // Reset LED color when leaving CS state
+        if (!state.equals(SuperStructState.DEFAULT)) {
+            // If not going to DEFAULT (which has its own LED pattern)
+            mled.nocolor();
         }
+        
         
         // Reset algaeCommandSent when changing to a different state
         if (state != SuperStructState.SMACK_ALGAE) {
@@ -327,15 +325,9 @@ public class SuperStruct extends SubsystemBase {
         mGrabber.stop();
         mGrabber.resetcounter();
         mElevator.setPosition(-0.0);
-        // mIntake.setAngle(-0.390137);
-        // mIntake.setIntake(0);
-        // if (mElevator.atTargetPosition()) {
-        //     mled.marquee(255, 69, 200);
-        // }
-        
-        // mled.chris();
         mObjectDetection.stopFollowing();
         mAlgaeRemover.setSpeed(0);
+        // mled.blinkSection1(255, 165, 0, 1.5);
     }
 
     public void grabberDefault() {
@@ -370,7 +362,7 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void GENSHINIMPACT() {
-        mElevator.setPosition(129);
+        // mElevator.setPosition(129);
     }
 
     public void ELEDROP() {
@@ -433,7 +425,7 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void DISABLE(){
-
+        mled.blinkSection1(255, 165, 0, 1.5);
     }
 
     public void updateState() {
@@ -522,8 +514,7 @@ public class SuperStruct extends SubsystemBase {
             if (mCommandedState == SuperStructState.L1 || 
                 mCommandedState == SuperStructState.L2 || 
                 mCommandedState == SuperStructState.L3 || 
-                mCommandedState == SuperStructState.L4 || 
-                mCommandedState == SuperStructState.GENSHINIMPACT ||
+                mCommandedState == SuperStructState.CS ||
                 mCommandedState == SuperStructState.DEFAULT) {  // Also track when going to default position
                 
                 double currentPosition = mElevator.getElevatorPosition();
@@ -561,17 +552,15 @@ public class SuperStruct extends SubsystemBase {
                         percentComplete = 1.0; // Already at or below target
                     }
                     
-                    // Use pink color for downward movement (255, 105, 180)
-                    // For downward motion: section 2 fills right-to-left, section 3 fills left-to-right (opposite directions)
-                    mled.sectionChargePercentage(2, 255, 0, 255, percentComplete, atTarget, true);  // Fill right-to-left
-                    mled.sectionChargePercentage(3, 255, 0, 255, percentComplete, atTarget, false); // Fill left-to-right
+                    // Use color based on height for downward movement
+                    // For downward motion: section 2 fills right-to-left
+                    mled.sectionHeightColor(2, currentPosition, 130.0, percentComplete, atTarget, true);  // Fill right-to-left
                 } else {
-                    // For upward movement, also use pink (255, 105, 180)
-                    // For upward motion: section 2 fills left-to-right, section 3 fills right-to-left (opposite directions)
+                    // For upward movement, color based on height
+                    // For upward motion: section 2 fills left-to-right
                     if (targetPosition > 0.1) { // Avoid division by zero
                         percentComplete = Math.min(currentPosition / targetPosition, 1.0);
-                        mled.sectionChargePercentage(2, 255, 0, 255, percentComplete, atTarget, false); // Fill left-to-right
-                        mled.sectionChargePercentage(3, 255, 0, 255, percentComplete, atTarget, true);  // Fill right-to-left
+                        mled.sectionHeightColor(2, currentPosition, 130.0, percentComplete, atTarget, false); // Fill left-to-right
                     }
                 }
             }

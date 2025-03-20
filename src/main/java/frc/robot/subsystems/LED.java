@@ -79,21 +79,34 @@ public class LED extends SubsystemBase {
         }
     }
 
-    public void marquee(int r, int g, int b) {
+
+
+    // Improved marquee method with customizable frequency and speed
+    public void marquee(int r, int g, int b, int frequency, double speed) {
         timer.start();
-        if (timer.get() < 0.1) {
+        // Lower speed value means faster animation
+        double animationTime = 0.2 / speed;
+        
+        if (timer.get() < animationTime/2) {
             for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
-                if (((int) ((i + counter) / 6)) % 2 == 0) {
+                if (((int) ((i + counter) / frequency)) % 2 == 0) {
                     m_ledBuffer.setRGB(i, r, g, b);
-                }else{
-                    m_ledBuffer.setRGB(i, 0, 0, 0);}
+                } else {
+                    m_ledBuffer.setRGB(i, 0, 0, 0);
+                }
             }
-        } else if (timer.get() > 0.2) {
+        } else if (timer.get() > animationTime) {
             counter++;
             timer.restart();
         }
 
         m_led.setData(m_ledBuffer);
+    }
+    
+    // Maintain backward compatibility with original method
+    public void marquee(int r, int g, int b) {
+        // Default frequency of 6 and speed of 1.0
+        marquee(r, g, b, 6, 1.0);
     }
 
     public void rainbowmarquee() {
@@ -325,33 +338,32 @@ public class LED extends SubsystemBase {
         m_led.setData(m_ledBuffer);
     }
     
-    // First section: 0-12 (13 LEDs)
+    // First section: 0-11 (12 LEDs)
     public void setSection1(int r, int g, int b) {
-        setSection(0, 6, r, g, b);
+        setSection(0, 12, r, g, b);
     }
     
-    // Second section: 13-25 (13 LEDs)
+    // Second section: 12-25 (14 LEDs)
     public void setSection2(int r, int g, int b) {
-        setSection(6, 6, r, g, b);
+        setSection(12, 14, r, g, b);
     }
     
-    // Third section: 26-40 (15 LEDs)
-    public void setSection3(int r, int g, int b) {
-        setSection(12, 7, r, g, b);
-    }
+    // // Third section: 26-40 (15 LEDs)
+    // public void setSection3(int r, int g, int b) {
+    //     setSection(26, 15, r, g, b);
+    // }
     
-    // Fourth section: 41-53 (13 LEDs)
-    public void setSection4(int r, int g, int b) {
-        setSection(19, 7, r, g, b);
-    }
+    // // Fourth section: 41-53 (13 LEDs)
+    // public void setSection4(int r, int g, int b) {
+    //     setSection(41, 13, r, g, b);
+    // }
     
     // Set all sections with different colors
-    public void setAllSections(int r1, int g1, int b1, int r2, int g2, int b2, 
-                              int r3, int g3, int b3, int r4, int g4, int b4) {
+    public void setAllSections(int r1, int g1, int b1, int r2, int g2, int b2) {
         setSection1(r1, g1, b1);
         setSection2(r2, g2, b2);
-        setSection3(r3, g3, b3);
-        setSection4(r4, g4, b4);
+        // setSection3(r3, g3, b3);
+        // setSection4(r4, g4, b4);
     }
     
     // Charging effect for a specific section - non-blocking version using timer
@@ -363,19 +375,11 @@ public class LED extends SubsystemBase {
         switch(section) {
             case 1:
                 startIndex = 0;
-                length = 6;
+                length = 12;
                 break;
             case 2:
-                startIndex = 6;
-                length = 6;
-                break;
-            case 3:
                 startIndex = 12;
-                length = 7;
-                break;
-            case 4:
-                startIndex = 19;
-                length = 7;
+                length = 14;
                 break;
             default:
                 return; // Invalid section
@@ -468,19 +472,11 @@ public class LED extends SubsystemBase {
         switch(section) {
             case 1:
                 startIndex = 0;
-                length = 6;
+                length = 12;
                 break;
             case 2:
-                startIndex = 6;
-                length = 6;
-                break;
-            case 3:
                 startIndex = 12;
-                length = 7;
-                break;
-            case 4:
-                startIndex = 19;
-                length = 7;
+                length = 14;
                 break;
             default:
                 return; // Invalid section
@@ -532,5 +528,105 @@ public class LED extends SubsystemBase {
         // For section 3, use right-to-left by default, left-to-right for all others
         boolean fromRightToLeft = (section == 3);
         sectionChargePercentage(section, r, g, b, percentage, blink, fromRightToLeft);
+    }
+    
+    /**
+     * Show height-based color in specified section
+     * @param section Section number (1-2)
+     * @param height Current height value
+     * @param maxHeight Maximum height value for scaling
+     * @param percentage Completion percentage (0.0-1.0)
+     * @param blink Whether to blink when at target
+     * @param fromRightToLeft Whether to fill from right-to-left instead of left-to-right
+     */
+    public void sectionHeightColor(int section, double height, double maxHeight, double percentage, boolean blink, boolean fromRightToLeft) {
+        int startIndex = 0;
+        int length = 0;
+        
+        // Clamp percentage between 0 and 1
+        percentage = Math.max(0.0, Math.min(1.0, percentage));
+        
+        // Determine section parameters
+        switch(section) {
+            case 1:
+                startIndex = 0;
+                length = 12;
+                break;
+            case 2:
+                startIndex = 12;
+                length = 14;
+                break;
+            default:
+                return; // Invalid section
+        }
+        
+        // Calculate how many LEDs to light up
+        int ledsToLight = (int)Math.ceil(percentage * length);
+        
+        // Reset section first
+        for (int i = startIndex; i < startIndex + length; i++) {
+            m_ledBuffer.setRGB(i, 0, 0, 0);
+        }
+        
+        // Map height to HSV hue value (0-180)
+        // Lower heights: red/orange (0-30), middle heights: green/cyan (60-120), upper heights: blue/purple (120-180)
+        int hue = (int)(180.0 * (height / maxHeight));
+        
+        // Clamp hue value
+        hue = Math.max(0, Math.min(180, hue));
+        
+        // Light up LEDs based on percentage
+        if (fromRightToLeft) {
+            // Fill from right to left
+            for (int i = 0; i < ledsToLight; i++) {
+                // Use HSV for nice color gradient based on height
+                m_ledBuffer.setHSV(startIndex + length - 1 - i, hue, 255, 255);
+            }
+        } else {
+            // Fill from left to right
+            for (int i = startIndex; i < startIndex + ledsToLight; i++) {
+                // Use HSV for nice color gradient based on height
+                m_ledBuffer.setHSV(i, hue, 255, 255);
+            }
+        }
+        
+        // If at target and blink is true, use timer-based blinking
+        if (percentage >= 0.99 && blink) {
+            // Fast blinking effect based on timer
+            double time = timer.get() % 0.4; // 400ms cycle
+            if (time >= 0.2) { // Second half of cycle: off
+                for (int i = startIndex; i < startIndex + length; i++) {
+                    m_ledBuffer.setRGB(i, 0, 0, 0);
+                }
+            }
+        }
+        
+        // Only update LED data once
+        m_led.setData(m_ledBuffer);
+    }
+    
+    /**
+     * Blinks section1 (LEDs 0-11) with customizable color and speed
+     * @param r Red value (0-255)
+     * @param g Green value (0-255)
+     * @param b Blue value (0-255)
+     * @param blinkSpeed Blink speed multiplier (higher = faster)
+     */
+    public void blinkSection1(int r, int g, int b, double blinkSpeed) {
+        timer.start();
+        // Calculate blink cycle duration based on speed (0.6 seconds by default)
+        double cycleDuration = 0.6 / blinkSpeed;
+        double halfCycle = cycleDuration / 2;
+        
+        // Determine if we're in the "on" or "off" part of the cycle
+        double cycleTime = timer.get() % cycleDuration;
+        
+        // First half of cycle: LEDs on
+        if (cycleTime < halfCycle) {
+            setSection1(r, g, b);
+        } else {
+            // Second half of cycle: LEDs off
+            setSection1(0, 0, 0);
+        }
     }
 }
