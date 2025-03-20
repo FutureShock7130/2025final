@@ -17,18 +17,6 @@
           }
         },
         {
-          "type": "named",
-          "data": {
-            "name": "ALGAE_UP"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 1.0
-          }
-        },
-        {
           "type": "path",
           "data": {
             "pathName": "I-CSL"
@@ -50,25 +38,6 @@
           "type": "wait",
           "data": {
             "waitTime": 1.0
-          }
-        },
-        {
-          "type": "parallel",
-          "data": {
-            "commands": [
-              {
-                "type": "path",
-                "data": {
-                  "pathName": "K-CSL"
-                }
-              },
-              {
-                "type": "named",
-                "data": {
-                  "name": "ALGAE_DOWN"
-                }
-              }
-            ]
           }
         }
       ]

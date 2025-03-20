@@ -34,8 +34,8 @@ public class LED extends SubsystemBase {
     /** Creates a new LED. */
     public LED() {
         m_led = new AddressableLED(0);
-        m_ledBuffer = new AddressableLEDBuffer(54);
-        Buffer = new AddressableLEDBuffer(54);
+        m_ledBuffer = new AddressableLEDBuffer(26);
+        Buffer = new AddressableLEDBuffer(26);
         m_led.setLength(m_ledBuffer.getLength());
         m_led.setData(m_ledBuffer);
         m_led.start();
@@ -327,22 +327,22 @@ public class LED extends SubsystemBase {
     
     // First section: 0-12 (13 LEDs)
     public void setSection1(int r, int g, int b) {
-        setSection(0, 13, r, g, b);
+        setSection(0, 6, r, g, b);
     }
     
     // Second section: 13-25 (13 LEDs)
     public void setSection2(int r, int g, int b) {
-        setSection(13, 13, r, g, b);
+        setSection(6, 6, r, g, b);
     }
     
     // Third section: 26-40 (15 LEDs)
     public void setSection3(int r, int g, int b) {
-        setSection(26, 15, r, g, b);
+        setSection(12, 7, r, g, b);
     }
     
     // Fourth section: 41-53 (13 LEDs)
     public void setSection4(int r, int g, int b) {
-        setSection(41, 13, r, g, b);
+        setSection(19, 7, r, g, b);
     }
     
     // Set all sections with different colors
@@ -363,19 +363,19 @@ public class LED extends SubsystemBase {
         switch(section) {
             case 1:
                 startIndex = 0;
-                length = 13;
+                length = 6;
                 break;
             case 2:
-                startIndex = 13;
-                length = 13;
+                startIndex = 6;
+                length = 6;
                 break;
             case 3:
-                startIndex = 26;
-                length = 15;
+                startIndex = 12;
+                length = 7;
                 break;
             case 4:
-                startIndex = 41;
-                length = 13;
+                startIndex = 19;
+                length = 7;
                 break;
             default:
                 return; // Invalid section
@@ -468,19 +468,19 @@ public class LED extends SubsystemBase {
         switch(section) {
             case 1:
                 startIndex = 0;
-                length = 13;
+                length = 6;
                 break;
             case 2:
-                startIndex = 13;
-                length = 13;
+                startIndex = 6;
+                length = 6;
                 break;
             case 3:
-                startIndex = 26;
-                length = 15;
+                startIndex = 12;
+                length = 7;
                 break;
             case 4:
-                startIndex = 41;
-                length = 13;
+                startIndex = 19;
+                length = 7;
                 break;
             default:
                 return; // Invalid section

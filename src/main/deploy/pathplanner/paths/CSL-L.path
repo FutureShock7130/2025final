@@ -8,20 +8,20 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.3386885245901659,
-        "y": 6.325823164530486
+        "x": 1.58925,
+        "y": 6.49175
       },
       "isLocked": false,
       "linkedName": "CSL"
     },
     {
       "anchor": {
-        "x": 3.7142226482839784,
-        "y": 5.066496957709322
+        "x": 3.65625,
+        "y": 5.14625
       },
       "prevControl": {
-        "x": 3.2779275663167646,
-        "y": 5.595806383938831
+        "x": 3.2955,
+        "y": 5.84825
       },
       "nextControl": null,
       "isLocked": false,
@@ -37,11 +37,11 @@
   "constraintZones": [
     {
       "name": "Constraints Zone",
-      "minWaypointRelativePos": 0,
-      "maxWaypointRelativePos": 0,
+      "minWaypointRelativePos": 0.8267990074441689,
+      "maxWaypointRelativePos": 1.0,
       "constraints": {
         "maxVelocity": 2.0,
-        "maxAcceleration": 2.0,
+        "maxAcceleration": 1.0,
         "maxAngularVelocity": 720.0,
         "maxAngularAcceleration": 1080.0,
         "nominalVoltage": 12.0,
@@ -52,8 +52,8 @@
   "pointTowardsZones": [],
   "eventMarkers": [],
   "globalConstraints": {
-    "maxVelocity": 2.0,
-    "maxAcceleration": 2.0,
+    "maxVelocity": 3.5,
+    "maxAcceleration": 2.5,
     "maxAngularVelocity": 720.0,
     "maxAngularAcceleration": 1080.0,
     "nominalVoltage": 12.0,
@@ -67,7 +67,7 @@
   "folder": "CSL",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 126.0
+    "rotation": -54.0
   },
-  "useDefaultConstraints": false
+  "useDefaultConstraints": true
 }

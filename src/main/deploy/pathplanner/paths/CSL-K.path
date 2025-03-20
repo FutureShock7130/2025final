@@ -53,7 +53,7 @@
   "folder": "CSL",
   "idealStartingState": {
     "velocity": 0,
-    "rotation": 126.0
+    "rotation": -54.0
   },
   "useDefaultConstraints": false
 }
