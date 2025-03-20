@@ -166,26 +166,32 @@ public class NavigationController extends SubsystemBase {
         // This allows the driver to see feedback while making adjustments
         if (currentDestination == DestinationState.MANUAL_DRIVING) {
             // Check if we're at the correct distance from left or right side of any tag
-            if (isAtTargetPosition(0.55, -0.164, 0.1)) {
+            if (isAtTargetPosition(0.501, -0.16, 0.03)) {
                 // Blink green when at left position of tag
-                LED.getInstance().blinkSection1(0, 255, 0, 1.5);
+                LED.getInstance().setSection1(0, 255, 0);
+                LED.getInstance().setSection3(0, 255, 0);
                 SmartDashboard.putString("Position", "At left side of tag");
-            } else if (isAtTargetPosition(0.55, 0.164, 0.1)) {
+            } else if (isAtTargetPosition(0.501, 0.18, 0.03)) {
                 // Blink green when at right position of tag
-                LED.getInstance().blinkSection1(0, 255, 0, 1.5);
+                LED.getInstance().setSection1(0, 255, 0);
+                LED.getInstance().setSection3(0, 255, 0);
                 SmartDashboard.putString("Position", "At right side of tag");
             } else {
                 // Check if we're close but not quite at the target position
-                boolean nearLeftPosition = isAtTargetPosition(0.55, -0.164, 0.3);
-                boolean nearRightPosition = isAtTargetPosition(0.55, 0.164, 0.3);
+                boolean nearLeftPosition = isAtTargetPosition(0.501, -0.16, 0.03);
+                boolean nearRightPosition = isAtTargetPosition(0.501, 0.18
+                , 0.03);
                 
                 if (nearLeftPosition || nearRightPosition) {
                     // Yellow when near but not exactly at position - needs adjustment
-                    LED.getInstance().blinkSection1(255, 255, 0, 1.0);
+                    LED.getInstance().setSection1(255, 255, 0);
+                    LED.getInstance().setSection3(0, 255, 0);
                     SmartDashboard.putString("Position", "Near tag position - adjusting");
                 } else {
                     // No special position feedback
                     SmartDashboard.putString("Position", "Not near tag position");
+                    LED.getInstance().blinkSection1(150, 30, 7, 1);
+                    LED.getInstance().blinkSection3(120, 30, 7, 1);
                 }
             }
         }
@@ -336,11 +342,11 @@ public class NavigationController extends SubsystemBase {
             return;
         } else if (destination == DestinationState.PATHFINDING_TO_LEFT_OF_TAG) {
             // Navigate to the left side of the closest tag
-            boolean success = navigateToClosestTag(0.55, -0.164, null);  // 1.0m to the left
+            boolean success = navigateToClosestTag(0.501, -0.16, null);  // 1.0m to the left
             if (success) {
                 SmartDashboard.putString("Navigation/Status", "Navigating to left of closest tag");
                 // Check if we're at the correct distance
-                if (isAtTargetPosition(0.55, -0.164, 0.01)) {
+                if (isAtTargetPosition(0.501, -0.16, 0.005)) {
                     // Blink green when at correct position
                     LED.getInstance().blinkSection1(0, 255, 0, 1.5);
                 }
@@ -350,11 +356,11 @@ public class NavigationController extends SubsystemBase {
             return;
         } else if (destination == DestinationState.PATHFINDING_TO_RIGHT_OF_TAG) {
             // Navigate to the right side of the closest tag
-            boolean success = navigateToClosestTag(0.55, 0.164, null);  // -1.0m to the left (= right)
+            boolean success = navigateToClosestTag(0.501, 0.18, null);  // -1.0m to the left (= right)
             if (success) {
                 SmartDashboard.putString("Navigation/Status", "Navigating to right of closest tag");
                 // Check if we're at the correct distance
-                if (isAtTargetPosition(0.55, 0.164, 0.01)) {
+                if (isAtTargetPosition(0.501, 0.118, 0.005)) {
                     // Blink green when at correct position
                     LED.getInstance().blinkSection1(0, 255, 0, 1.5);
                 }

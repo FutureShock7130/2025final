@@ -17,7 +17,7 @@ public class LED extends SubsystemBase {
     private final Timer timer = new Timer();
 
     private static LED mInstance = null;
-    
+
     // State variables for sectionCharge animation
     private int chargeState = 0;
     private int ledIndex = 0;
@@ -34,8 +34,8 @@ public class LED extends SubsystemBase {
     /** Creates a new LED. */
     public LED() {
         m_led = new AddressableLED(0);
-        m_ledBuffer = new AddressableLEDBuffer(26);
-        Buffer = new AddressableLEDBuffer(26);
+        m_ledBuffer = new AddressableLEDBuffer(41);
+        Buffer = new AddressableLEDBuffer(41);
         m_led.setLength(m_ledBuffer.getLength());
         m_led.setData(m_ledBuffer);
         m_led.start();
@@ -51,7 +51,7 @@ public class LED extends SubsystemBase {
         }
         m_led.setData(m_ledBuffer);
         m_led.start();
-        
+
     }
 
     int counter = 0;
@@ -79,15 +79,13 @@ public class LED extends SubsystemBase {
         }
     }
 
-
-
     // Improved marquee method with customizable frequency and speed
     public void marquee(int r, int g, int b, int frequency, double speed) {
         timer.start();
         // Lower speed value means faster animation
         double animationTime = 0.2 / speed;
-        
-        if (timer.get() < animationTime/2) {
+
+        if (timer.get() < animationTime / 2) {
             for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
                 if (((int) ((i + counter) / frequency)) % 2 == 0) {
                     m_ledBuffer.setRGB(i, r, g, b);
@@ -102,7 +100,7 @@ public class LED extends SubsystemBase {
 
         m_led.setData(m_ledBuffer);
     }
-    
+
     // Maintain backward compatibility with original method
     public void marquee(int r, int g, int b) {
         // Default frequency of 6 and speed of 1.0
@@ -113,15 +111,15 @@ public class LED extends SubsystemBase {
         timer.start();
         if (timer.get() < 0.1) {
             for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
-                if ((i + counter) % 7 == 0){
+                if ((i + counter) % 7 == 0) {
                     m_ledBuffer.setRGB(i, 255, 0, 0);
                 }
-                if ((i + counter) % 7 == 1){
+                if ((i + counter) % 7 == 1) {
                     m_ledBuffer.setRGB(i, 255, 100, 0);
                 }
-                if ((i + counter) % 7 == 2){
+                if ((i + counter) % 7 == 2) {
                     m_ledBuffer.setRGB(i, 255, 255, 0);
-                    }
+                }
                 if ((i + counter) % 7 == 3) {
                     m_ledBuffer.setRGB(i, 0, 255, 0);
                 }
@@ -165,42 +163,42 @@ public class LED extends SubsystemBase {
         }
     }
 
-    public void charge(int r,int g,int b,int blink) {
+    public void charge(int r, int g, int b, int blink) {
         for (int i = 0; i < m_ledBuffer.getLength(); i++) {
             m_ledBuffer.setRGB(i, r, g, b);
             m_led.setData(m_ledBuffer);
-          try {
-            Thread.sleep(100);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         for (int j = 0; j < blink; j++) {
-          for (int i = 0; i < m_ledBuffer.getLength(); i++) {
-            m_ledBuffer.setRGB(i, 0, 0, 0);
-          }
-          m_led.setData(m_ledBuffer);
-          try {
-            Thread.sleep(100);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-          for (int i = 0; i < m_ledBuffer.getLength(); i++) {
-            m_ledBuffer.setRGB(i, r, g, b);
-          }
-          m_led.setData(m_ledBuffer);
-          try {
-            Thread.sleep(100);
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
+            for (int i = 0; i < m_ledBuffer.getLength(); i++) {
+                m_ledBuffer.setRGB(i, 0, 0, 0);
+            }
+            m_led.setData(m_ledBuffer);
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            for (int i = 0; i < m_ledBuffer.getLength(); i++) {
+                m_ledBuffer.setRGB(i, r, g, b);
+            }
+            m_led.setData(m_ledBuffer);
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         for (int i = 0; i < m_ledBuffer.getLength(); i++) {
             m_ledBuffer.setRGB(i, 0, 0, 0);
         }
         m_led.setData(m_ledBuffer);
-      }
-      
+    }
+
     public void chris() {
         timer.start();
         if (timer.get() < 0.1) {
@@ -241,95 +239,98 @@ public class LED extends SubsystemBase {
         m_led.setData(m_ledBuffer);
     }
 
-    public void breath(int  hue){
+    public void breath(int hue) {
         timer.start();
-        if (timer.get()<0.3){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
-            m_ledBuffer.setHSV(i, hue, 255, 100);
+        if (timer.get() < 0.3) {
+            for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
+                m_ledBuffer.setHSV(i, hue, 255, 100);
+            }
+            m_led.setData(m_ledBuffer);
+        } else if (timer.get() < 0.6) {
+            for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
+                m_ledBuffer.setHSV(i, hue, 255, 90);
+            }
+            m_led.setData(m_ledBuffer);
+        } else if (timer.get() < 0.9) {
+            for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
+                m_ledBuffer.setHSV(i, hue, 255, 80);
+            }
+            m_led.setData(m_ledBuffer);
+        } else if (timer.get() < 1.2) {
+            for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
+                m_ledBuffer.setHSV(i, hue, 255, 70);
+            }
+            m_led.setData(m_ledBuffer);
+        } else if (timer.get() < 1.5) {
+            for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
+                m_ledBuffer.setHSV(i, hue, 255, 60);
+            }
+            m_led.setData(m_ledBuffer);
+        } else if (timer.get() < 1.8) {
+            for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
+                m_ledBuffer.setHSV(i, hue, 255, 50);
+            }
+            m_led.setData(m_ledBuffer);
+        } else if (timer.get() < 2.1) {
+            for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
+                m_ledBuffer.setHSV(i, hue, 255, 40);
+            }
+            m_led.setData(m_ledBuffer);
+        } else if (timer.get() < 2.4) {
+            for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
+                m_ledBuffer.setHSV(i, hue, 255, 30);
+            }
+            m_led.setData(m_ledBuffer);
+        } else if (timer.get() < 2.7) {
+            for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
+                m_ledBuffer.setHSV(i, hue, 255, 20);
+            }
+            m_led.setData(m_ledBuffer);
+        } else if (timer.get() < 3) {
+            for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
+                m_ledBuffer.setHSV(i, hue, 255, 30);
+            }
+            m_led.setData(m_ledBuffer);
+        } else if (timer.get() < 3.3) {
+            for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
+                m_ledBuffer.setHSV(i, hue, 255, 40);
+            }
+            m_led.setData(m_ledBuffer);
+        } else if (timer.get() < 3.6) {
+            for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
+                m_ledBuffer.setHSV(i, hue, 255, 50);
+            }
+            m_led.setData(m_ledBuffer);
+        } else if (timer.get() < 3.9) {
+            for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
+                m_ledBuffer.setHSV(i, hue, 255, 60);
+            }
+            m_led.setData(m_ledBuffer);
+        } else if (timer.get() < 4.2) {
+            for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
+                m_ledBuffer.setHSV(i, hue, 255, 70);
+            }
+            m_led.setData(m_ledBuffer);
+        } else if (timer.get() < 4.5) {
+            for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
+                m_ledBuffer.setHSV(i, hue, 255, 80);
+            }
+            m_led.setData(m_ledBuffer);
+        } else if (timer.get() < 4.8) {
+            for (int i = 0; i < m_ledBuffer.getLength() - 1; i++) {
+                m_ledBuffer.setHSV(i, hue, 255, 90);
+            }
+            m_led.setData(m_ledBuffer);
+        } else if (timer.get() < 5.1) {
+            timer.reset();
         }
-        m_led.setData(m_ledBuffer);
     }
-        else if (timer.get()<0.6){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
-            m_ledBuffer.setHSV(i, hue, 255, 90);
-        }
-        m_led.setData(m_ledBuffer);
-    }
-        else if (timer.get()<0.9){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
-            m_ledBuffer.setHSV(i, hue, 255, 80);
-        }
-        m_led.setData(m_ledBuffer);
-    }
-        else if (timer.get()<1.2){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
-            m_ledBuffer.setHSV(i, hue, 255, 70);
-        }
-        m_led.setData(m_ledBuffer);
-    }
-        else if (timer.get()<1.5){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
-            m_ledBuffer.setHSV(i, hue, 255, 60);
-        }
-        m_led.setData(m_ledBuffer);
-    }
-        else if (timer.get()<1.8){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
-            m_ledBuffer.setHSV(i, hue, 255, 50);
-        }
-        m_led.setData(m_ledBuffer);
-    }
-        else if (timer.get()<2.1){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
-            m_ledBuffer.setHSV(i, hue, 255, 40);
-        }
-        m_led.setData(m_ledBuffer);
-    }
-        else if (timer.get()<2.4){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
-            m_ledBuffer.setHSV(i, hue, 255, 30);
-        }
-        m_led.setData(m_ledBuffer);
-    }
-        else if (timer.get()<2.7){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
-            m_ledBuffer.setHSV(i, hue, 255, 20);
-        }
-        m_led.setData(m_ledBuffer);
-    }
-        else if (timer.get()<3){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
-            m_ledBuffer.setHSV(i, hue, 255, 30);
-        }
-        m_led.setData(m_ledBuffer);
-    }
-        else if (timer.get()<3.3){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
-            m_ledBuffer.setHSV(i, hue, 255, 40);
-        }
-        m_led.setData(m_ledBuffer);
-    }
-        else if (timer.get()<3.6){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
-            m_ledBuffer.setHSV(i, hue, 255, 50);
-        }
-        m_led.setData(m_ledBuffer);
-    }
-        else if (timer.get()<3.9){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
-            m_ledBuffer.setHSV(i, hue, 255, 60);
-        }
-        m_led.setData(m_ledBuffer);
-    }
-        else if (timer.get()<4.2){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
-            m_ledBuffer.setHSV(i, hue, 255, 70);
-        }
-        m_led.setData(m_ledBuffer);
-    }
-        else if (timer.get()<4.5){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
-            m_ledBuffer.setHSV(i, hue, 255, 80);
-        }
-        m_led.setData(m_ledBuffer);
-    }
-        else if (timer.get()<4.8){for(int i= 0;i<m_ledBuffer.getLength() -1;i++){
-            m_ledBuffer.setHSV(i, hue, 255, 90);
-        }
-        m_led.setData(m_ledBuffer);
-    }
-        else if (timer.get()<5.1){timer.reset();}
-      }
+
     @Override
     public void periodic() {
 
     }
-    
+
     // Section control methods
     public void setSection(int startIndex, int length, int r, int g, int b) {
         for (int i = startIndex; i < startIndex + length && i < m_ledBuffer.getLength(); i++) {
@@ -337,27 +338,27 @@ public class LED extends SubsystemBase {
         }
         m_led.setData(m_ledBuffer);
     }
-    
+
     // First section: 0-11 (12 LEDs)
     public void setSection1(int r, int g, int b) {
         setSection(0, 12, r, g, b);
     }
-    
+
     // Second section: 12-25 (14 LEDs)
     public void setSection2(int r, int g, int b) {
         setSection(12, 14, r, g, b);
     }
-    
-    // // Third section: 26-40 (15 LEDs)
-    // public void setSection3(int r, int g, int b) {
-    //     setSection(26, 15, r, g, b);
-    // }
-    
+
+    // Third section: 26-40 (15 LEDs)
+    public void setSection3(int r, int g, int b) {
+        setSection(26, 15, r, g, b);
+    }
+
     // // Fourth section: 41-53 (13 LEDs)
     // public void setSection4(int r, int g, int b) {
-    //     setSection(41, 13, r, g, b);
+    // setSection(41, 13, r, g, b);
     // }
-    
+
     // Set all sections with different colors
     public void setAllSections(int r1, int g1, int b1, int r2, int g2, int b2) {
         setSection1(r1, g1, b1);
@@ -365,14 +366,14 @@ public class LED extends SubsystemBase {
         // setSection3(r3, g3, b3);
         // setSection4(r4, g4, b4);
     }
-    
+
     // Charging effect for a specific section - non-blocking version using timer
     public void sectionCharge(int section, int r, int g, int b, int blink) {
         int startIndex = 0;
         int length = 0;
-        
+
         // Determine section parameters
-        switch(section) {
+        switch (section) {
             case 1:
                 startIndex = 0;
                 length = 12;
@@ -381,26 +382,30 @@ public class LED extends SubsystemBase {
                 startIndex = 12;
                 length = 14;
                 break;
+            case 3:
+                startIndex = 26;
+                length = 15;
+                break;
             default:
                 return; // Invalid section
         }
-        
+
         // First call initializes the animation
         if (chargeState == 0) {
             chargeState = 1;
             ledIndex = 0;
             blinkCount = 0;
             lastStateChangeTime = timer.get();
-            
+
             // Reset section
             for (int i = startIndex; i < startIndex + length; i++) {
                 m_ledBuffer.setRGB(i, 0, 0, 0);
             }
         }
-        
+
         double currentTime = timer.get();
         double elapsedTime = currentTime - lastStateChangeTime;
-        
+
         // State machine for charging animation
         switch (chargeState) {
             case 1: // Filling up LEDs one by one
@@ -416,7 +421,7 @@ public class LED extends SubsystemBase {
                     }
                 }
                 break;
-                
+
             case 2: // Blinking the section
                 if (blinkCount < blink * 2) {
                     if (elapsedTime >= 0.1) { // 100ms per blink state
@@ -439,7 +444,7 @@ public class LED extends SubsystemBase {
                     lastStateChangeTime = currentTime;
                 }
                 break;
-                
+
             case 3: // Final state - turn off
                 for (int i = startIndex; i < startIndex + length; i++) {
                     m_ledBuffer.setRGB(i, 0, 0, 0);
@@ -447,29 +452,32 @@ public class LED extends SubsystemBase {
                 chargeState = 0; // Reset for next time
                 break;
         }
-        
+
         m_led.setData(m_ledBuffer);
     }
-    
+
     /**
      * Show charging progress based on percentage in specified section
-     * @param section Section number (1-4)
-     * @param r Red value (0-255)
-     * @param g Green value (0-255)
-     * @param b Blue value (0-255)
-     * @param percentage Charging percentage (0.0-1.0)
-     * @param blink Whether to blink when fully charged
-     * @param fromRightToLeft Whether to fill from right-to-left instead of left-to-right
+     * 
+     * @param section         Section number (1-4)
+     * @param r               Red value (0-255)
+     * @param g               Green value (0-255)
+     * @param b               Blue value (0-255)
+     * @param percentage      Charging percentage (0.0-1.0)
+     * @param blink           Whether to blink when fully charged
+     * @param fromRightToLeft Whether to fill from right-to-left instead of
+     *                        left-to-right
      */
-    public void sectionChargePercentage(int section, int r, int g, int b, double percentage, boolean blink, boolean fromRightToLeft) {
+    public void sectionChargePercentage(int section, int r, int g, int b, double percentage, boolean blink,
+            boolean fromRightToLeft) {
         int startIndex = 0;
         int length = 0;
-        
+
         // Clamp percentage between 0 and 1
         percentage = Math.max(0.0, Math.min(1.0, percentage));
-        
+
         // Determine section parameters
-        switch(section) {
+        switch (section) {
             case 1:
                 startIndex = 0;
                 length = 12;
@@ -478,18 +486,22 @@ public class LED extends SubsystemBase {
                 startIndex = 12;
                 length = 14;
                 break;
+            case 3:
+                startIndex = 26;
+                length = 15;
+                break;
             default:
                 return; // Invalid section
         }
-        
+
         // Calculate how many LEDs to light up
-        int ledsToLight = (int)Math.ceil(percentage * length);
-        
+        int ledsToLight = (int) Math.ceil(percentage * length);
+
         // Reset section first
         for (int i = startIndex; i < startIndex + length; i++) {
             m_ledBuffer.setRGB(i, 0, 0, 0);
         }
-        
+
         // Light up LEDs based on percentage
         if (fromRightToLeft) {
             // Fill from right to left
@@ -502,7 +514,7 @@ public class LED extends SubsystemBase {
                 m_ledBuffer.setRGB(i, r, g, b);
             }
         }
-        
+
         // If fully charged and blink is true, use timer-based blinking instead of sleep
         if (percentage >= 0.99 && blink) {
             // Fast blinking effect based on timer
@@ -515,11 +527,11 @@ public class LED extends SubsystemBase {
                 }
             }
         }
-        
+
         // Only update LED data once
         m_led.setData(m_ledBuffer);
     }
-    
+
     /**
      * Show charging progress based on percentage in specified section
      * (Backwards compatibility with old calls)
@@ -529,25 +541,28 @@ public class LED extends SubsystemBase {
         boolean fromRightToLeft = (section == 3);
         sectionChargePercentage(section, r, g, b, percentage, blink, fromRightToLeft);
     }
-    
+
     /**
      * Show height-based color in specified section
-     * @param section Section number (1-2)
-     * @param height Current height value
-     * @param maxHeight Maximum height value for scaling
-     * @param percentage Completion percentage (0.0-1.0)
-     * @param blink Whether to blink when at target
-     * @param fromRightToLeft Whether to fill from right-to-left instead of left-to-right
+     * 
+     * @param section         Section number (1-2)
+     * @param height          Current height value
+     * @param maxHeight       Maximum height value for scaling
+     * @param percentage      Completion percentage (0.0-1.0)
+     * @param blink           Whether to blink when at target
+     * @param fromRightToLeft Whether to fill from right-to-left instead of
+     *                        left-to-right
      */
-    public void sectionHeightColor(int section, double height, double maxHeight, double percentage, boolean blink, boolean fromRightToLeft) {
+    public void sectionHeightColor(int section, double height, double maxHeight, double percentage, boolean blink,
+            boolean fromRightToLeft) {
         int startIndex = 0;
         int length = 0;
-        
+
         // Clamp percentage between 0 and 1
         percentage = Math.max(0.0, Math.min(1.0, percentage));
-        
+
         // Determine section parameters
-        switch(section) {
+        switch (section) {
             case 1:
                 startIndex = 0;
                 length = 12;
@@ -556,25 +571,30 @@ public class LED extends SubsystemBase {
                 startIndex = 12;
                 length = 14;
                 break;
+            case 3:
+                startIndex = 26;
+                length = 15;
+                break;
             default:
                 return; // Invalid section
         }
-        
+
         // Calculate how many LEDs to light up
-        int ledsToLight = (int)Math.ceil(percentage * length);
-        
+        int ledsToLight = (int) Math.ceil(percentage * length);
+
         // Reset section first
         for (int i = startIndex; i < startIndex + length; i++) {
             m_ledBuffer.setRGB(i, 0, 0, 0);
         }
-        
+
         // Map height to HSV hue value (0-180)
-        // Lower heights: red/orange (0-30), middle heights: green/cyan (60-120), upper heights: blue/purple (120-180)
-        int hue = (int)(180.0 * (height / maxHeight));
-        
+        // Lower heights: red/orange (0-30), middle heights: green/cyan (60-120), upper
+        // heights: blue/purple (120-180)
+        int hue = (int) (180.0 * (height / maxHeight));
+
         // Clamp hue value
         hue = Math.max(0, Math.min(180, hue));
-        
+
         // Light up LEDs based on percentage
         if (fromRightToLeft) {
             // Fill from right to left
@@ -589,7 +609,7 @@ public class LED extends SubsystemBase {
                 m_ledBuffer.setHSV(i, hue, 255, 255);
             }
         }
-        
+
         // If at target and blink is true, use timer-based blinking
         if (percentage >= 0.99 && blink) {
             // Fast blinking effect based on timer
@@ -600,16 +620,17 @@ public class LED extends SubsystemBase {
                 }
             }
         }
-        
+
         // Only update LED data once
         m_led.setData(m_ledBuffer);
     }
-    
+
     /**
      * Blinks section1 (LEDs 0-11) with customizable color and speed
-     * @param r Red value (0-255)
-     * @param g Green value (0-255)
-     * @param b Blue value (0-255)
+     * 
+     * @param r          Red value (0-255)
+     * @param g          Green value (0-255)
+     * @param b          Blue value (0-255)
      * @param blinkSpeed Blink speed multiplier (higher = faster)
      */
     public void blinkSection1(int r, int g, int b, double blinkSpeed) {
@@ -617,16 +638,41 @@ public class LED extends SubsystemBase {
         // Calculate blink cycle duration based on speed (0.6 seconds by default)
         double cycleDuration = 0.6 / blinkSpeed;
         double halfCycle = cycleDuration / 2;
-        
+
         // Determine if we're in the "on" or "off" part of the cycle
         double cycleTime = timer.get() % cycleDuration;
-        
+
         // First half of cycle: LEDs on
         if (cycleTime < halfCycle) {
             setSection1(r, g, b);
         } else {
             // Second half of cycle: LEDs off
             setSection1(0, 0, 0);
+        }
+    }
+    /**
+     * Blinks section1 (LEDs 0-11) with customizable color and speed
+     * 
+     * @param r          Red value (0-255)
+     * @param g          Green value (0-255)
+     * @param b          Blue value (0-255)
+     * @param blinkSpeed Blink speed multiplier (higher = faster)
+     */
+    public void blinkSection3(int r, int g, int b, double blinkSpeed) {
+        timer.start();
+        // Calculate blink cycle duration based on speed (0.6 seconds by default)
+        double cycleDuration = 0.6 / blinkSpeed;
+        double halfCycle = cycleDuration / 2;
+
+        // Determine if we're in the "on" or "off" part of the cycle
+        double cycleTime = timer.get() % cycleDuration;
+
+        // First half of cycle: LEDs on
+        if (cycleTime < halfCycle) {
+            setSection3(r, g, b);
+        } else {
+            // Second half of cycle: LEDs off
+            setSection3(0, 0, 0);
         }
     }
 }

@@ -303,11 +303,10 @@ public class SuperStruct extends SubsystemBase {
         // save previos state
         mPreviousState = mCommandedState;
 
-        // Reset LED color when leaving CS state
-        if (!state.equals(SuperStructState.DEFAULT)) {
+        // if (!state.equals(SuperStructState.DEFAULT)) {
             // If not going to DEFAULT (which has its own LED pattern)
             mled.nocolor();
-        }
+        // }
         
         
         // Reset algaeCommandSent when changing to a different state
@@ -425,7 +424,7 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void DISABLE(){
-        mled.blinkSection1(255, 165, 0, 1.5);
+        // mled.blinkSection1(255, 165, 0, 1.5);
     }
 
     public void updateState() {
