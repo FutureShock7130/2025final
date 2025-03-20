@@ -107,9 +107,9 @@ public class Robot extends TimedRobot {
     StateMachine.getInstance().setCommandedState(SuperStructState.DISABLE);
     Pose2d desiredPose = new PathPlannerAuto(m_robotContainer.getAutonomousCommand().getName()).getStartingPose();
     if (desiredPose != null) {
-    if ((m_robotContainer.getDrive().getPose().getX() - desiredPose.getX()) < 0.03
-        && (m_robotContainer.getDrive().getPose().getY() - desiredPose.getY()) < 0.03
-        && (m_robotContainer.getDrive().getPose().getRotation().minus(desiredPose.getRotation())).getDegrees() < 1) {
+    if (Math.abs(m_robotContainer.getDrive().getPose().getX() - desiredPose.getX()) < 0.03
+        && Math.abs(m_robotContainer.getDrive().getPose().getY() - desiredPose.getY()) < 0.03
+        && Math.abs((m_robotContainer.getDrive().getPose().getRotation().minus(desiredPose.getRotation())).getDegrees()) < 1) {
           m_robotContainer.m_led.color(0, 255, 0);
     } else {
       if (DriverStation.getAlliance().get() == Alliance.Blue) {
@@ -119,7 +119,7 @@ public class Robot extends TimedRobot {
         }
       }
     } else {
-      m_robotContainer.m_led.blink(200, 200, 200);
+      m_robotContainer.m_led.marquee(255, 0, 255, 10, 1.5);
     }
   }
 

@@ -9,6 +9,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -19,6 +20,7 @@ import frc.robot.Constants;
 import frc.robot.Vision;
 import frc.robot.commands.DriveCommands;
 import frc.robot.subsystems.drive.Drive;
+import frc.robot.subsystems.LED;
 
 import java.util.Map;
 import org.photonvision.PhotonCamera;
@@ -311,6 +313,11 @@ public class NavigationController extends SubsystemBase {
             boolean success = navigateToClosestTag(0.55, -0.164, null);  // 1.0m to the left
             if (success) {
                 SmartDashboard.putString("Navigation/Status", "Navigating to left of closest tag");
+                // Check if we're at the correct distance
+                if (isAtTargetPosition(0.55, -0.164, 0.1)) {
+                    // Blink green when at correct position
+                    LED.getInstance().blinkSection1(0, 255, 0, 1.5);
+                }
             } else {
                 SmartDashboard.putString("Navigation/Status", "No AprilTags visible");
             }
@@ -320,6 +327,11 @@ public class NavigationController extends SubsystemBase {
             boolean success = navigateToClosestTag(0.55, 0.164, null);  // -1.0m to the left (= right)
             if (success) {
                 SmartDashboard.putString("Navigation/Status", "Navigating to right of closest tag");
+                // Check if we're at the correct distance
+                if (isAtTargetPosition(0.55, 0.164, 0.1)) {
+                    // Blink green when at correct position
+                    LED.getInstance().blinkSection1(0, 255, 0, 1.5);
+                }
             } else {
                 SmartDashboard.putString("Navigation/Status", "No AprilTags visible");
             }
@@ -643,5 +655,48 @@ public class NavigationController extends SubsystemBase {
      */
     public DestinationState getCurrentDestination() {
         return currentDestination;
+    }
+
+    /**
+     * Checks if the robot is at the target position
+     * @param x The x coordinate of the target position
+     * @param y The y coordinate of the target position
+     * @param tolerance The tolerance for the distance to the target position
+     * @return True if the robot is at the target position, false otherwise
+     */
+    private boolean isAtTargetPosition(double x, double y, double tolerance) {
+        // Get the closest visible tag
+        int tagId = findClosestVisibleTag();
+        if (tagId < 0) {
+            return false; // No tags visible
+        }
+
+        // Get the current robot pose
+        Pose2d robotPose = driveSubsystem.getPose();
+
+        // Get the tag pose
+        var tagPoseOptional = Constants.Vision.kTagLayout.getTagPose(tagId);
+        if (tagPoseOptional.isEmpty()) {
+            return false; // Tag not found in field layout
+        }
+
+        // Calculate the target position relative to the tag
+        Pose2d tagPose = tagPoseOptional.get().toPose2d();
+        
+        // Create a transformation relative to the tag's coordinate system
+        // x = forward from tag, y = left from tag
+        Transform2d relativeTransform = new Transform2d(
+            new Translation2d(x, y),
+            new Rotation2d() // No rotation
+        );
+        
+        // Apply the transformation to get the absolute target position
+        Pose2d targetPose = tagPose.plus(relativeTransform);
+        
+        // Calculate distance from robot to target
+        double distance = robotPose.getTranslation().getDistance(targetPose.getTranslation());
+        
+        // Check if we're within tolerance
+        return distance <= tolerance;
     }
 } 
