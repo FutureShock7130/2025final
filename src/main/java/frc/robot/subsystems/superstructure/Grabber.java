@@ -83,7 +83,7 @@ public class Grabber extends SubsystemBase {
         CANcoderConfiguration encoderConfig = new CANcoderConfiguration();
         encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
         encoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
-        encoderConfig.MagnetSensor.MagnetOffset = 0.3;
+        encoderConfig.MagnetSensor.MagnetOffset = -0.282958984375;
         grabberEncoder.getConfigurator().apply(encoderConfig);
 
         pidController.reset(grabberEncoder.getAbsolutePosition().getValueAsDouble());
@@ -115,11 +115,11 @@ public class Grabber extends SubsystemBase {
 
     @Override
     public void periodic() {
-        double baseKG = DEFAULT_KG;
+        // double baseKG = DEFAULT_KG;
         double currentAngle = grabberEncoder.getAbsolutePosition().getValueAsDouble();
 
         // Calculate kG based on angle (now in volts)
-        double kG = (currentAngle <= 0) ? -baseKG * 12.0 : baseKG * 12.0;
+        // double kG = (currentAngle <= 0) ? -baseKG * 12.0 : baseKG * 12.0;
     }
 
     // Copy your configuration methods

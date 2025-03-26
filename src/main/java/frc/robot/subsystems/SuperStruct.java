@@ -291,7 +291,7 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void CORALFORCEINTAKE() {
-        mGrabber.forceCoralIntake();
+        // mGrabber.forceCoralIntake();
     }
 
     /**
@@ -322,7 +322,7 @@ public class SuperStruct extends SubsystemBase {
 
     public void DEFAULT() {
         mGrabber.stop();
-        mGrabber.resetcounter();
+        // mGrabber.resetcounter();
         mElevator.setPosition(-0.0);
         mObjectDetection.stopFollowing();
         mAlgaeRemover.setSpeed(0);
@@ -331,7 +331,7 @@ public class SuperStruct extends SubsystemBase {
 
     public void grabberDefault() {
         mGrabber.stop();
-        mGrabber.resetcounter();
+        // mGrabber.resetcounter();
     }
 
     public void ALGAE_STOWAGE() {

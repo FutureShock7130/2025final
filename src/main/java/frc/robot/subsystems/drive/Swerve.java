@@ -83,7 +83,7 @@ public class Swerve implements ModuleIO {
         // turnTalon = new TalonFX(7);
         turnSparkMax = new SparkMax(22, MotorType.kBrushless);
         
-        cancoder = new CANcoder(2,"GTX7130");
+        cancoder = new CANcoder(2,"rio");
         absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(-0.288795)); // MUST BE CALIBRATED
         break;
       case 3:

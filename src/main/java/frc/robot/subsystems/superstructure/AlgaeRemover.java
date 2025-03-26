@@ -7,6 +7,7 @@ package frc.robot.subsystems.superstructure;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SoftLimitConfig;
@@ -33,8 +34,10 @@ public class AlgaeRemover extends SubsystemBase {
   private static final double DEFAULT_DURATION = 2.0; // Default duration in seconds
   
   // Motors
-  private final SparkMax leftMotor;
-  private final SparkMax rightMotor;
+  // private final SparkMax leftMotor;
+  // private final SparkMax rightMotor;
+  private final WPI_TalonSRX leftMotor;
+  private final WPI_TalonSRX rightMotor;
   
   // Dashboard
   private final ShuffleboardTab algaeTab = Shuffleboard.getTab("AlgaeRemover");
@@ -56,13 +59,13 @@ public class AlgaeRemover extends SubsystemBase {
   /** Creates a new AlgaeRemover. */
   public AlgaeRemover() {
     // Initialize motors
-    leftMotor = new SparkMax(LEFT_MOTOR_CAN_ID, MotorType.kBrushless);
-    rightMotor = new SparkMax(RIGHT_MOTOR_CAN_ID, MotorType.kBrushless);
+    leftMotor = new WPI_TalonSRX(LEFT_MOTOR_CAN_ID);
+    rightMotor = new WPI_TalonSRX(RIGHT_MOTOR_CAN_ID);
     
     // Configure motors
     
-    configureNEO(leftMotor, true, true);
-    configureNEO(rightMotor, false, true); // Right motor is inverted
+    // configureNEO(leftMotor, true, true);
+    // configureNEO(rightMotor, false, true); // Right motor is inverted
     
     // Setup dashboard entries for both motors
     algaeTab.addString("Motor Status", () -> "Left: " + LEFT_MOTOR_CAN_ID + " | Right: " + RIGHT_MOTOR_CAN_ID)
@@ -150,11 +153,11 @@ public class AlgaeRemover extends SubsystemBase {
         .withPosition(0, 7)
         .withSize(4, 1);
     
-    algaeTab.add("Reset Position", getResetCommand())
-        .withWidget(BuiltInWidgets.kCommand)
-        .withProperties(Map.of("Label", "Reset Encoders"))
-        .withPosition(0, 8)
-        .withSize(4, 1);
+    // algaeTab.add("Reset Position", getResetCommand())
+    //     .withWidget(BuiltInWidgets.kCommand)
+    //     .withProperties(Map.of("Label", "Reset Encoders"))
+    //     .withPosition(0, 8)
+    //     .withSize(4, 1);
     
     // Add status indicators
     algaeTab.addBoolean("Left Running", () -> Math.abs(leftMotor.get()) > 0.01)
@@ -264,9 +267,9 @@ public class AlgaeRemover extends SubsystemBase {
   /**
    * Command to reset both encoder positions
    */
-  private Command getResetCommand() {
-    return Commands.runOnce(this::resetPosition, this);
-  }
+  // private Command getResetCommand() {
+  //   return Commands.runOnce(this::resetPosition, this);
+  // }
   
   /**
    * Configures a NEO motor with soft limits
@@ -364,26 +367,26 @@ public class AlgaeRemover extends SubsystemBase {
    * 
    * @return Current position in rotations
    */
-  public double getLeftPosition() {
-    return leftMotor.getEncoder().getPosition();
-  }
+  // public double getLeftPosition() {
+  //   return leftMotor.getEncoder().getPosition();
+  // }
   
   /**
    * Get the current position of the right motor in rotations
    * 
    * @return Current position in rotations
    */
-  public double getRightPosition() {
-    return rightMotor.getEncoder().getPosition();
-  }
+  // public double getRightPosition() {
+  //   return rightMotor.getEncoder().getPosition();
+  // }
   
   /**
    * Reset the encoder positions to zero
    */
-  public void resetPosition() {
-    leftMotor.getEncoder().setPosition(0.0);
-    rightMotor.getEncoder().setPosition(0.0);
-  }
+  // public void resetPosition() {
+  //   leftMotor.getEncoder().setPosition(0.0);
+  //   rightMotor.getEncoder().setPosition(0.0);
+  // }
   
   /**
    * Stop the left motor
@@ -410,8 +413,8 @@ public class AlgaeRemover extends SubsystemBase {
   @Override
   public void periodic() {
     // Update dashboard with both motor info
-    leftPositionEntry.setDouble(getLeftPosition());
-    rightPositionEntry.setDouble(getRightPosition());
+    // leftPositionEntry.setDouble(getLeftPosition());
+    // rightPositionEntry.setDouble(getRightPosition());
     leftSpeedEntry.setDouble(leftMotor.get());
     rightSpeedEntry.setDouble(rightMotor.get());
   }

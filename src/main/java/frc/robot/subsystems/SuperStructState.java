@@ -30,3 +30,7 @@ public enum SuperStructState {
     SMACK_DOWN,
     SMACK_UP
 } 
+/*
+ * grabber default: 0.396729
+ * grabber funnel: 0.673584
+ */
