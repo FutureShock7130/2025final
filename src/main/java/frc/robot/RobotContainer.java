@@ -176,17 +176,33 @@ public class RobotContainer {
                 .withPosition(0, 3)
                 .withSize(6, 1);
 
-    NamedCommands.registerCommand("DEFAULT", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.DEFAULT), m_elevator));
-    NamedCommands.registerCommand("L1", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L1), m_elevator));
-    NamedCommands.registerCommand("L2", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L2), m_elevator));
-    NamedCommands.registerCommand("L3", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L3), m_elevator));
-    NamedCommands.registerCommand("L4", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L4), m_elevator).withTimeout(2));
-    NamedCommands.registerCommand("PLACE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.PLACEMENT), m_grabber).withTimeout(0.3));
-    NamedCommands.registerCommand("INTAKE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.CS), m_grabber).withTimeout(2.5));
-    NamedCommands.registerCommand("GRABBERDEFAULT", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.GRABBER_DEFAULT), m_grabber).withTimeout(0.5));
-    NamedCommands.registerCommand("GENSHIN", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.GENSHINIMPACT), m_elevator).withTimeout(1));
-    NamedCommands.registerCommand("ALGAE_UP", Commands.run(() -> mAlgaeRemover.setRightSpeed(0.4), mAlgaeRemover).withTimeout(2));
-    NamedCommands.registerCommand("ALGAE_DOWN", Commands.run(() -> mAlgaeRemover.setRightSpeed(-0.4), mAlgaeRemover).withTimeout(2));
+        NamedCommands.registerCommand("DEFAULT", Commands
+                .runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.DEFAULT), m_elevator));
+        NamedCommands.registerCommand("L1",
+                Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L1), m_elevator));
+        NamedCommands.registerCommand("L2",
+                Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L2), m_elevator));
+        NamedCommands.registerCommand("L3",
+                Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L3), m_elevator));
+        NamedCommands.registerCommand("L4",
+                Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.L4), m_elevator)
+                        .withTimeout(2));
+        NamedCommands.registerCommand("PLACE",
+                Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.PLACEMENT), m_grabber)
+                        .withTimeout(1));
+        NamedCommands.registerCommand("INTAKE",
+                Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.CS), m_grabber)
+                        .withTimeout(2.5));
+        NamedCommands.registerCommand("GRABBERDEFAULT", Commands
+                .run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.GRABBER_DEFAULT), m_grabber)
+                .withTimeout(0.5));
+        NamedCommands.registerCommand("GENSHIN", Commands
+                .runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.GENSHINIMPACT), m_elevator)
+                .withTimeout(1));
+        NamedCommands.registerCommand("ALGAE_UP",
+                Commands.run(() -> mAlgaeRemover.setRightSpeed(0.4), mAlgaeRemover).withTimeout(2));
+        NamedCommands.registerCommand("ALGAE_DOWN",
+                Commands.run(() -> mAlgaeRemover.setRightSpeed(-0.4), mAlgaeRemover).withTimeout(2));
 
         // Set up auto routines
         autoChooser = AutoBuilder.buildAutoChooser();
