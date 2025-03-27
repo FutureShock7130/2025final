@@ -31,7 +31,6 @@ public class Grabber extends SubsystemBase {
     private final SparkMax rightangle;
     private final SparkMax leftangle;
     private final CANcoder grabberEncoder;
-    private static final double cancderoffset = 0.2;
 
     // Shuffleboard entries
     private final ShuffleboardTab grabberTab = Shuffleboard.getTab("Grabber");
@@ -48,7 +47,7 @@ public class Grabber extends SubsystemBase {
 
     private final ArmFeedforward grabberFF = new ArmFeedforward(
             0.0,
-            0.02,
+            0.05,
             0.1);
 
     private final DigitalInput intakeLimitSwitch;
@@ -184,7 +183,7 @@ public class Grabber extends SubsystemBase {
         double currentAngle = grabberEncoder.getAbsolutePosition().getValueAsDouble();
 
         // Convert position to radians for ArmFeedforward
-        double positionRadians = (currentAngle - cancderoffset) * Math.PI * 2; // Adjust scaling as needed
+        double positionRadians = (currentAngle) * Math.PI * 2; // Adjust scaling as needed
 
         // Calculate feedforward voltage
         double ffVolts = grabberFF.calculate(positionRadians, output);
@@ -211,13 +210,13 @@ public class Grabber extends SubsystemBase {
 
 
     public void intake() {
-        if (intakeLimitSwitch.get()) {
+        if (!intakeLimitSwitch.get()) {
         rightIntake.set(0);
         leftIntake.set(0);
         return;
         }else{
-        rightIntake.set(-0.5);
-        leftIntake.set(0.5);
+        rightIntake.set(0.5);
+        leftIntake.set(-0.5);
         }
     }
 
@@ -243,6 +242,6 @@ public class Grabber extends SubsystemBase {
     }
 
     public boolean hasCoral() {
-        return intakeLimitSwitch.get();
+        return !intakeLimitSwitch.get();
     }
 }
