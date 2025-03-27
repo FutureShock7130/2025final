@@ -308,7 +308,7 @@ public class SuperStruct extends SubsystemBase {
             mled.color(0, 0, 255);  // RGB values for green
         }else{
             mled.marqueeSection(0, 13, 100, 100, 100, 1.5);
-            mled.marqueeSection(22, 35, 100, 100, 100, 1.5);
+            mled.marqueeSection(22, 35, 100, 100, 100, 1.5, true);
         }
     }
 

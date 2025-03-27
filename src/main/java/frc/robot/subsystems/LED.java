@@ -368,10 +368,16 @@ public class LED extends SubsystemBase {
     }
    
     public void marqueeSection(int startLED, int endLED, int r, int g, int b, double speed) {
+        marqueeSection(startLED, endLED, r, g, b, speed, false);
+    }
+
+    public void marqueeSection(int startLED, int endLED, int r, int g, int b, double speed, boolean reverse) {
         timer.start();
         if (timer.get() < 0.1) {
             for (int i = startLED; i <= endLED && i < m_ledBuffer.getLength(); i++) {
-                if (((int) ((i + counter) / 6)) % 2 == 0) {
+                // When reversed, we subtract counter instead of adding it
+                int position = reverse ? (-i + counter) : (i + counter);
+                if (((int) (position / 6)) % 2 == 0) {
                     m_ledBuffer.setRGB(i, r, g, b);
                 } else {
                     m_ledBuffer.setRGB(i, 0, 0, 0);
