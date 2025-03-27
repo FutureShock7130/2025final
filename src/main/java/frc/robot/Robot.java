@@ -101,12 +101,12 @@ public class Robot extends TimedRobot {
   /** This function is called once each time the robot enters Disabled mode. */
   @Override
   public void disabledInit() {
-    StateMachine.getInstance().setCommandedState(SuperStructState.DISABLE);
+    // StateMachine.getInstance().setCommandedState(SuperStructState.DISABLE);
   }
 
   @Override
   public void disabledPeriodic() {
-    StateMachine.getInstance().setCommandedState(SuperStructState.DISABLE);
+    // StateMachine.getInstance().setCommandedState(SuperStructState.DISABLE);
     Pose2d desiredPose = new PathPlannerAuto(m_robotContainer.getAutonomousCommand().getName()).getStartingPose();
     if (desiredPose != null) {
     if (Math.abs(m_robotContainer.getDrive().getPose().getX() - desiredPose.getX()) < 0.03

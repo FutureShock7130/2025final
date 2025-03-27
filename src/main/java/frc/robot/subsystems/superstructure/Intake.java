@@ -48,13 +48,13 @@ public class Intake extends SubsystemBase {
 
   private final TrapezoidProfile.Constraints constraints =
   new TrapezoidProfile.Constraints(
-    0.1,
-    0.1
+    0.2,
+    0.2
   );
 
   private final ProfiledPIDController pidController =
   new ProfiledPIDController(
-    1.2,
+    1,
     0.02,
     0.001,
     constraints
@@ -62,9 +62,9 @@ public class Intake extends SubsystemBase {
 
   private final ArmFeedforward intakeFF =
   new ArmFeedforward(
-    0.01,
+    0.1,
     0.2,
-    0.1
+    0.5
   );
 
   private final DynamicMotionMagicVoltage magic =
@@ -96,7 +96,7 @@ public class Intake extends SubsystemBase {
     
     // Then initialize motors
     // leftAngle = new TalonFX(17, "GTX7130");
-    rightAngle = new TalonFX(18, "GTX7130");
+    rightAngle = new TalonFX(18, "rio");
     angleEncoder = new CANcoder(4, "rio");
     intakeMotor = new TalonFX(45, "rio");
     // Configure TalonFX motors
@@ -139,8 +139,8 @@ public class Intake extends SubsystemBase {
     // Configure CANcoder
     CANcoderConfiguration encoderConfig = new CANcoderConfiguration();
     encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-    encoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 0;
-    encoderConfig.MagnetSensor.MagnetOffset = -0.2;
+    encoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
+    encoderConfig.MagnetSensor.MagnetOffset = -0.8566796875;
     angleEncoder.getConfigurator().apply(encoderConfig);
 
     // // Configure SparkMax
