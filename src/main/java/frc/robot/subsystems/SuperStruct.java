@@ -51,7 +51,7 @@ public class SuperStruct extends SubsystemBase {
     private double targetUpPosition = 0.0;
 
     // Add this field to the class
-    private static final double ALGAE_SPEED = 0.3; // Speed for the algae remover
+    private static final double ALGAE_SPEED = 0.5; // Speed for the algae remover
     private static final double ALGAE_DURATION = 0.2; // Duration in seconds for the algae remover to run
     private boolean algaeCommandSent = false; // Track if we've already sent the command
     private double algaeStartTime = 0; // Track when the algae command was sent
