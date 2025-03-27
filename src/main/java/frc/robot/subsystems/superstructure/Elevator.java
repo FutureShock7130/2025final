@@ -101,7 +101,7 @@ public class Elevator extends SubsystemBase {
     // Create soft limit config for elevator
     SoftLimitConfig softLimitConfig = new SoftLimitConfig();
     softLimitConfig
-        .forwardSoftLimit(198 * 0.6)     // in rotations
+        .forwardSoftLimit(200 * 0.6)     // in rotations
         .forwardSoftLimitEnabled(softLimit)
         .reverseSoftLimit(0.0)     
         .reverseSoftLimitEnabled(false);

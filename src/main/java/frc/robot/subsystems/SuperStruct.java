@@ -269,12 +269,11 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void L4() {
-        mGrabber.setPosition(0.396729);
-        if (mGrabber.atTargetPosition()) {
             mElevator.setPosition(165 * 0.6);
             if (mElevator.atTargetPosition()) {
                 mGrabber.setPosition(0.297539);
-            }
+        }else {
+            mGrabber.setPosition(0.396729);
         }
         mIntake.setAngle(0.818359);
     }
@@ -305,10 +304,10 @@ public class SuperStruct extends SubsystemBase {
         // Check if coral is detected and update LEDs accordingly
         if (mGrabber.hasCoral()) {
             // Set LED to green when coral is detected
-            mled.color(0, 0, 255);  // RGB values for green
+            mled.color(0, 255, 0);  // RGB values for green
         }else{
-            mled.marqueeSection(0, 13, 100, 100, 100, 1.5);
-            mled.marqueeSection(22, 35, 100, 100, 100, 1.5, true);
+            mled.marqueeSection(0, 13, 100, 100, 100, 0.5);
+            mled.marqueeSection(22, 35, 100, 100, 100, 0.5, true);
         }
     }
 
@@ -367,7 +366,7 @@ public class SuperStruct extends SubsystemBase {
             if (!hasSetSafeHeight && !isMovingToDefault) {
                 // Only set target position once
                 savedElevatorPos = mElevator.getElevatorPosition();
-                int raiseDistance = mPreviousState == SuperStructState.L4 ? 25 : 35;
+                int raiseDistance = mPreviousState == SuperStructState.L4 ? 25 : 40;
                 targetUpPosition = savedElevatorPos + raiseDistance;
                 mElevator.setPosition(targetUpPosition);
                 mGrabber.setPosition(0.396729);
@@ -401,7 +400,7 @@ public class SuperStruct extends SubsystemBase {
         mGrabber.stop();
         mIntake.setAngle(0.818359);
         mIntake.setIntake(0.0);
-        mled.rainbowmarquee();
+        // mled.rainbowmarquee();
         mObjectDetection.stopFollowing();
     }
 

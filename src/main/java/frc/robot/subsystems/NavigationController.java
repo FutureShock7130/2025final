@@ -190,8 +190,8 @@ public class NavigationController extends SubsystemBase {
                 } else {
                     // No special position feedback
                     SmartDashboard.putString("Position", "Not near tag position");
-                    LED.getInstance().blinkSection1(150, 30, 7, 1);
-                    LED.getInstance().blinkSection3(120, 30, 7, 1);
+                    // LED.getInstance().blinkSection1(150, 30, 7, 1);
+                    // LED.getInstance().blinkSection3(120, 30, 7, 1);
                 }
             }
         }
