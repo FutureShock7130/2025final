@@ -71,7 +71,7 @@ public class Robot extends TimedRobot {
   }
 
   public void RobotInit() {
-
+    StateMachine.getInstance().setCommandedState(SuperStructState.DEFAULT);
   }
 
   /**
@@ -114,7 +114,7 @@ public class Robot extends TimedRobot {
       SmartDashboard.putNumber("Starting Pose Heading", desiredPose.getRotation().getDegrees());
     if (Math.abs(m_robotContainer.getDrive().getPose().getX() - desiredPose.getX()) < 0.03
         && Math.abs(m_robotContainer.getDrive().getPose().getY() - desiredPose.getY()) < 0.03
-        && Math.abs((m_robotContainer.getDrive().getPose().getRotation().minus(desiredPose.getRotation())).getDegrees()) < 1) {
+        && Math.abs((m_robotContainer.getDrive().getPose().getRotation().minus(desiredPose.getRotation())).getDegrees()) < 2) {
           m_robotContainer.m_led.color(0, 255, 0);
     } else {
       if (DriverStation.getAlliance().get() == Alliance.Blue) {

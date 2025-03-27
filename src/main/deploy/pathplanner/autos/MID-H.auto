@@ -9,9 +9,22 @@
           "data": {
             "commands": [
               {
-                "type": "path",
+                "type": "sequential",
                 "data": {
-                  "pathName": "Mid-G"
+                  "commands": [
+                    {
+                      "type": "path",
+                      "data": {
+                        "pathName": "MID-H"
+                      }
+                    },
+                    {
+                      "type": "wait",
+                      "data": {
+                        "waitTime": 1.66
+                      }
+                    }
+                  ]
                 }
               },
               {
@@ -21,25 +34,13 @@
                     {
                       "type": "named",
                       "data": {
-                        "name": "DEFAULT"
-                      }
-                    },
-                    {
-                      "type": "wait",
-                      "data": {
-                        "waitTime": 1.0
-                      }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
                         "name": "L4"
                       }
                     },
                     {
                       "type": "wait",
                       "data": {
-                        "waitTime": 2.7
+                        "waitTime": 2.6
                       }
                     },
                     {
@@ -53,23 +54,35 @@
                       "data": {
                         "waitTime": 0.5
                       }
-                    },
-                    {
-                      "type": "named",
-                      "data": {
-                        "name": "GENSHIN"
-                      }
-                    },
-                    {
-                      "type": "wait",
-                      "data": {
-                        "waitTime": 0.4
-                      }
                     }
                   ]
                 }
               }
             ]
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "GENSHIN"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.8
+          }
+        },
+        {
+          "type": "named",
+          "data": {
+            "name": "GRABBERDEFAULT"
+          }
+        },
+        {
+          "type": "wait",
+          "data": {
+            "waitTime": 0.8
           }
         },
         {

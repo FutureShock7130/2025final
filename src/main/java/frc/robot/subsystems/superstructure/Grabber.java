@@ -114,11 +114,8 @@ public class Grabber extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // double baseKG = DEFAULT_KG;
-        double currentAngle = grabberEncoder.getAbsolutePosition().getValueAsDouble();
-
-        // Calculate kG based on angle (now in volts)
-        // double kG = (currentAngle <= 0) ? -baseKG * 12.0 : baseKG * 12.0;
+        SmartDashboard.putNumber("Grabber Angle", leftIntake.getEncoder().getPosition());
+        SmartDashboard.putNumber("Grabber Target Angle", pidController.getGoal().position);
     }
 
     // Copy your configuration methods
@@ -154,7 +151,6 @@ public class Grabber extends SubsystemBase {
                 .openLoopRampRate(0.1)
                 .apply(softLimitConfig)
                 .inverted(false);
-       
 
         motor.setCANTimeout(250);
         motor.configure(neoConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -193,7 +189,7 @@ public class Grabber extends SubsystemBase {
 
         leftangle.setVoltage(totalVoltage);
     }
-       
+
     /**
      * @return true if grabber is at the target position
      */
@@ -208,15 +204,14 @@ public class Grabber extends SubsystemBase {
         return grabberEncoder.getAbsolutePosition().getValueAsDouble();
     }
 
-
     public void intake() {
         if (!intakeLimitSwitch.get()) {
-        rightIntake.set(0);
-        leftIntake.set(0);
-        return;
-        }else{
-        rightIntake.set(0.5);
-        leftIntake.set(-0.5);
+            rightIntake.set(0);
+            leftIntake.set(0);
+            return;
+        } else {
+            rightIntake.set(0.5);
+            leftIntake.set(-0.5);
         }
     }
 

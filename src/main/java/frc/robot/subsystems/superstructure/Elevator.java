@@ -40,14 +40,14 @@ public class Elevator extends SubsystemBase {
   // Profiled PID Controller for smooth motionS
   private final TrapezoidProfile.Constraints constraints = 
       new TrapezoidProfile.Constraints(
-          150,   
+          175,   
           250
       );
   
   private final ProfiledPIDController pidController = 
       new ProfiledPIDController(
           0.03,   // P gain
-          0.0,   // I gain
+          0.0003,   // I gain
           0.0,   // D gain
           constraints
       );

@@ -19,19 +19,21 @@
     "L",
     "LA",
     "LC",
+    "LEAVE",
     "Left",
     "MA",
     "MC",
     "Mid",
-    "LEAVE",
+    "MID",
     "PRO",
     "RA",
     "RC",
     "Right"
   ],
   "autoFolders": [
+    "DAMN",
     "LEAVE",
-    "DAMN"
+    "Test"
   ],
   "defaultMaxVel": 3.5,
   "defaultMaxAccel": 2.5,

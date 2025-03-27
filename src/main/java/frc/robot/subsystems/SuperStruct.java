@@ -31,7 +31,7 @@ import java.util.Map;
 
 public class SuperStruct extends SubsystemBase {
     Elevator mElevator;
-    Grabber mGrabber;
+    Grabber mGrabber = Grabber.getInstance();
     Intake mIntake;
     AlgaeRemover mAlgaeRemover;
     StateMachine mStateMachine;
@@ -60,7 +60,7 @@ public class SuperStruct extends SubsystemBase {
     // Add this field to the class
     private final frc.robot.subsystems.superstructure.AlgaeRemover algaeRemover = frc.robot.subsystems.superstructure.AlgaeRemover
             .getInstance();
-    private static final double ALGAE_SPEED = 0.3; // Speed for the algae remover
+    private static final double ALGAE_SPEED = 0.5; // Speed for the algae remover
     private static final double ALGAE_DURATION = 0.2; // Duration in seconds for the algae remover to run
     private boolean algaeCommandSent = false; // Track if we've already sent the command
     private double algaeStartTime = 0; // Track when the algae command was sent
@@ -114,10 +114,10 @@ public class SuperStruct extends SubsystemBase {
                         () -> setState(SuperStructState.DEFAULT),
                         this));
 
-        new CommandJoystick(2).button(2)
-                .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.PAUSE),
-                        this));
+        // new CommandJoystick(2).button(2)
+        // .onTrue(Commands.runOnce(
+        // () -> setState(SuperStructState.PAUSE),
+        // this));
 
         // new CommandJoystick(1).button(11)
         // .onTrue(Commands.runOnce(
@@ -269,10 +269,10 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void L4() {
-            mElevator.setPosition(165 * 0.6);
-            if (mElevator.atTargetPosition()) {
-                mGrabber.setPosition(0.297539);
-        }else {
+        mElevator.setPosition(165 * 0.6);
+        if (mElevator.atTargetPosition()) {
+            mGrabber.setPosition(0.297539);
+        } else {
             mGrabber.setPosition(0.396729);
         }
         mIntake.setAngle(0.818359);
@@ -294,7 +294,7 @@ public class SuperStruct extends SubsystemBase {
         mGrabber.intake();
         if (mElevator.atTargetPosition()) {
             if (!mGrabber.hasCoral()) {
-                mGrabber.setPosition(0.687162);
+                mGrabber.setPosition(0.675162);
             } else if (mGrabber.hasCoral()) {
                 mGrabber.setPosition(0.396729);
             }
@@ -304,8 +304,8 @@ public class SuperStruct extends SubsystemBase {
         // Check if coral is detected and update LEDs accordingly
         if (mGrabber.hasCoral()) {
             // Set LED to green when coral is detected
-            mled.color(0, 255, 0);  // RGB values for green
-        }else{
+            mled.color(0, 255, 0); // RGB values for green
+        } else {
             mled.marqueeSection(0, 13, 100, 100, 100, 0.5);
             mled.marqueeSection(22, 35, 100, 100, 100, 0.5, true);
         }
@@ -438,7 +438,7 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void GENSHINIMPACT() {
-        // mElevator.setPosition(129);
+        mElevator.setPosition(132);
     }
 
     public void ELEDROP() {
@@ -446,6 +446,7 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void SMACK_ALGAE() {
+        mGrabber.setPosition(0.396729);
         // Determine direction based on button press count (odd = up, even = down)
         boolean directionUp = (algaeButtonPressCount % 2 == 1); // Odd = up, Even = down
         double speed = directionUp ? -ALGAE_SPEED : ALGAE_SPEED;
@@ -630,15 +631,17 @@ public class SuperStruct extends SubsystemBase {
 
                     // Use color based on height for downward movement
                     // For downward motion: section 2 fills right-to-left
-                    mled.sectionHeightColor(2, currentPosition, 130.0, percentComplete, atTarget, true); // Fill
-                                                                                                         // right-to-left
+                    // mled.sectionHeightColor(2, currentPosition, 130.0, percentComplete, atTarget,
+                    // true); // Fill
+                    // right-to-left
                 } else {
                     // For upward movement, color based on height
                     // For upward motion: section 2 fills left-to-right
                     if (targetPosition > 0.1) { // Avoid division by zero
                         percentComplete = Math.min(currentPosition / targetPosition, 1.0);
-                        mled.sectionHeightColor(2, currentPosition, 130.0, percentComplete, atTarget, false); // Fill
-                                                                                                              // left-to-right
+                        // mled.sectionHeightColor(2, currentPosition, 130.0, percentComplete, atTarget,
+                        // false); // Fill
+                        // left-to-right
                     }
                 }
             }

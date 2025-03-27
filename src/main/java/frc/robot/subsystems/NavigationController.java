@@ -248,9 +248,7 @@ public class NavigationController extends SubsystemBase {
                 // If one of the auto-tag buttons is held and we're in manual driving,
                 // automatically start the navigation
                 if (currentDestination == DestinationState.MANUAL_DRIVING) {
-                    if (driver.getYButton()) {
-                        startPathfinding(DestinationState.PATHFINDING_TO_CLOSEST_TAG);
-                    } else if (driver.getLeftTriggerAxis() > 0.6) {
+                    if (driver.getLeftTriggerAxis() > 0.6) {
                         startPathfinding(DestinationState.PATHFINDING_TO_LEFT_OF_TAG);
                     } else if (driver.getRightTriggerAxis() > 0.6) {
                         startPathfinding(DestinationState.PATHFINDING_TO_RIGHT_OF_TAG);
