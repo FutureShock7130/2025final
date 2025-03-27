@@ -366,7 +366,7 @@ public class SuperStruct extends SubsystemBase {
             if (!hasSetSafeHeight && !isMovingToDefault) {
                 // Only set target position once
                 savedElevatorPos = mElevator.getElevatorPosition();
-                int raiseDistance = mPreviousState == SuperStructState.L4 ? 25 : 40;
+                int raiseDistance = mPreviousState == SuperStructState.L4 ? 30 : 40;
                 targetUpPosition = savedElevatorPos + raiseDistance;
                 mElevator.setPosition(targetUpPosition);
                 mGrabber.setPosition(0.396729);

@@ -109,6 +109,9 @@ public class Robot extends TimedRobot {
     // StateMachine.getInstance().setCommandedState(SuperStructState.DISABLE);
     Pose2d desiredPose = new PathPlannerAuto(m_robotContainer.getAutonomousCommand().getName()).getStartingPose();
     if (desiredPose != null) {
+      SmartDashboard.putNumber("Starting Pose X", desiredPose.getX());
+      SmartDashboard.putNumber("Starting Pose Y", desiredPose.getY());
+      SmartDashboard.putNumber("Starting Pose Heading", desiredPose.getRotation().getDegrees());
     if (Math.abs(m_robotContainer.getDrive().getPose().getX() - desiredPose.getX()) < 0.03
         && Math.abs(m_robotContainer.getDrive().getPose().getY() - desiredPose.getY()) < 0.03
         && Math.abs((m_robotContainer.getDrive().getPose().getRotation().minus(desiredPose.getRotation())).getDegrees()) < 1) {
