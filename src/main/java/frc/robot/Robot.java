@@ -4,32 +4,15 @@
 
 package frc.robot;
 
-import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
-import com.pathplanner.lib.path.PathConstraints;
-
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.Constants.FieldConstants;
 import frc.robot.subsystems.NavigationController;
-import frc.robot.subsystems.StateMachine;
-import frc.robot.subsystems.SuperStruct;
-import frc.robot.subsystems.SuperStructState;
-import frc.robot.subsystems.superstructure.Elevator;
-import frc.robot.subsystems.superstructure.Grabber;
 import frc.robot.subsystems.DashBoard;
 
 /**
@@ -42,18 +25,8 @@ import frc.robot.subsystems.DashBoard;
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
 
-  // private Vision vision;
-
-  private XboxController driver;
-  private Joystick ButtonBox1;
-  private Joystick ButtonBox2;
-
   private final RobotContainer m_robotContainer;
   private final DashBoard m_dashboard;
-
-  private final PathConstraints constraints = new PathConstraints(3, 3, 2 * Math.PI, 4 * Math.PI);
-
-  private double mIter = 0;
 
   /**
    * This function is run when the robot is first started up and should be used
@@ -61,17 +34,11 @@ public class Robot extends TimedRobot {
    * initialization code.
    */
   public Robot() {
+    super(0.01); // Update at 100Hz
     m_robotContainer = new RobotContainer();
     m_dashboard = DashBoard.getInstance(); // Get dashboard instance
-    driver = new XboxController(0);
-    ButtonBox1 = new Joystick(1);
-    ButtonBox2 = new Joystick(2);
     CommandScheduler.getInstance().registerSubsystem(NavigationController.getInstance());
     CommandScheduler.getInstance().registerSubsystem(m_dashboard); // Register dashboard as subsystem
-  }
-
-  public void RobotInit() {
-
   }
 
   /**
@@ -176,76 +143,6 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     NavigationController.getInstance().periodic();
-
-    // if (ButtonBox2.getRawButtonPressed(7)) {
-    // AutoBuilder.pathfindToPose(Constants.FieldConstants.A, constraints).until(()
-    // -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox2.getRawButtonPressed(8)) {
-    // AutoBuilder.pathfindToPose(Constants.FieldConstants.B, constraints).until(()
-    // -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox1.getRawButtonPressed(7)) {
-    // AutoBuilder.pathfindToPose(Constants.FieldConstants.C, constraints).until(()
-    // -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox1.getRawButtonPressed(12)) {
-    // AutoBuilder.pathfindToPose(Constants.FieldConstants.D, constraints).until(()
-    // -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox1.getRawButtonPressed(5)) {
-    // AutoBuilder.pathfindToPose(Constants.FieldConstants.E, constraints).until(()
-    // -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox1.getRawButtonPressed(6)) {
-    // AutoBuilder.pathfindToPose(Constants.FieldConstants.F, constraints).until(()
-    // -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox1.getRawButtonPressed(3)) {
-    // AutoBuilder.pathfindToPose(Constants.FieldConstants.G, constraints).until(()
-    // -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox1.getRawButtonPressed(4)) {
-    // AutoBuilder.pathfindToPose(Constants.FieldConstants.H, constraints).until(()
-    // -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox1.getRawButtonPressed(1)) {
-    // AutoBuilder.pathfindToPose(Constants.FieldConstants.I, constraints).until(()
-    // -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox1.getRawButtonPressed(2)) {
-    // AutoBuilder.pathfindToPose(Constants.FieldConstants.J, constraints).until(()
-    // -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox2.getRawButtonPressed(5)) {
-    // AutoBuilder.pathfindToPose(Constants.FieldConstants.K, constraints).until(()
-    // -> driverWantsControl()).schedule();
-    // }
-
-    // if (ButtonBox2.getRawButtonPressed(6)) {
-    // AutoBuilder.pathfindToPose(Constants.FieldConstants.L, constraints).until(()
-    // -> driverWantsControl()).schedule();
-    // }
-
-    // if (driver.getLeftBumperButtonPressed()) {
-    // AutoBuilder.pathfindToPose(Constants.FieldConstants.CSL,
-    // constraints).until(() -> driverWantsControl()).schedule();
-    // }
-
-    // if (driver.getRightBumperButtonPressed()) {
-    // AutoBuilder.pathfindToPose(Constants.FieldConstants.CSR,
-    // constraints).until(() -> driverWantsControl()).schedule();
-    // }
   }
 
   @Override
@@ -267,13 +164,6 @@ public class Robot extends TimedRobot {
   /** This function is called periodically whilst in simulation. */
   @Override
   public void simulationPeriodic() {
-  }
-
-  public boolean driverWantsControl() {
-    return Math.abs(driver.getLeftX()) > 0.3 ||
-        Math.abs(driver.getLeftY()) > 0.3 ||
-        Math.abs(driver.getRightX()) > 0.3 ||
-        Math.abs(driver.getRightY()) > 0.3;
   }
 
 }

@@ -2,9 +2,6 @@ package frc.robot.subsystems;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
-import com.pathplanner.lib.path.PathPlannerPath;
-// import com.pathplanner.lib.util.ReplanningConfig;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -20,14 +17,12 @@ import frc.robot.Constants;
 import frc.robot.Vision;
 import frc.robot.commands.DriveCommands;
 import frc.robot.subsystems.drive.Drive;
-import frc.robot.subsystems.LED;
-
 import java.util.Map;
 import org.photonvision.PhotonCamera;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class NavigationController extends SubsystemBase {
-    
+
     public enum DestinationState {
         MANUAL_DRIVING,
         PATHFINDING_TO_A,
@@ -62,18 +57,18 @@ public class NavigationController extends SubsystemBase {
         PATHFINDING_TO_KL,
         PATHFINDING_TO_CSL,
         PATHFINDING_TO_CSR,
-        
+
         // AprilTag navigation states (simplified)
-        PATHFINDING_TO_CLOSEST_TAG,      // In front of the closest tag
-        PATHFINDING_TO_LEFT_OF_TAG,      // Left of the closest tag
-        PATHFINDING_TO_RIGHT_OF_TAG      // Right of the closest tag
+        PATHFINDING_TO_CLOSEST_TAG, // In front of the closest tag
+        PATHFINDING_TO_LEFT_OF_TAG, // Left of the closest tag
+        PATHFINDING_TO_RIGHT_OF_TAG // Right of the closest tag
     }
-    
+
     // Controllers
     private final XboxController driver;
     private final Joystick buttonBox1;
     private final Joystick buttonBox2;
-    
+
     // Navigation state
     private DestinationState currentDestination = DestinationState.MANUAL_DRIVING;
     private DestinationState nextDestination = null;
@@ -81,22 +76,22 @@ public class NavigationController extends SubsystemBase {
     private final PathConstraints constraints;
     private final PathConstraints fastConstraints;
     private final PathConstraints slowConstraints;
-    
+
     // Drive subsystem reference
     private Drive driveSubsystem;
-    
+
     // Vision system reference
     private Vision visionSystem;
 
     private static NavigationController mInstance = null;
 
     public static synchronized NavigationController getInstance() {
-      if (mInstance == null) {
-        mInstance = new NavigationController();
-      }
-      return mInstance;
+        if (mInstance == null) {
+            mInstance = new NavigationController();
+        }
+        return mInstance;
     }
-    
+
     /**
      * Creates a new navigation controller to manage path planning
      */
@@ -104,13 +99,13 @@ public class NavigationController extends SubsystemBase {
         driver = new XboxController(0);
         buttonBox1 = new Joystick(1);
         buttonBox2 = new Joystick(2);
-        
-        // Initialize path constraints 
+
+        // Initialize path constraints
         this.constraints = new PathConstraints(3, 3, 2 * Math.PI, 4 * Math.PI);
         this.fastConstraints = new PathConstraints(4, 8, 2 * Math.PI, 4 * Math.PI);
         this.slowConstraints = new PathConstraints(2, 1, 2 * Math.PI, 4 * Math.PI);
     }
-    
+
     /**
      * Set the drive subsystem reference
      * Must be called before using path following
@@ -118,7 +113,7 @@ public class NavigationController extends SubsystemBase {
     public void setDriveSubsystem(Drive drive) {
         this.driveSubsystem = drive;
     }
-    
+
     /**
      * Set the vision system reference
      * Must be called to enable AprilTag-based navigation
@@ -126,7 +121,7 @@ public class NavigationController extends SubsystemBase {
     public void setVisionSystem(Vision vision) {
         this.visionSystem = vision;
     }
-    
+
     @Override
     public void periodic() {
         // Check if driver wants manual control
@@ -138,25 +133,25 @@ public class NavigationController extends SubsystemBase {
         if (activePathCommand == null && nextDestination != null) {
             // Start the next step - use slow constraints for the second part
             PathConstraints secondStageConstraints = slowConstraints;
-            
+
             // All second-stage paths should use slow constraints for precise positioning
             Pose2d targetPose = getPoseForDestination(nextDestination);
-            
+
             // Use createAccuratePathCommand for better terminal accuracy
             activePathCommand = createAccuratePathCommand(driveSubsystem, targetPose)
-                .until(() -> driverWantsControl())
-                .finallyDo((interrupted) -> {
-                    if (!interrupted) {
-                        currentDestination = DestinationState.MANUAL_DRIVING;
-                    } else {
-                        currentDestination = DestinationState.MANUAL_DRIVING;
-                    }
-                    activePathCommand = null;
-                });
-            
+                    .until(() -> driverWantsControl())
+                    .finallyDo((interrupted) -> {
+                        if (!interrupted) {
+                            currentDestination = DestinationState.MANUAL_DRIVING;
+                        } else {
+                            currentDestination = DestinationState.MANUAL_DRIVING;
+                        }
+                        activePathCommand = null;
+                    });
+
             // Schedule the command
             activePathCommand.schedule();
-            
+
             // Update current destination
             currentDestination = nextDestination;
             nextDestination = null;
@@ -179,9 +174,8 @@ public class NavigationController extends SubsystemBase {
             } else {
                 // Check if we're close but not quite at the target position
                 boolean nearLeftPosition = isAtTargetPosition(0.501, -0.16, 0.03);
-                boolean nearRightPosition = isAtTargetPosition(0.501, 0.18
-                , 0.03);
-                
+                boolean nearRightPosition = isAtTargetPosition(0.501, 0.18, 0.03);
+
                 if (nearLeftPosition || nearRightPosition) {
                     // Yellow when near but not exactly at position - needs adjustment
                     LED.getInstance().setSection1(255, 255, 0);
@@ -198,17 +192,17 @@ public class NavigationController extends SubsystemBase {
 
         // Check button presses to set new destinations
         DestinationState newDestination = checkButtonPresses();
-        
+
         if (newDestination != currentDestination) {
             startPathfinding(newDestination);
         }
     }
-    
+
     /**
      * Checks all controller inputs and returns the requested destination
      */
     private DestinationState checkButtonPresses() {
-        
+
         if (buttonBox1.getRawAxis(1) >= 0.5) {
             return DestinationState.PATHFINDING_TO_AB_THEN_A;
         } else if (buttonBox1.getRawButtonPressed(5)) {
@@ -233,18 +227,18 @@ public class NavigationController extends SubsystemBase {
             return DestinationState.PATHFINDING_TO_KL_THEN_K;
         } else if (buttonBox2.getRawButtonPressed(3)) {
             return DestinationState.PATHFINDING_TO_KL_THEN_L;
-        // } else if (driver.getLeftBumperPressed()) {
-        //     return DestinationState.PATHFINDING_TO_CSL;
-        // } else if (driver.getRightBumperPressed()) {
-        //     return DestinationState.PATHFINDING_TO_CSR;
-        }// Check for visible AprilTags and show on dashboard, even when not navigating
+            // } else if (driver.getLeftBumperPressed()) {
+            // return DestinationState.PATHFINDING_TO_CSL;
+            // } else if (driver.getRightBumperPressed()) {
+            // return DestinationState.PATHFINDING_TO_CSR;
+        } // Check for visible AprilTags and show on dashboard, even when not navigating
         if (visionSystem != null) {
             int closestTag = findClosestVisibleTag();
             if (closestTag >= 0) {
                 // Found a tag!
                 SmartDashboard.putBoolean("Navigation/TagVisible", true);
                 SmartDashboard.putNumber("Navigation/ClosestTagID", closestTag);
-                
+
                 // If one of the auto-tag buttons is held and we're in manual driving,
                 // automatically start the navigation
                 if (currentDestination == DestinationState.MANUAL_DRIVING) {
@@ -261,28 +255,26 @@ public class NavigationController extends SubsystemBase {
                 SmartDashboard.putNumber("Navigation/ClosestTagID", -1);
             }
         }
-        
-       
-        
+
         // Left/Right bumpers - navigate to left/right of the closest tag
         // if (driver.getLeftBumperPressed()) {
-        //     return DestinationState.PATHFINDING_TO_LEFT_OF_TAG;
+        // return DestinationState.PATHFINDING_TO_LEFT_OF_TAG;
         // } else if (driver.getRightBumperPressed()) {
-        //     return DestinationState.PATHFINDING_TO_RIGHT_OF_TAG;
+        // return DestinationState.PATHFINDING_TO_RIGHT_OF_TAG;
         // }
-        
+
         return currentDestination;
     }
-    
+
     /**
      * Starts pathfinding to the specified destination
      */
     public void startPathfinding(DestinationState destination) {
         // Cancel any existing pathfinding
         cancelPathfinding();
-        
+
         PathConstraints currentConstraints = constraints;
-        
+
         if (destination == DestinationState.PATHFINDING_TO_AB_THEN_A) {
             nextDestination = DestinationState.PATHFINDING_TO_A;
             destination = DestinationState.PATHFINDING_TO_AB;
@@ -342,7 +334,7 @@ public class NavigationController extends SubsystemBase {
             return;
         } else if (destination == DestinationState.PATHFINDING_TO_LEFT_OF_TAG) {
             // Navigate to the left side of the closest tag
-            boolean success = navigateToClosestTag(0.501, -0.16, null);  // 1.0m to the left
+            boolean success = navigateToClosestTag(0.501, -0.16, null); // 1.0m to the left
             if (success) {
                 SmartDashboard.putString("Navigation/Status", "Navigating to left of closest tag");
                 // Check if we're at the correct distance
@@ -356,7 +348,7 @@ public class NavigationController extends SubsystemBase {
             return;
         } else if (destination == DestinationState.PATHFINDING_TO_RIGHT_OF_TAG) {
             // Navigate to the right side of the closest tag
-            boolean success = navigateToClosestTag(0.501, 0.18, null);  // -1.0m to the left (= right)
+            boolean success = navigateToClosestTag(0.501, 0.18, null); // -1.0m to the left (= right)
             if (success) {
                 SmartDashboard.putString("Navigation/Status", "Navigating to right of closest tag");
                 // Check if we're at the correct distance
@@ -369,78 +361,77 @@ public class NavigationController extends SubsystemBase {
             }
             return;
         }
-        
+
         // Find the target pose based on the destination
         Pose2d targetPose = getPoseForDestination(destination);
 
         // Use faster constraints for intermediate points
         if (destination == DestinationState.PATHFINDING_TO_AB ||
-            destination == DestinationState.PATHFINDING_TO_CD ||
-            destination == DestinationState.PATHFINDING_TO_EF ||
-            destination == DestinationState.PATHFINDING_TO_GH ||
-            destination == DestinationState.PATHFINDING_TO_IJ ||
-            destination == DestinationState.PATHFINDING_TO_KL) {
+                destination == DestinationState.PATHFINDING_TO_CD ||
+                destination == DestinationState.PATHFINDING_TO_EF ||
+                destination == DestinationState.PATHFINDING_TO_GH ||
+                destination == DestinationState.PATHFINDING_TO_IJ ||
+                destination == DestinationState.PATHFINDING_TO_KL) {
             currentConstraints = fastConstraints;
         }
-        
+
         // Create the pathfinding command
-        boolean useAccurateNavigation = 
-            destination == DestinationState.PATHFINDING_TO_A ||
-            destination == DestinationState.PATHFINDING_TO_B ||
-            destination == DestinationState.PATHFINDING_TO_C ||
-            destination == DestinationState.PATHFINDING_TO_D ||
-            destination == DestinationState.PATHFINDING_TO_E ||
-            destination == DestinationState.PATHFINDING_TO_F ||
-            destination == DestinationState.PATHFINDING_TO_G ||
-            destination == DestinationState.PATHFINDING_TO_H ||
-            destination == DestinationState.PATHFINDING_TO_I ||
-            destination == DestinationState.PATHFINDING_TO_J ||
-            destination == DestinationState.PATHFINDING_TO_K ||
-            destination == DestinationState.PATHFINDING_TO_L ||
-            destination == DestinationState.PATHFINDING_TO_CSL ||
-            destination == DestinationState.PATHFINDING_TO_CSR;
-            
+        boolean useAccurateNavigation = destination == DestinationState.PATHFINDING_TO_A ||
+                destination == DestinationState.PATHFINDING_TO_B ||
+                destination == DestinationState.PATHFINDING_TO_C ||
+                destination == DestinationState.PATHFINDING_TO_D ||
+                destination == DestinationState.PATHFINDING_TO_E ||
+                destination == DestinationState.PATHFINDING_TO_F ||
+                destination == DestinationState.PATHFINDING_TO_G ||
+                destination == DestinationState.PATHFINDING_TO_H ||
+                destination == DestinationState.PATHFINDING_TO_I ||
+                destination == DestinationState.PATHFINDING_TO_J ||
+                destination == DestinationState.PATHFINDING_TO_K ||
+                destination == DestinationState.PATHFINDING_TO_L ||
+                destination == DestinationState.PATHFINDING_TO_CSL ||
+                destination == DestinationState.PATHFINDING_TO_CSR;
+
         // Use accurate navigation for important destinations
         if (useAccurateNavigation && driveSubsystem != null) {
             SmartDashboard.putString("Navigation/Status", "Using enhanced accurate navigation");
             activePathCommand = createAccuratePathCommand(driveSubsystem, targetPose)
-                .until(() -> driverWantsControl())
-                .finallyDo((interrupted) -> {
-                    if (!interrupted) {
-                        if (nextDestination == null) {
+                    .until(() -> driverWantsControl())
+                    .finallyDo((interrupted) -> {
+                        if (!interrupted) {
+                            if (nextDestination == null) {
+                                currentDestination = DestinationState.MANUAL_DRIVING;
+                            }
+                        } else {
+                            nextDestination = null;
                             currentDestination = DestinationState.MANUAL_DRIVING;
                         }
-                    } else {
-                        nextDestination = null;
-                        currentDestination = DestinationState.MANUAL_DRIVING;
-                    }
-                    activePathCommand = null;
-                    SmartDashboard.putString("Navigation/Status", "Ready");
-                });
+                        activePathCommand = null;
+                        SmartDashboard.putString("Navigation/Status", "Ready");
+                    });
         } else {
             // Use standard pathfinding for other destinations
             activePathCommand = AutoBuilder.pathfindToPose(targetPose, currentConstraints)
-                .until(() -> driverWantsControl())
-                .finallyDo((interrupted) -> {
-                    if (!interrupted) {
-                        if (nextDestination == null) {
+                    .until(() -> driverWantsControl())
+                    .finallyDo((interrupted) -> {
+                        if (!interrupted) {
+                            if (nextDestination == null) {
+                                currentDestination = DestinationState.MANUAL_DRIVING;
+                            }
+                        } else {
+                            nextDestination = null;
                             currentDestination = DestinationState.MANUAL_DRIVING;
                         }
-                    } else {
-                        nextDestination = null;
-                        currentDestination = DestinationState.MANUAL_DRIVING;
-                    }
-                    activePathCommand = null;
-                });
+                        activePathCommand = null;
+                    });
         }
-        
+
         // Schedule the command
         activePathCommand.schedule();
-        
+
         // Update current destination
         currentDestination = destination;
     }
-    
+
     /**
      * Returns the target pose for the given destination
      */
@@ -490,7 +481,7 @@ public class NavigationController extends SubsystemBase {
                 return null;
         }
     }
-    
+
     /**
      * Cancels any active pathfinding operation
      */
@@ -501,15 +492,15 @@ public class NavigationController extends SubsystemBase {
         }
         currentDestination = DestinationState.MANUAL_DRIVING;
     }
-    
+
     /**
      * Checks if the driver is attempting to take manual control
      */
     private boolean driverWantsControl() {
         return Math.abs(driver.getLeftX()) > 0.3 ||
-               Math.abs(driver.getLeftY()) > 0.3 ||
-               Math.abs(driver.getRightX()) > 0.3 ||
-               Math.abs(driver.getRightY()) > 0.3;
+                Math.abs(driver.getLeftY()) > 0.3 ||
+                Math.abs(driver.getRightX()) > 0.3 ||
+                Math.abs(driver.getRightY()) > 0.3;
     }
 
     /**
@@ -519,144 +510,154 @@ public class NavigationController extends SubsystemBase {
     public Command createAccuratePathCommand(Drive drive, Pose2d targetPose) {
         // Build the path command
         Command pathCommand = AutoBuilder.pathfindToPose(
-            targetPose, 
-            constraints,
-            0.0 // Goal end velocity
+                targetPose,
+                constraints,
+                0.0 // Goal end velocity
         );
-        
+
         // Combine with our terminal pose accuracy command
         return pathCommand
-            .andThen(DriveCommands.improvePathEndAccuracy(drive, targetPose))
-            .withName("AccuratePath");
+                .andThen(DriveCommands.improvePathEndAccuracy(drive, targetPose))
+                .withName("AccuratePath");
     }
-    
+
     /**
      * Creates a path command to a target pose relative to an AprilTag
-     * @param tagId The ID of the AprilTag to navigate relative to
+     * 
+     * @param tagId          The ID of the AprilTag to navigate relative to
      * @param relativeOffset The offset from the tag (x forward, y left)
-     * @param targetHeading The desired heading at the target position
+     * @param targetHeading  The desired heading at the target position
      */
-    public Command createTagRelativePathCommand(Drive drive, int tagId, Translation2d relativeOffset, Rotation2d targetHeading) {
+    public Command createTagRelativePathCommand(Drive drive, int tagId, Translation2d relativeOffset,
+            Rotation2d targetHeading) {
         // Check if vision system is available
         if (visionSystem == null) {
             SmartDashboard.putString("Navigation/Error", "Vision system not connected");
             return Commands.none();
         }
-        
+
         // Get the tag pose from the field layout
         var tagPose = Constants.Vision.kTagLayout.getTagPose(tagId);
-        
+
         if (tagPose.isEmpty()) {
             SmartDashboard.putString("Navigation/Error", "Tag ID " + tagId + " not found in field layout");
             return Commands.none();
         }
-        
+
         // Calculate the target pose by applying the relative offset to the tag pose
         Pose2d tagPose2d = tagPose.get().toPose2d();
-        
+
         // Transform the offset based on tag rotation
         Translation2d rotatedOffset = new Translation2d(
-            relativeOffset.getX() * tagPose2d.getRotation().getCos() - relativeOffset.getY() * tagPose2d.getRotation().getSin(),
-            relativeOffset.getX() * tagPose2d.getRotation().getSin() + relativeOffset.getY() * tagPose2d.getRotation().getCos()
-        );
-        
+                relativeOffset.getX() * tagPose2d.getRotation().getCos()
+                        - relativeOffset.getY() * tagPose2d.getRotation().getSin(),
+                relativeOffset.getX() * tagPose2d.getRotation().getSin()
+                        + relativeOffset.getY() * tagPose2d.getRotation().getCos());
+
         // Apply the offset to the tag position
         Pose2d targetPose = new Pose2d(
-            tagPose2d.getX() + rotatedOffset.getX(),
-            tagPose2d.getY() + rotatedOffset.getY(),
-            targetHeading
-        );
-        
-        SmartDashboard.putString("Navigation/TagRelativeTarget", "Tag: " + tagId + 
-                                ", X: " + targetPose.getX() + 
-                                ", Y: " + targetPose.getY());
-        
+                tagPose2d.getX() + rotatedOffset.getX(),
+                tagPose2d.getY() + rotatedOffset.getY(),
+                targetHeading);
+
+        SmartDashboard.putString("Navigation/TagRelativeTarget", "Tag: " + tagId +
+                ", X: " + targetPose.getX() +
+                ", Y: " + targetPose.getY());
+
         // Create a path to this target pose
         return createAccuratePathCommand(drive, targetPose);
     }
-    
+
     /**
      * Navigate to a position relative to the specified AprilTag
-     * @param tagId The ID of the AprilTag to navigate relative to
-     * @param xOffset Forward offset from tag in meters (positive is in front of tag)
-     * @param yOffset Left offset from tag in meters (positive is to the left of tag)
+     * 
+     * @param tagId          The ID of the AprilTag to navigate relative to
+     * @param xOffset        Forward offset from tag in meters (positive is in front
+     *                       of tag)
+     * @param yOffset        Left offset from tag in meters (positive is to the left
+     *                       of tag)
      * @param headingDegrees Desired robot heading in degrees
      */
     public void navigateToTagRelative(int tagId, double xOffset, double yOffset, double headingDegrees) {
         // Cancel existing navigation
         cancelPathfinding();
-        
+
         Translation2d offset = new Translation2d(xOffset, yOffset);
         Rotation2d heading = Rotation2d.fromDegrees(headingDegrees);
-        
+
         // Create and schedule the command
         activePathCommand = createTagRelativePathCommand(driveSubsystem, tagId, offset, heading)
-            .until(() -> driverWantsControl())
-            .finallyDo((interrupted) -> {
-                activePathCommand = null;
-                currentDestination = DestinationState.MANUAL_DRIVING;
-                SmartDashboard.putString("Navigation/Status", "Ready");
-            });
-        
+                .until(() -> driverWantsControl())
+                .finallyDo((interrupted) -> {
+                    activePathCommand = null;
+                    currentDestination = DestinationState.MANUAL_DRIVING;
+                    SmartDashboard.putString("Navigation/Status", "Ready");
+                });
+
         activePathCommand.schedule();
         currentDestination = DestinationState.MANUAL_DRIVING; // We'll need to extend the enum for tags
     }
-    
+
     /**
      * Find the closest visible AprilTag and return its ID
+     * 
      * @return The ID of the closest visible tag, or -1 if no tags are visible
      */
     public int findClosestVisibleTag() {
         if (visionSystem == null) {
             return -1;
         }
-        
+
         // Get all visible tag translations
         Map<String, Translation3d> tagTranslations = visionSystem.getAllTagTranslations();
-        
+
         // Find the closest tag based on distance
         double closestDistance = Double.MAX_VALUE;
         int closestTagId = -1;
-        
+
         for (Map.Entry<String, Translation3d> entry : tagTranslations.entrySet()) {
             String cameraName = entry.getKey();
             // Get the camera that detected this tag
             PhotonCamera camera = visionSystem.getCamera(cameraName);
             var result = camera.getLatestResult();
-            
+
             if (result.hasTargets()) {
                 // Find the tag with the smallest distance (closest)
                 PhotonTrackedTarget target = result.getBestTarget();
                 int tagId = target.getFiducialId();
                 double distance = entry.getValue().getNorm();
-                
+
                 if (distance < closestDistance) {
                     closestDistance = distance;
                     closestTagId = tagId;
                 }
             }
         }
-        
+
         return closestTagId;
     }
-    
+
     /**
      * Navigate to the closest visible AprilTag
-     * @param xOffset Forward offset from tag in meters (positive is in front of tag)
-     * @param yOffset Left offset from tag in meters (positive is to the left of tag)
-     * @param headingDegrees Desired robot heading in degrees, or null to automatically face the tag
+     * 
+     * @param xOffset        Forward offset from tag in meters (positive is in front
+     *                       of tag)
+     * @param yOffset        Left offset from tag in meters (positive is to the left
+     *                       of tag)
+     * @param headingDegrees Desired robot heading in degrees, or null to
+     *                       automatically face the tag
      * @return True if navigation started, false if no tags were visible
      */
     public boolean navigateToClosestTag(double xOffset, double yOffset, Double headingDegrees) {
         // Find the closest visible tag
         int tagId = findClosestVisibleTag();
-        
+
         if (tagId < 0) {
             // No tags visible
             SmartDashboard.putString("Navigation/Error", "No AprilTags visible");
             return false;
         }
-        
+
         // Get the tag pose to calculate heading
         if (headingDegrees == null) {
             // Auto-calculate heading to face the tag
@@ -665,17 +666,17 @@ public class NavigationController extends SubsystemBase {
                 // Get the tag's rotation, then invert it (to face it)
                 Rotation2d tagRotation = tagPose.get().toPose2d().getRotation();
                 double autoHeading = tagRotation.getDegrees() + 180.0; // Add 180° to face the tag
-                
+
                 // Navigate to the tag with auto-calculated heading
                 navigateToTagRelative(tagId, xOffset, yOffset, autoHeading);
                 SmartDashboard.putNumber("Navigation/AutoHeading", autoHeading);
                 return true;
             }
         }
-        
+
         // Use specified heading (or default to 180° if auto failed)
         double heading = (headingDegrees != null) ? headingDegrees : 180.0;
-        
+
         // Navigate to the tag with specified or default heading
         navigateToTagRelative(tagId, xOffset, yOffset, heading);
         return true;
@@ -683,6 +684,7 @@ public class NavigationController extends SubsystemBase {
 
     /**
      * Get the current destination state
+     * 
      * @return The current destination state
      */
     public DestinationState getCurrentDestination() {
@@ -691,8 +693,9 @@ public class NavigationController extends SubsystemBase {
 
     /**
      * Checks if the robot is at the target position
-     * @param x The x coordinate of the target position
-     * @param y The y coordinate of the target position
+     * 
+     * @param x         The x coordinate of the target position
+     * @param y         The y coordinate of the target position
      * @param tolerance The tolerance for the distance to the target position
      * @return True if the robot is at the target position, false otherwise
      */
@@ -714,21 +717,21 @@ public class NavigationController extends SubsystemBase {
 
         // Calculate the target position relative to the tag
         Pose2d tagPose = tagPoseOptional.get().toPose2d();
-        
+
         // Create a transformation relative to the tag's coordinate system
         // x = forward from tag, y = left from tag
         Transform2d relativeTransform = new Transform2d(
-            new Translation2d(x, y),
-            new Rotation2d() // No rotation
+                new Translation2d(x, y),
+                new Rotation2d() // No rotation
         );
-        
+
         // Apply the transformation to get the absolute target position
         Pose2d targetPose = tagPose.plus(relativeTransform);
-        
+
         // Calculate distance from robot to target
         double distance = robotPose.getTranslation().getDistance(targetPose.getTranslation());
-        
+
         // Check if we're within tolerance
         return distance <= tolerance;
     }
-} 
+}

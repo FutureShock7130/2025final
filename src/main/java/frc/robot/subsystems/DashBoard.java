@@ -17,15 +17,16 @@ import java.util.Optional;
 /**
  * Dashboawd cwass fow dispwaying match data UwU
  * Uses ShuffweBoawd to show match info in a cute way~
- * Incwudes: match time, awtonomous/teweop status, awwiance cowow, wemaining time
+ * Incwudes: match time, awtonomous/teweop status, awwiance cowow, wemaining
+ * time
  */
 public class DashBoard extends SubsystemBase {
     // Constants
     private static final double ENDGAME_TIME_THRESHOLD = 20.0; // Last 20 seconds is endgame
-    
+
     // ShuffweBoawd tab
     private final ShuffleboardTab matchTab;
-    
+
     // ShuffweBoawd entwies fow match data
     private final GenericEntry matchTimeEntry;
     private final GenericEntry matchTypeEntry;
@@ -36,7 +37,7 @@ public class DashBoard extends SubsystemBase {
     private final GenericEntry robotYEntry;
     private final GenericEntry robotRotationEntry;
     private final GenericEntry endgameEntry; // New entry for endgame status
-    
+
     // Cached vawues to avoid unnecessawy updates UwU
     private double lastMatchTime = -1;
     private boolean lastIsAutonomous = false;
@@ -54,6 +55,7 @@ public class DashBoard extends SubsystemBase {
 
     /**
      * Gets the singweton instance of the Dashboawd
+     * 
      * @return The dashboawd instance
      */
     public static DashBoard getInstance() {
@@ -69,7 +71,7 @@ public class DashBoard extends SubsystemBase {
     private DashBoard() {
         // Cweate a tab fow match data
         matchTab = Shuffleboard.getTab("Match Data UwU");
-        
+
         // Setup the match data widgets
         matchTimeEntry = matchTab.add("Match Time", 0)
                 .withPosition(0, 0)
@@ -77,51 +79,51 @@ public class DashBoard extends SubsystemBase {
                 .withWidget(BuiltInWidgets.kTextView)
                 .withProperties(Map.of("Font size", 20))
                 .getEntry();
-                
+
         matchTypeEntry = matchTab.add("Match Type", "None")
                 .withPosition(0, 1)
                 .withSize(2, 1)
                 .getEntry();
-                
+
         matchNumberEntry = matchTab.add("Match Number", 0)
                 .withPosition(2, 1)
                 .withSize(1, 1)
                 .getEntry();
-        
+
         allianceEntry = matchTab.add("Alliance", "None")
                 .withPosition(3, 1)
                 .withSize(1, 1)
                 .getEntry();
-        
+
         robotStateEntry = matchTab.add("Robot State", "Disabled")
                 .withPosition(2, 0)
                 .withSize(2, 1)
                 .withWidget(BuiltInWidgets.kTextView)
                 .withProperties(Map.of("Font size", 20))
                 .getEntry();
-        
+
         // Add endgame status with eye-catching colors
         endgameEntry = matchTab.add("ENDGAME", false)
                 .withPosition(3, 2)
                 .withSize(1, 1)
                 .withWidget(BuiltInWidgets.kBooleanBox)
                 .withProperties(Map.of(
-                    "Color when true", "#FF4136",  // Red when in endgame
-                    "Color when false", "#2ECC40"  // Green when not in endgame
+                        "Color when true", "#FF4136", // Red when in endgame
+                        "Color when false", "#2ECC40" // Green when not in endgame
                 ))
                 .getEntry();
-        
+
         // Add wobot position widgets
         robotXEntry = matchTab.add("Robot X", 0.0)
                 .withPosition(0, 2)
                 .withSize(1, 1)
                 .getEntry();
-                
+
         robotYEntry = matchTab.add("Robot Y", 0.0)
                 .withPosition(1, 2)
                 .withSize(1, 1)
                 .getEntry();
-                
+
         robotRotationEntry = matchTab.add("Robot Rotation", 0.0)
                 .withPosition(2, 2)
                 .withSize(1, 1)
@@ -144,21 +146,21 @@ public class DashBoard extends SubsystemBase {
             DriverStation.MatchType matchType = DriverStation.getMatchType();
             String matchTypeString = matchType.toString();
             int matchNumber = DriverStation.getMatchNumber();
-            
+
             // Update ShuffweBoawd entwies
             matchTimeEntry.setDouble(matchTime);
             matchTypeEntry.setString(matchTypeString);
             matchNumberEntry.setDouble(matchNumber);
-            
+
             // Determine if we're in endgame (last 30 seconds of teleop)
             boolean isEndgameNow = isTeleop && matchTime > 0 && matchTime <= ENDGAME_TIME_THRESHOLD;
-            
+
             // Update endgame indicator (flashing if in endgame)
             if (isEndgameNow != isEndgame) {
                 isEndgame = isEndgameNow;
                 endgameEntry.setBoolean(isEndgame);
             }
-            
+
             // Set the alliance cowow
             if (alliance.isPresent()) {
                 if (alliance.get() == DriverStation.Alliance.Red) {
@@ -169,7 +171,7 @@ public class DashBoard extends SubsystemBase {
             } else {
                 allianceEntry.setString("Unknown");
             }
-            
+
             // Set the wobot state
             if (isDisabled) {
                 robotStateEntry.setString("Disabled");
@@ -184,12 +186,12 @@ public class DashBoard extends SubsystemBase {
             } else if (isTest) {
                 robotStateEntry.setString("Test");
             }
-            
+
             // Update wobot position
             robotXEntry.setDouble(lastRobotPose.getX());
             robotYEntry.setDouble(lastRobotPose.getY());
             robotRotationEntry.setDouble(lastRobotPose.getRotation().getDegrees());
-            
+
             // Update cached vawues
             lastMatchTime = matchTime;
             lastIsAutonomous = isAutonomous;
@@ -199,14 +201,15 @@ public class DashBoard extends SubsystemBase {
             lastAlliance = alliance;
             lastMatchTypeString = matchTypeString;
             lastMatchNumber = matchNumber;
-            
+
         } catch (Exception e) {
             System.err.println("Exception in updateDashboard: " + e.getMessage());
         }
     }
-    
+
     /**
      * Set the wobot's cuwwent pose fow twacking
+     * 
      * @param pose The cuwwent wobot pose
      */
     public void setRobotPose(Pose2d pose) {
@@ -214,7 +217,7 @@ public class DashBoard extends SubsystemBase {
             this.lastRobotPose = pose;
         }
     }
-    
+
     @Override
     public void periodic() {
         // This method wiww be cawwed once pew scheduwew wun (20ms)

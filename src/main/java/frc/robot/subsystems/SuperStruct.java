@@ -9,23 +9,19 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import frc.robot.Constants.FieldConstants;
-import frc.robot.subsystems.StateMachine;
-import frc.robot.subsystems.SuperStructState;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.RobotContainer;
 import frc.robot.subsystems.superstructure.AlgaeRemover;
 import frc.robot.subsystems.superstructure.Elevator;
 import frc.robot.subsystems.superstructure.Grabber;
 import frc.robot.subsystems.superstructure.Intake;
+import frc.robot.util.ButtonBox;
+import frc.robot.util.XboxConst;
 import edu.wpi.first.wpilibj.XboxController;
 
-import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathConstraints;
 
-import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import frc.robot.subsystems.ObjectDetection;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import java.util.Map;
 
@@ -36,16 +32,13 @@ public class SuperStruct extends SubsystemBase {
     AlgaeRemover mAlgaeRemover;
     StateMachine mStateMachine;
     ObjectDetection mObjectDetection;
-    public SuperStructState mCommandedState;
+    SuperStructState mCommandedState;
     LED mled;
 
-    private final CommandXboxController driver;
-    private final CommandJoystick buttonBoard1;
-    private final CommandJoystick buttonBoard2;
-    private static final int buttonBoard1Port = 1;
-    private static final int buttonBoard2Port = 2;
-
     private static SuperStruct mInstance = null;
+
+    private final CommandXboxController driver = RobotContainer.getController();
+    private final ButtonBox operator = RobotContainer.getButtonBox();
 
     private final PathConstraints constraints = new PathConstraints(3, 3, 2 * Math.PI, 4 * Math.PI);
 
@@ -58,8 +51,6 @@ public class SuperStruct extends SubsystemBase {
     private double targetUpPosition = 0.0;
 
     // Add this field to the class
-    private final frc.robot.subsystems.superstructure.AlgaeRemover algaeRemover = frc.robot.subsystems.superstructure.AlgaeRemover
-            .getInstance();
     private static final double ALGAE_SPEED = 0.3; // Speed for the algae remover
     private static final double ALGAE_DURATION = 0.2; // Duration in seconds for the algae remover to run
     private boolean algaeCommandSent = false; // Track if we've already sent the command
@@ -73,73 +64,25 @@ public class SuperStruct extends SubsystemBase {
         return mInstance;
     }
 
-    private void configureButtonBindings() {
-        new CommandJoystick(1).button(12)
-                .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.L1),
-                        this));
-
-        new CommandJoystick(1).axisLessThan(1, -0.5)
-                .whileTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.L2),
-                        this));
-
-        new CommandJoystick(2).button(4)
-                .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.L3),
-                        this));
-
-        new CommandJoystick(2).button(5)
-                .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.L4),
-                        this));
-
-        new JoystickButton(driver.getHID(), 5)
+    public void configureButtonBindings() {
+        // Driver
+        new JoystickButton(driver.getHID(), XboxConst.LeftBumper)
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.CS),
                         this));
-
-        // new CommandXboxController(0).axisGreaterThan(3, 0.05)
-        // .toggleOnTrue(Commands.runOnce(
-        // () -> setState(SuperStructState.PLACEMENT),
-        // this));
-
-        new CommandJoystick(2).button(9)
-                .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.PLACEMENT),
-                        this));
-
-        new CommandJoystick(2).button(10)
+        new JoystickButton(driver.getHID(), XboxConst.Y)
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.DEFAULT),
                         this));
-
-        new CommandJoystick(2).button(2)
+        new JoystickButton(driver.getHID(), XboxConst.X)
                 .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.PAUSE),
+                        () -> setState(SuperStructState.ALGAE_INTAKE),
                         this));
-
-        // new CommandJoystick(1).button(11)
-        // .onTrue(Commands.runOnce(
-        // () -> setState(SuperStructState.ABORT),
-        // this));
-
-        // new CommandJoystick(2).button(6)
-        // .onTrue(Commands.runOnce(
-        // () -> setState(SuperStructState.IVECHANGEDMYMIND),
-        // this));
-
-        // new CommandJoystick(2).button(9)
-        // .onTrue(Commands.runOnce(
-        // () -> setState(SuperStructState.HIT_ALGAE),
-        // this));
-
-        new CommandJoystick(1).button(11)
+        new JoystickButton(driver.getHID(), XboxConst.B)
                 .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.ELEDROP),
+                        () -> setState(SuperStructState.ALGAE_PLACEMENT),
                         this));
-
-        new JoystickButton(driver.getHID(), 1)
+        new JoystickButton(driver.getHID(), XboxConst.A)
                 .onTrue(Commands.runOnce(
                         () -> {
                             // Increment press counter when the button is pressed
@@ -148,48 +91,43 @@ public class SuperStruct extends SubsystemBase {
                         },
                         this));
 
-        new JoystickButton(driver.getHID(), 2)
-                .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.ALGAE_PLACEMENT),
-                        this));
-
-        new JoystickButton(driver.getHID(), 3)
-                .onTrue(Commands.runOnce(
-                        () -> setState(SuperStructState.ALGAE_INTAKE),
-                        this));
-
-        new JoystickButton(driver.getHID(), 4)
+        // Operator
+        new Trigger(operator.leftTop_onTrue())
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.DEFAULT),
                         this));
-
-        new CommandJoystick(2).button(8)
+        new Trigger(operator.rightMid_onTrue())
+                .onTrue(Commands.runOnce(
+                        () -> setState(SuperStructState.PLACEMENT),
+                        this));
+        new Trigger(operator.rightBottom_onTrue())
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.ALGAE_PLACEMENT),
                         this));
-
-        new CommandJoystick(2).button(6)
+        new Trigger(operator.yellowRight_onTrue())
                 .onTrue(Commands.runOnce(
                         () -> setState(SuperStructState.RESET),
                         this));
-
-        // Object detection - Follow target (Xbox controller Y button)
-        // new JoystickButton(driver.getHID(), XboxController.Button.kY.value)
-        // .onTrue(Commands.runOnce(
-        // () -> {
-        // setState(SuperStructState.FOLLOW_TARGET);
-        // SmartDashboard.putString("Button Press", "Y Button - Start Following");
-        // },
-        // this));
-
-        // // Object detection - Stop following (Xbox controller B button)
-        // new JoystickButton(driver.getHID(), XboxController.Button.kB.value)
-        // .onTrue(Commands.runOnce(
-        // () -> {
-        // setState(SuperStructState.STOP_FOLLOWING);
-        // SmartDashboard.putString("Button Press", "B Button - Stop Following");
-        // },
-        // this));
+        new Trigger(operator.yellowLeft_onTrue())
+                .onTrue(Commands.runOnce(
+                        () -> setState(SuperStructState.ELEDROP),
+                        this));
+        new Trigger(operator.eleL1_onTrue())
+                .onTrue(Commands.runOnce(
+                        () -> setState(SuperStructState.L1),
+                        this));
+        new Trigger(operator.eleL2_onTrue())
+                .onTrue(Commands.runOnce(
+                        () -> setState(SuperStructState.L2),
+                        this));
+        new Trigger(operator.eleL3_onTrue())
+                .onTrue(Commands.runOnce(
+                        () -> setState(SuperStructState.L3),
+                        this));
+        new Trigger(operator.eleL4_onTrue())
+                .onTrue(Commands.runOnce(
+                        () -> setState(SuperStructState.L4),
+                        this));
     }
 
     /** Creates a new StateMachine. */
@@ -202,9 +140,6 @@ public class SuperStruct extends SubsystemBase {
         mObjectDetection = ObjectDetection.getInstance();
         mled = LED.getInstance();
         mCommandedState = SuperStructState.DEFAULT;
-        driver = new CommandXboxController(0);
-        buttonBoard1 = new CommandJoystick(buttonBoard1Port); // First port
-        buttonBoard2 = new CommandJoystick(buttonBoard2Port); // Second port
 
         // Add Shuffleboard controls for object following
         var tab = Shuffleboard.getTab("Controls");
@@ -234,8 +169,6 @@ public class SuperStruct extends SubsystemBase {
                 .withSize(1, 1)
                 .withPosition(5, 5)
                 .withProperties(Map.of("colorWhenTrue", "red"));
-
-        configureButtonBindings();
     }
 
     public void L1() {
@@ -269,10 +202,10 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void L4() {
-            mElevator.setPosition(165 * 0.6);
-            if (mElevator.atTargetPosition()) {
-                mGrabber.setPosition(0.297539);
-        }else {
+        mElevator.setPosition(165 * 0.6);
+        if (mElevator.atTargetPosition()) {
+            mGrabber.setPosition(0.297539);
+        } else {
             mGrabber.setPosition(0.396729);
         }
         mIntake.setAngle(0.818359);
@@ -304,8 +237,8 @@ public class SuperStruct extends SubsystemBase {
         // Check if coral is detected and update LEDs accordingly
         if (mGrabber.hasCoral()) {
             // Set LED to green when coral is detected
-            mled.color(0, 255, 0);  // RGB values for green
-        }else{
+            mled.color(0, 255, 0); // RGB values for green
+        } else {
             mled.marqueeSection(0, 13, 100, 100, 100, 0.5);
             mled.marqueeSection(22, 35, 100, 100, 100, 0.5, true);
         }
@@ -426,13 +359,12 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void ALGAE_PLACEMENT() {
-
         mIntake.setAngle(0.818359);
         mIntake.setIntake(-0.2);
     }
 
     public void HIT_ALGAE() {
-        mGrabber.hitAlgea();
+        mGrabber.hitAlgae();
 
         // mIntake.setAngle(-0.390137);
     }
@@ -451,16 +383,16 @@ public class SuperStruct extends SubsystemBase {
         double speed = directionUp ? -ALGAE_SPEED : ALGAE_SPEED;
 
         // Run for a specific time duration
-        algaeRemover.runForTime(speed, ALGAE_DURATION);
+        mAlgaeRemover.runForTime(speed, ALGAE_DURATION);
 
     }
 
     public void SMACK_DOWN() {
-        algaeRemover.runForTime(-ALGAE_SPEED, ALGAE_DURATION);
+        mAlgaeRemover.runForTime(-ALGAE_SPEED, ALGAE_DURATION);
     }
 
     public void SMACK_UP() {
-        algaeRemover.runForTime(ALGAE_SPEED, ALGAE_DURATION);
+        mAlgaeRemover.runForTime(ALGAE_SPEED, ALGAE_DURATION);
     }
 
     /**

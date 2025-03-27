@@ -3,7 +3,6 @@ package frc.robot.subsystems.superstructure;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
-import com.fasterxml.jackson.databind.ser.std.StdKeySerializers.Default;
 import com.revrobotics.spark.*;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
@@ -14,13 +13,8 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.shuffleboard.*;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.networktables.GenericEntry;
-import java.util.Map;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ArmFeedforward;
-import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -154,7 +148,6 @@ public class Grabber extends SubsystemBase {
                 .openLoopRampRate(0.1)
                 .apply(softLimitConfig)
                 .inverted(false);
-       
 
         motor.setCANTimeout(250);
         motor.configure(neoConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -193,7 +186,7 @@ public class Grabber extends SubsystemBase {
 
         leftangle.setVoltage(totalVoltage);
     }
-       
+
     /**
      * @return true if grabber is at the target position
      */
@@ -208,15 +201,14 @@ public class Grabber extends SubsystemBase {
         return grabberEncoder.getAbsolutePosition().getValueAsDouble();
     }
 
-
     public void intake() {
         if (!intakeLimitSwitch.get()) {
-        rightIntake.set(0);
-        leftIntake.set(0);
-        return;
-        }else{
-        rightIntake.set(0.5);
-        leftIntake.set(-0.5);
+            rightIntake.set(0);
+            leftIntake.set(0);
+            return;
+        } else {
+            rightIntake.set(0.5);
+            leftIntake.set(-0.5);
         }
     }
 
@@ -230,7 +222,7 @@ public class Grabber extends SubsystemBase {
         leftIntake.set(0.4);
     }
 
-    public void hitAlgea() {
+    public void hitAlgae() {
         rightIntake.set(0.3);
         leftIntake.set(-0.3);
 

@@ -22,9 +22,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.*;
 
-
-
-
 /**
  * Module IO implementation for Talon FX drive motor controller, Talon FX turn motor controller, and
  * CANcoder
@@ -39,7 +36,6 @@ import edu.wpi.first.units.measure.*;
  */
 public class Swerve implements ModuleIO {
   private final TalonFX driveTalon;
-  // private final TalonFX turnTalon;
   private final SparkMax turnSparkMax;
   private final CANcoder cancoder;
 
@@ -54,7 +50,7 @@ public class Swerve implements ModuleIO {
   // private final StatusSignal<Double> turnAppliedVolts;
   // private final StatusSignal<Double> turnCurrent;
 
-  // Gear ratios for SDS MK4i L2, adjust as necessary
+  // Gear ratios for SDS MK4i L3, adjust as necessary
   private final double DRIVE_GEAR_RATIO = 6.122449;
   private final double TURN_GEAR_RATIO = 150.0 / 7.0;
 
@@ -65,32 +61,25 @@ public class Swerve implements ModuleIO {
     switch (index) {
       case 0:
         driveTalon = new TalonFX(1,"GTX7130"); //lf
-        // turnTalon = new TalonFX(1);
         turnSparkMax = new SparkMax(2, MotorType.kBrushless);
         cancoder = new CANcoder(3,"GTX7130");
         absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(0.461426)); // MUST BE CALIBRATED
         break;
       case 1:
         driveTalon = new TalonFX(31,"GTX7130");  //rf
-        // turnTalon = new TalonFX(4);
-        
         turnSparkMax = new SparkMax(32, MotorType.kBrushless);
         cancoder = new CANcoder(0,"GTX7130");
         absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(0.208252 + 0.5)); // MUST BE CALIBRATED
         break;
       case 2:
         driveTalon = new TalonFX(21,"GTX7130"); //lr
-        // turnTalon = new TalonFX(7);
         turnSparkMax = new SparkMax(22, MotorType.kBrushless);
-        
         cancoder = new CANcoder(2,"rio");
         absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(-0.371826 + 0.5)); // MUST BE CALIBRATED
         break;
       case 3:
         driveTalon = new TalonFX(11,"GTX7130"); //rr
-        // turnTalon = new TalonFX(10);
         turnSparkMax = new SparkMax(12, MotorType.kBrushless);
-        
         cancoder = new CANcoder(1,"GTX7130");
         absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(-0.267090 + 0.5)); // MUST BE CALIBRATED
         break;
@@ -98,30 +87,25 @@ public class Swerve implements ModuleIO {
         throw new RuntimeException("Invalid module index");
     }
 
+    // TalonFX Config
     var driveConfig = new TalonFXConfiguration();
     driveConfig.CurrentLimits.SupplyCurrentLimit = 40.0;
     driveConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
     driveTalon.getConfigurator().apply(driveConfig);
+    driveTalon.optimizeBusUtilization();
     setDriveBrakeMode(true);
 
-    // var turnConfig = new TalonFXConfiguration();
-    // turnConfig.CurrentLimits.SupplyCurrentLimit = 30.0;
-    // turnConfig.CurrentLimits.SupplyCurrentLimitEnable = true;
-    // turnTalon.getConfigurator().apply(turnConfig);
-    // setTurnBrakeMode(true);
-    SparkMaxConfig turnSparkConfig = new SparkMaxConfig();
-    
+    // SparkMax Config
+    SparkMaxConfig turnSparkConfig = new SparkMaxConfig();  
     turnSparkConfig
           .smartCurrentLimit(30)
           .voltageCompensation(12.0)
           .inverted(isTurnMotorInverted)
           .idleMode(IdleMode.kBrake);
-    
-
-    turnSparkMax.setCANTimeout(250);
-
+    turnSparkMax.setCANTimeout(100);
     turnSparkMax.configure(turnSparkConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     
+    // CANCoder Config
     CANcoderConfiguration cancoderConfig = new CANcoderConfiguration();
     cancoderConfig.MagnetSensor.MagnetOffset = absoluteEncoderOffset.getRotations();
     cancoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 0.5;
@@ -134,27 +118,14 @@ public class Swerve implements ModuleIO {
     driveCurrent = driveTalon.getSupplyCurrent();
 
     turnAbsolutePosition = cancoder.getAbsolutePosition();
-    // turnPosition = turnTalon.getPosition();
-    // turnVelocity = turnTalon.getVelocity();
-    // turnAppliedVolts = turnTalon.getMotorVoltage();
-    // turnCurrent = turnTalon.getSupplyCurrent();
 
-    // BaseStatusSignal.setUpdateFrequencyForAll(100.0, drivePosition, turnPosition);
+    // BaseStatusSignal.setUpdateFrequencyForAll(100.0, 
+    //     drivePosition, driveVelocity, driveAppliedVolts, driveCurrent, turnAbsolutePosition);
+
     BaseStatusSignal.setUpdateFrequencyForAll(
         40.0, drivePosition);
-    // BaseStatusSignal.setUpdateFrequencyForAll(
-    //     50.0,
-    //     driveVelocity,
-    //     driveAppliedVolts,
-    //     driveCurrent,
-    //     turnAbsolutePosition,
-    //     turnVelocity,
-    //     turnAppliedVolts,
-    //     turnCurrent);
     BaseStatusSignal.setUpdateFrequencyForAll(
         10.0, driveVelocity, driveAppliedVolts, driveCurrent, turnAbsolutePosition);
-    driveTalon.optimizeBusUtilization();
-    // turnTalon.optimizeBusUtilization();
   }
 
   @Override
