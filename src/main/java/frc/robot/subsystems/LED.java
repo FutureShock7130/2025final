@@ -366,6 +366,24 @@ public class LED extends SubsystemBase {
         // setSection3(r3, g3, b3);
         // setSection4(r4, g4, b4);
     }
+   
+    public void marqueeSection(int startLED, int endLED, int r, int g, int b, double speed) {
+        timer.start();
+        if (timer.get() < 0.1) {
+            for (int i = startLED; i <= endLED && i < m_ledBuffer.getLength(); i++) {
+                if (((int) ((i + counter) / 6)) % 2 == 0) {
+                    m_ledBuffer.setRGB(i, r, g, b);
+                } else {
+                    m_ledBuffer.setRGB(i, 0, 0, 0);
+                }
+            }
+        } else if (timer.get() > speed) {
+            counter++;
+            timer.restart();
+        }
+
+        m_led.setData(m_ledBuffer);
+    }
 
     // Charging effect for a specific section - non-blocking version using timer
     public void sectionCharge(int section, int r, int g, int b, int blink) {
@@ -380,11 +398,11 @@ public class LED extends SubsystemBase {
                 break;
             case 2:
                 startIndex = 12;
-                length = 14;
+                length = 10;
                 break;
             case 3:
-                startIndex = 26;
-                length = 15;
+                startIndex = 22;
+                length = 13;
                 break;
             default:
                 return; // Invalid section
@@ -484,11 +502,11 @@ public class LED extends SubsystemBase {
                 break;
             case 2:
                 startIndex = 12;
-                length = 14;
+                length = 10;
                 break;
             case 3:
-                startIndex = 26;
-                length = 15;
+                startIndex = 22;
+                length = 13;
                 break;
             default:
                 return; // Invalid section
