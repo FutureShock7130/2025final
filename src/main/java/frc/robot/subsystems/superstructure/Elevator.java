@@ -24,18 +24,18 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 
 public class Elevator extends SubsystemBase {
-  private final SparkMax leftMotor;
-  private final SparkMax rightMotor;
-  
-  private static final double kDownSpeedMultiplier = 1; // Reduces speed when decending
+    private final SparkMax leftMotor;
+    private final SparkMax rightMotor;
 
-  // Shuffleboard entries
-  private final ShuffleboardTab elevatorTab = Shuffleboard.getTab("Elevator");
+    private static final double kDownSpeedMultiplier = 1; // Reduces speed when decending
 
-  // Add these with other instance variables at the top
-  private final GenericEntry speedEntry;
-  private final GenericEntry leftRotationsEntry;
-  private final GenericEntry rightRotationsEntry;
+    // Shuffleboard entries
+    private final ShuffleboardTab elevatorTab = Shuffleboard.getTab("Elevator");
+
+    // Add these with other instance variables at the top
+    private final GenericEntry speedEntry;
+    private final GenericEntry leftRotationsEntry;
+    private final GenericEntry rightRotationsEntry;
 
   // Profiled PID Controller for smooth motionS
   private final TrapezoidProfile.Constraints constraints = 
@@ -55,167 +55,165 @@ public class Elevator extends SubsystemBase {
   private final SimpleMotorFeedforward leftfeedforward = new SimpleMotorFeedforward(0.6, 2.307, 0.05);
   private final SimpleMotorFeedforward rightfeedforward = new SimpleMotorFeedforward(0.5, 2.307, 0.05);
 
-  private static Elevator mInstance = null;
+    private static Elevator mInstance = null;
 
-  public static synchronized Elevator getInstance() {
-    if (mInstance == null) {
-      mInstance = new Elevator();
+    public static synchronized Elevator getInstance() {
+        if (mInstance == null) {
+            mInstance = new Elevator();
+        }
+        return mInstance;
     }
-    return mInstance;
-  }
 
-  /** Creates a new Elevator. */
-  public Elevator() {
-    leftMotor = new SparkMax(25, MotorType.kBrushless);  // Update ID as needed
-    rightMotor = new SparkMax(26, MotorType.kBrushless); // Update ID as needed
-    
-    configureNEO(leftMotor, false, true);  //master ccw positive
-    configureNEO(rightMotor, true, true);  //slave cw positive
-    
-    // Configure PID Controller
-    pidController.setTolerance(2); 
-    pidController.setIZone(Double.POSITIVE_INFINITY);
-    pidController.setIntegratorRange(-0.5, 0.5);
-    pidController.setGoal(leftMotor.getEncoder().getPosition());
-    pidController.calculate(leftMotor.getEncoder().getPosition());
-    pidController.reset(leftMotor.getEncoder().getPosition());
+    /** Creates a new Elevator. */
+    public Elevator() {
+        leftMotor = new SparkMax(25, MotorType.kBrushless); // Update ID as needed
+        rightMotor = new SparkMax(26, MotorType.kBrushless); // Update ID as needed
 
-    //widgets
-    speedEntry = elevatorTab.add("Elevator Speed", 0.0)
-        .withPosition(0, 1)
-        .withSize(2, 1)
-        .getEntry();
-    leftRotationsEntry = elevatorTab.add("Left Motor Rotations", 0.0)
-        .withPosition(1, 1)
-        .withSize(2, 1)
-        .getEntry();
-    rightRotationsEntry = elevatorTab.add("Right Motor Rotations", 0.0)
-        .withPosition(1, 2)
-        .withSize(2, 1)
-        .getEntry();
-  }
+        configureNEO(leftMotor, false, true); // master ccw positive
+        configureNEO(rightMotor, true, true); // slave cw positive
 
-  private void configureNEO(SparkMax motor, boolean inverted, boolean softLimit) {
-    SparkMaxConfig neoConfig = new SparkMaxConfig();
-    
-    // Create soft limit config for elevator
-    SoftLimitConfig softLimitConfig = new SoftLimitConfig();
-    softLimitConfig
-        .forwardSoftLimit(200 * 0.6)     // in rotations
-        .forwardSoftLimitEnabled(softLimit)
-        .reverseSoftLimit(0.0)     
-        .reverseSoftLimitEnabled(false);
-    
-    neoConfig
-        .smartCurrentLimit(50)
-        .secondaryCurrentLimit(70)
-        .idleMode(IdleMode.kBrake)  
-        .voltageCompensation(12.0)
-        .openLoopRampRate(0.1)
-        .apply(softLimitConfig)
-        .inverted(inverted)
-        .disableFollowerMode();
-    
-    motor.setCANTimeout(250);
-    motor.configure(neoConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    motor.getEncoder().setPosition(0.0);  // Reset encoder to zero
-  }
+        // Configure PID Controller
+        pidController.setTolerance(2);
+        pidController.setIZone(Double.POSITIVE_INFINITY);
+        pidController.setIntegratorRange(-0.5, 0.5);
+        pidController.setGoal(leftMotor.getEncoder().getPosition());
+        pidController.calculate(leftMotor.getEncoder().getPosition());
+        pidController.reset(leftMotor.getEncoder().getPosition());
 
-  /** 
-   * Sets the elevator speed. Positive values move up, negative values move down.
-   * Includes gravity compensation when moving up and speed reduction when moving down! ^w^
-   * @param speed Speed from -1.0 to 1.0
-   */
-  public void setElevatorSpeed(double speed) {
-    double gravityCompensation = 0;
-    
-    // Reduce speed when moving down
-    if (speed < 0) {
-      speed *= kDownSpeedMultiplier;
+        // widgets
+        speedEntry = elevatorTab.add("Elevator Speed", 0.0)
+                .withPosition(0, 1)
+                .withSize(2, 1)
+                .getEntry();
+        leftRotationsEntry = elevatorTab.add("Left Motor Rotations", 0.0)
+                .withPosition(1, 1)
+                .withSize(2, 1)
+                .getEntry();
+        rightRotationsEntry = elevatorTab.add("Right Motor Rotations", 0.0)
+                .withPosition(1, 2)
+                .withSize(2, 1)
+                .getEntry();
     }
-    
-    leftMotor.set(speed + gravityCompensation);
-    rightMotor.set(speed + gravityCompensation);
-  }
 
-  public void setVoltage(double voltagePercent) {
-    double speed = MathUtil.clamp(voltagePercent, -1, 1);
-    double ff = leftfeedforward.calculate(speed);
-    double output = (speed * 12) + ff;
+    private void configureNEO(SparkMax motor, boolean inverted, boolean softLimit) {
+        SparkMaxConfig neoConfig = new SparkMaxConfig();
 
-    // Reduce speed when moving down
-    if (output < 0) {
-      output *= kDownSpeedMultiplier;
+        // Create soft limit config for elevator
+        SoftLimitConfig softLimitConfig = new SoftLimitConfig();
+        softLimitConfig
+                .forwardSoftLimit(200 * 0.6) // in rotations
+                .forwardSoftLimitEnabled(softLimit)
+                .reverseSoftLimit(0.0)
+                .reverseSoftLimitEnabled(false);
+
+        neoConfig
+                .smartCurrentLimit(50)
+                .secondaryCurrentLimit(70)
+                .idleMode(IdleMode.kBrake)
+                .voltageCompensation(12.0)
+                .openLoopRampRate(0.1)
+                .apply(softLimitConfig)
+                .inverted(inverted)
+                .disableFollowerMode();
+
+        motor.setCANTimeout(250);
+        motor.configure(neoConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        motor.getEncoder().setPosition(0.0); // Reset encoder to zero
     }
-    leftMotor.setVoltage(output);
-    rightMotor.setVoltage(output);
-  }
 
-  public void setleftVoltage(double voltagePercent) {
-    double speed = MathUtil.clamp(voltagePercent, -1, 1);
-    double ff = leftfeedforward.calculate(speed);
-    double output = (speed * 12) + ff;
+    /**
+     * Sets the elevator speed. Positive values move up, negative values move down.
+     * Includes gravity compensation when moving up and speed reduction when moving
+     * down! ^w^
+     * 
+     * @param speed Speed from -1.0 to 1.0
+     */
+    public void setElevatorSpeed(double speed) {
+        double gravityCompensation = 0;
 
-    // Reduce speed when moving down
-    if (output < 0) {
-      output *= kDownSpeedMultiplier;
+        // Reduce speed when moving down
+        if (speed < 0) {
+            speed *= kDownSpeedMultiplier;
+        }
+
+        leftMotor.set(speed + gravityCompensation);
+        rightMotor.set(speed + gravityCompensation);
     }
-    leftMotor.setVoltage(output);
-  }
 
-  public void setrightVoltage(double voltagePercent) {
-    double speed = MathUtil.clamp(voltagePercent, -1, 1);
-    double ff = rightfeedforward.calculate(speed);
-    double output = (speed * 12) + ff;
+    public void setVoltage(double voltagePercent) {
+        double speed = MathUtil.clamp(voltagePercent, -1, 1);
+        double ff = leftfeedforward.calculate(speed);
+        double output = (speed * 12) + ff;
 
-    // Reduce speed when moving down
-    if (output < 0) {
-      output *= kDownSpeedMultiplier;
+        // Reduce speed when moving down
+        if (output < 0) {
+            output *= kDownSpeedMultiplier;
+        }
+        leftMotor.setVoltage(output);
+        rightMotor.setVoltage(output);
     }
-    rightMotor.setVoltage(output);
-  }
 
-  /**
-   * Stop the elevator uwu
-   */
-  public void stop() {
-    setElevatorSpeed(0.0);
-  }
+    public void setleftVoltage(double voltagePercent) {
+        double speed = MathUtil.clamp(voltagePercent, -1, 1);
+        double ff = leftfeedforward.calculate(speed);
+        double output = (speed * 12) + ff;
 
-  public void setPosition(double position) {
-    pidController.setGoal(position);
-    setleftVoltage(MathUtil.clamp(pidController.calculate(leftMotor.getEncoder().getPosition()) * 1.0, -0.9, 0.9));
-    setrightVoltage(MathUtil.clamp(pidController.calculate(rightMotor.getEncoder().getPosition()) * 1.0, -0.9, 0.9));
-  }
+        // Reduce speed when moving down
+        if (output < 0) {
+            output *= kDownSpeedMultiplier;
+        }
+        leftMotor.setVoltage(output);
+    }
 
-  public void resetPosition() {
-    rightMotor.getEncoder().setPosition(0);
-    leftMotor.getEncoder().setPosition(0);
-  }
+    public void setrightVoltage(double voltagePercent) {
+        double speed = MathUtil.clamp(voltagePercent, -1, 1);
+        double ff = rightfeedforward.calculate(speed);
+        double output = (speed * 12) + ff;
 
-  public double getElevatorPosition() {
-    return leftMotor.getEncoder().getPosition();
-  }
+        // Reduce speed when moving down
+        if (output < 0) {
+            output *= kDownSpeedMultiplier;
+        }
+        rightMotor.setVoltage(output);
+    }
 
-  public boolean atTargetPosition() {
-    return pidController.atGoal();
-  }
+    /**
+     * Stop the elevator uwu
+     */
+    public void stop() {
+        setElevatorSpeed(0.0);
+    }
 
-  @Override
-  public void periodic() {
-    // Update values instead of creating new widgets
-    speedEntry.setDouble(leftMotor.get());
-    SmartDashboard.putNumber("elevator applied output", leftMotor.getAppliedOutput());
-    SmartDashboard.putNumber("elevator get", leftMotor.get());
-    SmartDashboard.putNumber("elevator volts", leftMotor.getBusVoltage());
-    SmartDashboard.putNumber("Elevator pid", pidController.calculate(rightMotor.getEncoder().getPosition()));
-    SmartDashboard.putNumber("pid setpont le", pidController.getSetpoint().position);
-    leftRotationsEntry.setDouble(leftMotor.getEncoder().getPosition());
-    rightRotationsEntry.setDouble(rightMotor.getEncoder().getPosition());
-  }
+    public void setPosition(double position) {
+        pidController.setGoal(position);
+        setleftVoltage(MathUtil.clamp(pidController.calculate(leftMotor.getEncoder().getPosition()) * 1.0, -0.9, 0.9));
+        setrightVoltage(
+                MathUtil.clamp(pidController.calculate(rightMotor.getEncoder().getPosition()) * 1.0, -0.9, 0.9));
+    }
+
+    public void resetPosition() {
+        rightMotor.getEncoder().setPosition(0);
+        leftMotor.getEncoder().setPosition(0);
+    }
+
+    public double getElevatorPosition() {
+        return leftMotor.getEncoder().getPosition();
+    }
+
+    public boolean atTargetPosition() {
+        return pidController.atGoal();
+    }
+
+    @Override
+    public void periodic() {
+        // Update values instead of creating new widgets
+        speedEntry.setDouble(leftMotor.get());
+        SmartDashboard.putNumber("elevator applied output", leftMotor.getAppliedOutput());
+        SmartDashboard.putNumber("elevator get", leftMotor.get());
+        SmartDashboard.putNumber("elevator volts", leftMotor.getBusVoltage());
+        SmartDashboard.putNumber("Elevator pid", pidController.calculate(rightMotor.getEncoder().getPosition()));
+        SmartDashboard.putNumber("pid setpont le", pidController.getSetpoint().position);
+        leftRotationsEntry.setDouble(leftMotor.getEncoder().getPosition());
+        rightRotationsEntry.setDouble(rightMotor.getEncoder().getPosition());
+    }
 }
-
-
-    
-    
-

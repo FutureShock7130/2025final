@@ -366,7 +366,7 @@ public class LED extends SubsystemBase {
         // setSection3(r3, g3, b3);
         // setSection4(r4, g4, b4);
     }
-   
+
     public void marqueeSection(int startLED, int endLED, int r, int g, int b, double speed) {
         marqueeSection(startLED, endLED, r, g, b, speed, false);
     }
@@ -674,6 +674,7 @@ public class LED extends SubsystemBase {
             setSection1(0, 0, 0);
         }
     }
+
     /**
      * Blinks section1 (LEDs 0-11) with customizable color and speed
      * 
