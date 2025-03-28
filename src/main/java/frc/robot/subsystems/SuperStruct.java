@@ -269,7 +269,7 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void L4() {
-        mElevator.setPosition(165 * 0.6);
+        mElevator.setPosition(169 * 0.6);
         if (mElevator.atTargetPosition()) {
             mGrabber.setPosition(0.297539);
         } else {
@@ -366,15 +366,17 @@ public class SuperStruct extends SubsystemBase {
             if (!hasSetSafeHeight && !isMovingToDefault) {
                 // Only set target position once
                 savedElevatorPos = mElevator.getElevatorPosition();
-                int raiseDistance = mPreviousState == SuperStructState.L4 ? 30 : 40;
+                int raiseDistance = mPreviousState == SuperStructState.L4 ? 30 : 69;
                 targetUpPosition = savedElevatorPos + raiseDistance;
                 mElevator.setPosition(targetUpPosition);
                 mGrabber.setPosition(0.396729);
                 hasSetSafeHeight = true;
+                
                 SmartDashboard.putString("Movement Phase", "Moving Up");
             } else if (hasSetSafeHeight && mElevator.atTargetPosition() && !isMovingToDefault) {
                 // Once we reach the up position, start moving down
-                mElevator.setPosition(-0.02 * 0.6);
+                mGrabber.setPosition(0.396729);
+                mElevator.setPosition(-0.0);
                 isMovingToDefault = true;
                 SmartDashboard.putString("Movement Phase", "Moving to Default");
             } else if (isMovingToDefault && mElevator.atTargetPosition()) {
