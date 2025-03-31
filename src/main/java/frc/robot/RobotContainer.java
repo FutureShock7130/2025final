@@ -180,7 +180,7 @@ public class RobotContainer {
     NamedCommands.registerCommand("PLACE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.PLACEMENT), m_grabber).withTimeout(0.3));
     NamedCommands.registerCommand("INTAKE", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.CS), m_grabber).withTimeout(2.5));
     NamedCommands.registerCommand("GRABBERDEFAULT", Commands.run(() -> StateMachine.getInstance().setCommandedState(SuperStructState.GRABBER_DEFAULT), m_grabber).withTimeout(0.5));
-    NamedCommands.registerCommand("GENSHIN", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.GENSHINIMPACT), m_elevator).withTimeout(1));
+    NamedCommands.registerCommand("GENSHIN", Commands.runOnce(() -> StateMachine.getInstance().setCommandedState(SuperStructState.GENSHINIMPACT), m_elevator).withTimeout(0.5));
     NamedCommands.registerCommand("ALGAE_UP", Commands.run(() -> mAlgaeRemover.setRightSpeed(0.4), mAlgaeRemover).withTimeout(2));
     NamedCommands.registerCommand("ALGAE_DOWN", Commands.run(() -> mAlgaeRemover.setRightSpeed(-0.4), mAlgaeRemover).withTimeout(2));
 

@@ -188,16 +188,7 @@ public class Drive extends SubsystemBase {
         module.stop();
       }
     }
-    // Log empty setpoint states when disabled
-    // if (DriverStation.isDisabled()) {
-    //   Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
-    //   Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
-    // }
     
-    Runtime runtime = Runtime.getRuntime();
-    SmartDashboard.putNumber("Memory/MaxKB", runtime.maxMemory()/1024);
-    SmartDashboard.putNumber("Memory/UsedKB", (runtime.totalMemory() - runtime.freeMemory())/1024);
-    SmartDashboard.putNumber("Memory/FreeKB", runtime.freeMemory()/1024);
 
     // Read wheel positions and deltas from each module
     SwerveModulePosition[] modulePositions = getModulePositions();

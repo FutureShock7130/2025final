@@ -40,20 +40,20 @@ public class Elevator extends SubsystemBase {
   // Profiled PID Controller for smooth motionS
   private final TrapezoidProfile.Constraints constraints = 
       new TrapezoidProfile.Constraints(
-          175,   
+          150,   
           250
       );
   
   private final ProfiledPIDController pidController = 
       new ProfiledPIDController(
-          0.03,   // P gain
-          0.0003,   // I gain
-          0.0,   // D gain
+          0.06,   // P gain
+          0.0,   // I gain
+          0.001,   // D gain
           constraints
       );
   
-  private final SimpleMotorFeedforward leftfeedforward = new SimpleMotorFeedforward(0.6, 2.307, 0.05);
-  private final SimpleMotorFeedforward rightfeedforward = new SimpleMotorFeedforward(0.5, 2.307, 0.05);
+  private final SimpleMotorFeedforward leftfeedforward = new SimpleMotorFeedforward(0.5, 2.307, 0.05);
+  private final SimpleMotorFeedforward rightfeedforward = new SimpleMotorFeedforward(0.4, 2.307, 0.05);
 
   private static Elevator mInstance = null;
 
@@ -110,7 +110,7 @@ public class Elevator extends SubsystemBase {
         .smartCurrentLimit(50)
         .secondaryCurrentLimit(70)
         .idleMode(IdleMode.kBrake)  
-        .voltageCompensation(12.0)
+        .voltageCompensation(12.5)
         .openLoopRampRate(0.1)
         .apply(softLimitConfig)
         .inverted(inverted)

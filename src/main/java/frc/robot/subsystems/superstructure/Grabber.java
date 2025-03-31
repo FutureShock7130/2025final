@@ -210,14 +210,14 @@ public class Grabber extends SubsystemBase {
             leftIntake.set(0);
             return;
         } else {
-            rightIntake.set(0.5);
-            leftIntake.set(-0.5);
+            rightIntake.set(0.3);
+            leftIntake.set(-0.3);
         }
     }
 
     public void placeCoral() {
-        rightIntake.set(-0.5);
-        leftIntake.set(0.5);
+        rightIntake.set(-0.3);
+        leftIntake.set(0.3);
     }
 
     public void placeL1() {

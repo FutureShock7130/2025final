@@ -61,11 +61,11 @@ public class Vision extends SubsystemBase {
         Map<String, Transform3d> robotToCamTransforms = new HashMap<>();
         robotToCamTransforms.put("CAM_1", new Transform3d(
                 new Translation3d(0.204506, -0.25855, 0.713104), // right camera
-                new Rotation3d(0.0, Math.toRadians(60), 0.0)));
+                new Rotation3d(0.0, Math.toRadians(70), 0.0)));
 
         robotToCamTransforms.put("CAM_2", new Transform3d(
                 new Translation3d(0.204506, 0.25855, 0.713104), // left camera
-                new Rotation3d(0.0, Math.toRadians(60), Math.toRadians(0))));
+                new Rotation3d(0.0, Math.toRadians(58), Math.toRadians(0))));
 
         robotToCamTransforms.put("WEB_CAM", new Transform3d(
                 new Translation3d(0.331964, 0.0, Units.inchesToMeters(7.875)), // mid cam
