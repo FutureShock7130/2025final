@@ -141,7 +141,7 @@ public class Swerve implements ModuleIO {
 
     // BaseStatusSignal.setUpdateFrequencyForAll(100.0, drivePosition, turnPosition);
     BaseStatusSignal.setUpdateFrequencyForAll(
-        40.0, drivePosition);
+        50.0, drivePosition);
     // BaseStatusSignal.setUpdateFrequencyForAll(
     //     50.0,
     //     driveVelocity,
