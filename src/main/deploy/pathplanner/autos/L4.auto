@@ -19,7 +19,7 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 3.0
+            "waitTime": 2.4
           }
         },
         {
@@ -31,31 +31,38 @@
         {
           "type": "wait",
           "data": {
-            "waitTime": 0.5
+            "waitTime": 0.4
           }
         },
         {
-          "type": "named",
+          "type": "sequential",
           "data": {
-            "name": "GRABBERDEFAULT"
+            "commands": [
+              {
+                "type": "named",
+                "data": {
+                  "name": "GENSHIN"
+                }
+              },
+              {
+                "type": "wait",
+                "data": {
+                  "waitTime": 0.3
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "GRABBERDEFAULT"
+                }
+              }
+            ]
           }
         },
         {
           "type": "wait",
           "data": {
-            "waitTime": 0.5
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "GENSHIN"
-          }
-        },
-        {
-          "type": "wait",
-          "data": {
-            "waitTime": 0.5
+            "waitTime": 0.4
           }
         },
         {

@@ -41,12 +41,12 @@ public class Elevator extends SubsystemBase {
   private final TrapezoidProfile.Constraints constraints = 
       new TrapezoidProfile.Constraints(
           150,   
-          250
+          500
       );
   
   private final ProfiledPIDController pidController = 
       new ProfiledPIDController(
-          0.06,   // P gain
+          0.08,   // P gain
           0.0,   // I gain
           0.001,   // D gain
           constraints

@@ -82,7 +82,7 @@ public class Grabber extends SubsystemBase {
         CANcoderConfiguration encoderConfig = new CANcoderConfiguration();
         encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
         encoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
-        encoderConfig.MagnetSensor.MagnetOffset = -0.282958984375;
+        encoderConfig.MagnetSensor.MagnetOffset = 0.137695;
         grabberEncoder.getConfigurator().apply(encoderConfig);
 
         pidController.reset(grabberEncoder.getAbsolutePosition().getValueAsDouble());
@@ -108,7 +108,6 @@ public class Grabber extends SubsystemBase {
         rightangle.setCANTimeout(250);
         rightangle.configure(followerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-        leftangle.getEncoder().setPosition(0.0);
 
     }
 
@@ -210,14 +209,14 @@ public class Grabber extends SubsystemBase {
             leftIntake.set(0);
             return;
         } else {
-            rightIntake.set(0.3);
-            leftIntake.set(-0.3);
+            rightIntake.set(0.5);
+            leftIntake.set(-0.5);
         }
     }
 
     public void placeCoral() {
-        rightIntake.set(-0.3);
-        leftIntake.set(0.3);
+        rightIntake.set(-0.4);
+        leftIntake.set(0.4);
     }
 
     public void placeL1() {

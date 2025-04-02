@@ -241,9 +241,9 @@ public class SuperStruct extends SubsystemBase {
     public void L1() {
         mElevator.setPosition(-0.0);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.232910); // ok
+            mGrabber.setPosition(0.487793); // ok
         } else {
-            mGrabber.setPosition(0.386768); // ok
+            mGrabber.setPosition(0.629912); // ok
         }
         mIntake.setAngle(0.920410); // ok
     }
@@ -251,9 +251,9 @@ public class SuperStruct extends SubsystemBase {
     public void L2() {
         mElevator.setPosition(20 * 0.6);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.232910); // ok
+            mGrabber.setPosition(0.487793); // ok
         } else {
-            mGrabber.setPosition(0.386768); // ok
+            mGrabber.setPosition(0.629912); // ok
         }
         mIntake.setAngle(0.920410); // ok
     }
@@ -261,9 +261,9 @@ public class SuperStruct extends SubsystemBase {
     public void L3() {
         mElevator.setPosition(70 * 0.6);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.232910); // ok
+            mGrabber.setPosition(0.487793); // ok
         } else {
-            mGrabber.setPosition(0.386768); // ok
+            mGrabber.setPosition(0.629912); // ok
         }
         mIntake.setAngle(0.920410); // ok
     }
@@ -271,9 +271,9 @@ public class SuperStruct extends SubsystemBase {
     public void L4() {
         mElevator.setPosition(165 * 0.6);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.302910); // ok
+            mGrabber.setPosition(0.517793); // ok
         } else {
-            mGrabber.setPosition(0.386768); // ok
+            mGrabber.setPosition(0.629912); // ok
         }
         mIntake.setAngle(0.920410); // ok
     }
@@ -294,9 +294,9 @@ public class SuperStruct extends SubsystemBase {
         mGrabber.intake();
         if (mElevator.atTargetPosition()) {
             if (!mGrabber.hasCoral()) {
-                mGrabber.setPosition(0.67621); // ok
+                mGrabber.setPosition(0.930176); // ok
             } else if (mGrabber.hasCoral()) {
-                mGrabber.setPosition(0.386768); // ok
+                mGrabber.setPosition(0.629912); // ok
             }
         }
         mIntake.setAngle(0.920410); // ok
@@ -369,7 +369,7 @@ public class SuperStruct extends SubsystemBase {
                 int raiseDistance = mPreviousState == SuperStructState.L4 ? 30 : 50;
                 targetUpPosition = savedElevatorPos + raiseDistance;
                 mElevator.setPosition(targetUpPosition);
-                mGrabber.setPosition(0.386768); // ok
+                mGrabber.setPosition(0.629912); // ok
                 hasSetSafeHeight = true;
                 SmartDashboard.putString("Movement Phase", "Moving Up");
             } else if (hasSetSafeHeight && mElevator.atTargetPosition() && !isMovingToDefault) {
@@ -391,7 +391,7 @@ public class SuperStruct extends SubsystemBase {
             // Direct to default if not from L-level
             hasSetSafeHeight = false;
             isMovingToDefault = false;
-            mGrabber.setPosition(0.386768); // ok
+            mGrabber.setPosition(0.629912); // ok
             mElevator.setPosition(0);
             SmartDashboard.putString("Movement Phase", "Direct to Default");
         }
@@ -407,7 +407,7 @@ public class SuperStruct extends SubsystemBase {
 
     public void grabberDefault() {
         mGrabber.stop();
-        mGrabber.setPosition(0.386768); // ok
+        mGrabber.setPosition(0.629912); // ok
         // mGrabber.resetcounter();
     }
 
