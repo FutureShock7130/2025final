@@ -177,18 +177,17 @@ public class Drive extends SubsystemBase {
 
   public void periodic() {
     gyroIO.updateInputs(gyroInputs);
-    // Logger.processInputs("Drive/Gyro", gyroInputs);
     for (var module : modules) {
       module.periodic();
     }
     
     // Stop moving when disabled
     if (DriverStation.isDisabled()) {
-      for (var module : modules) {
-        module.stop();
-      }
+        for (var module : modules) {
+            module.stop();
+        }
+        return; // Skip the rest of processing in disabled mode
     }
-    
 
     // Read wheel positions and deltas from each module
     SwerveModulePosition[] modulePositions = getModulePositions();
