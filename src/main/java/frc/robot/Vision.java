@@ -37,6 +37,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj.DriverStation;
 
 public class Vision extends SubsystemBase {
     private final Map<String, PhotonCamera> cameras;
@@ -317,8 +318,8 @@ public class Vision extends SubsystemBase {
 
     @Override
     public void periodic() {
-        if (!processingEnabled) {
-            return; // Skip all vision processing
+        if (!processingEnabled || DriverStation.isDisabled()) {
+            return; // Skip all vision processing in disabled mode
         }
         // Regular vision processing...
         // We can still keep the camera selector for debug viewing,

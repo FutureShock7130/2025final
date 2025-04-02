@@ -55,7 +55,7 @@ public class Swerve implements ModuleIO {
   // private final StatusSignal<Double> turnCurrent;
 
   // Gear ratios for SDS MK4i L2, adjust as necessary
-  private final double DRIVE_GEAR_RATIO = 6.122449;
+  private final double DRIVE_GEAR_RATIO = 6.12;
   private final double TURN_GEAR_RATIO = 150.0 / 7.0;
 
   private final boolean isTurnMotorInverted = true;
@@ -141,7 +141,7 @@ public class Swerve implements ModuleIO {
 
     // BaseStatusSignal.setUpdateFrequencyForAll(100.0, drivePosition, turnPosition);
     BaseStatusSignal.setUpdateFrequencyForAll(
-        40.0, drivePosition);
+        20.0, drivePosition);
     // BaseStatusSignal.setUpdateFrequencyForAll(
     //     50.0,
     //     driveVelocity,
@@ -173,9 +173,9 @@ public class Swerve implements ModuleIO {
         drivePosition, driveVelocity, driveAppliedVolts, driveCurrent, turnAbsolutePosition);
 
     inputs.drivePositionRad =
-        Units.rotationsToRadians(drivePosition.getValueAsDouble()) / DRIVE_GEAR_RATIO;
+        Units.rotationsToRadians(drivePosition.getValueAsDouble()) * DRIVE_GEAR_RATIO;
     inputs.driveVelocityRadPerSec =
-        Units.rotationsToRadians(driveVelocity.getValueAsDouble()) / DRIVE_GEAR_RATIO;
+        Units.rotationsToRadians(driveVelocity.getValueAsDouble()) * DRIVE_GEAR_RATIO;
     inputs.driveAppliedVolts = driveAppliedVolts.getValueAsDouble();
     inputs.driveCurrentAmps = new double[] {driveCurrent.getValueAsDouble()};
 
