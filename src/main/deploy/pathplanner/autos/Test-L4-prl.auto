@@ -15,7 +15,7 @@
                     {
                       "type": "path",
                       "data": {
-                        "pathName": "MID-H"
+                        "pathName": "MidLEAVE"
                       }
                     },
                     {
@@ -101,6 +101,6 @@
     }
   },
   "resetOdom": true,
-  "folder": "DAMN",
+  "folder": "Test",
   "choreoAuto": false
 }

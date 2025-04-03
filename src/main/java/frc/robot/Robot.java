@@ -107,25 +107,25 @@ public class Robot extends TimedRobot {
   @Override
   public void disabledPeriodic() {
     // StateMachine.getInstance().setCommandedState(SuperStructState.DISABLE);
-    Pose2d desiredPose = new PathPlannerAuto(m_robotContainer.getAutonomousCommand().getName()).getStartingPose();
-    if (desiredPose != null) {
-      SmartDashboard.putNumber("Starting Pose X", desiredPose.getX());
-      SmartDashboard.putNumber("Starting Pose Y", desiredPose.getY());
-      SmartDashboard.putNumber("Starting Pose Heading", desiredPose.getRotation().getDegrees());
-    if (Math.abs(m_robotContainer.getDrive().getPose().getX() - desiredPose.getX()) < 0.03
-        && Math.abs(m_robotContainer.getDrive().getPose().getY() - desiredPose.getY()) < 0.03
-        && Math.abs((m_robotContainer.getDrive().getPose().getRotation().minus(desiredPose.getRotation())).getDegrees()) < 2) {
-          m_robotContainer.m_led.color(0, 255, 0);
-    } else {
-      if (DriverStation.getAlliance().get() == Alliance.Blue) {
-        m_robotContainer.m_led.color(0, 0, 255);
-      } else {
-          m_robotContainer.m_led.color(255, 0, 0);
-        }
-      }
-    } else {
-      m_robotContainer.m_led.marquee(255, 0, 255, 10, 1.5);
-    }
+    // Pose2d desiredPose = new PathPlannerAuto(m_robotContainer.getAutonomousCommand().getName()).getStartingPose();
+    // if (desiredPose != null) {
+    //   SmartDashboard.putNumber("Starting Pose X", desiredPose.getX());
+    //   SmartDashboard.putNumber("Starting Pose Y", desiredPose.getY());
+    //   SmartDashboard.putNumber("Starting Pose Heading", desiredPose.getRotation().getDegrees());
+    // if (Math.abs(m_robotContainer.getDrive().getPose().getX() - desiredPose.getX()) < 0.03
+    //     && Math.abs(m_robotContainer.getDrive().getPose().getY() - desiredPose.getY()) < 0.03
+    //     && Math.abs((m_robotContainer.getDrive().getPose().getRotation().minus(desiredPose.getRotation())).getDegrees()) < 2) {
+    //       m_robotContainer.m_led.color(0, 255, 0);
+    // } else {
+    //   if (DriverStation.getAlliance().get() == Alliance.Blue) {
+    //     m_robotContainer.m_led.color(0, 0, 255);
+    //   } else {
+    //       m_robotContainer.m_led.color(255, 0, 0);
+    //     }
+    //   }
+    // } else {
+    //   m_robotContainer.m_led.marquee(255, 0, 255, 10, 1.5);
+    // }
   }
 
   /**

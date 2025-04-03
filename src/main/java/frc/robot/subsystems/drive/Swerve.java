@@ -55,7 +55,7 @@ public class Swerve implements ModuleIO {
   // private final StatusSignal<Double> turnCurrent;
 
   // Gear ratios for SDS MK4i L2, adjust as necessary
-  private final double DRIVE_GEAR_RATIO = 6.122449;
+  private final double DRIVE_GEAR_RATIO = 6.12;
   private final double TURN_GEAR_RATIO = 150.0 / 7.0;
 
   private final boolean isTurnMotorInverted = true;
@@ -67,8 +67,8 @@ public class Swerve implements ModuleIO {
         driveTalon = new TalonFX(1,"GTX7130"); //lf
         // turnTalon = new TalonFX(1);
         turnSparkMax = new SparkMax(2, MotorType.kBrushless);
-        cancoder = new CANcoder(3,"GTX7130");
-        absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(0.461426)); // MUST BE CALIBRATED
+        cancoder = new CANcoder(3,"rio");
+        absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(-0.046143 + 0.5)); // MUST BE CALIBRATED
         break;
       case 1:
         driveTalon = new TalonFX(31,"GTX7130");  //rf
@@ -76,7 +76,7 @@ public class Swerve implements ModuleIO {
         
         turnSparkMax = new SparkMax(32, MotorType.kBrushless);
         cancoder = new CANcoder(0,"GTX7130");
-        absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(0.208252 + 0.5)); // MUST BE CALIBRATED
+        absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(0.209229 + 0.5)); // MUST BE CALIBRATED
         break;
       case 2:
         driveTalon = new TalonFX(21,"GTX7130"); //lr
@@ -84,7 +84,7 @@ public class Swerve implements ModuleIO {
         turnSparkMax = new SparkMax(22, MotorType.kBrushless);
         
         cancoder = new CANcoder(2,"rio");
-        absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(-0.371826 + 0.5)); // MUST BE CALIBRATED
+        absoluteEncoderOffset = new Rotation2d(Units.rotationsToRadians(0.132812)); // MUST BE CALIBRATED
         break;
       case 3:
         driveTalon = new TalonFX(11,"GTX7130"); //rr
@@ -141,7 +141,7 @@ public class Swerve implements ModuleIO {
 
     // BaseStatusSignal.setUpdateFrequencyForAll(100.0, drivePosition, turnPosition);
     BaseStatusSignal.setUpdateFrequencyForAll(
-        40.0, drivePosition);
+        100.0, drivePosition);
     // BaseStatusSignal.setUpdateFrequencyForAll(
     //     50.0,
     //     driveVelocity,

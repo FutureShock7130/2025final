@@ -140,7 +140,7 @@ public class Intake extends SubsystemBase {
     CANcoderConfiguration encoderConfig = new CANcoderConfiguration();
     encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
     encoderConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1;
-    encoderConfig.MagnetSensor.MagnetOffset = -0.8566796875;
+    encoderConfig.MagnetSensor.MagnetOffset = -0.0;
     angleEncoder.getConfigurator().apply(encoderConfig);
 
     // // Configure SparkMax
@@ -189,7 +189,7 @@ public class Intake extends SubsystemBase {
     pidController.setGoal(position);
     double output = MathUtil.clamp(pidController.calculate(angleEncoder.getAbsolutePosition().getValueAsDouble()), -0.1, 0.1);
     // output += intakeFF.calculate(position, output);
-    setVoltage(output);
+    setVoltage(-output);
   }
 
   public void setVoltage(double voltagePercent) {

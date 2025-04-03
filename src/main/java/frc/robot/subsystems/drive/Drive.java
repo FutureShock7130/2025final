@@ -43,8 +43,8 @@ import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 
 public class Drive extends SubsystemBase {
   private static final double MAX_LINEAR_SPEED = 4.5;
-  private static final double TRACK_WIDTH_X = Units.inchesToMeters(25.0);
-  private static final double TRACK_WIDTH_Y = Units.inchesToMeters(25.0);
+  private static final double TRACK_WIDTH_X = Units.inchesToMeters(28.0);
+  private static final double TRACK_WIDTH_Y = Units.inchesToMeters(28.0);
   private static final double DRIVE_BASE_RADIUS =
       Math.hypot(TRACK_WIDTH_X / 2.0, TRACK_WIDTH_Y / 2.0);
   private static final double MAX_ANGULAR_SPEED = MAX_LINEAR_SPEED / DRIVE_BASE_RADIUS;
@@ -177,27 +177,17 @@ public class Drive extends SubsystemBase {
 
   public void periodic() {
     gyroIO.updateInputs(gyroInputs);
-    // Logger.processInputs("Drive/Gyro", gyroInputs);
     for (var module : modules) {
       module.periodic();
     }
     
     // Stop moving when disabled
     if (DriverStation.isDisabled()) {
-      for (var module : modules) {
-        module.stop();
-      }
+        for (var module : modules) {
+            module.stop();
+        }
+        return; // Skip the rest of processing in disabled mode
     }
-    // Log empty setpoint states when disabled
-    // if (DriverStation.isDisabled()) {
-    //   Logger.recordOutput("SwerveStates/Setpoints", new SwerveModuleState[] {});
-    //   Logger.recordOutput("SwerveStates/SetpointsOptimized", new SwerveModuleState[] {});
-    // }
-    
-    Runtime runtime = Runtime.getRuntime();
-    SmartDashboard.putNumber("Memory/MaxKB", runtime.maxMemory()/1024);
-    SmartDashboard.putNumber("Memory/UsedKB", (runtime.totalMemory() - runtime.freeMemory())/1024);
-    SmartDashboard.putNumber("Memory/FreeKB", runtime.freeMemory()/1024);
 
     // Read wheel positions and deltas from each module
     SwerveModulePosition[] modulePositions = getModulePositions();

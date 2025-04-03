@@ -106,7 +106,7 @@ public class NavigationController extends SubsystemBase {
         buttonBox2 = new Joystick(2);
         
         // Initialize path constraints 
-        this.constraints = new PathConstraints(2, 0.7, 2 * Math.PI, 4 * Math.PI);
+        this.constraints = new PathConstraints(2, 1, 2 * Math.PI, 4 * Math.PI);
         this.fastConstraints = new PathConstraints(4, 8, 2 * Math.PI, 4 * Math.PI);
         this.slowConstraints = new PathConstraints(2, 1, 2 * Math.PI, 4 * Math.PI);
     }
@@ -177,8 +177,8 @@ public class NavigationController extends SubsystemBase {
             } else {
                     // No special position feedback
                     SmartDashboard.putString("Position", "Not near tag position");
-                    LED.getInstance().blink(150, 30, 7);
-                    // LED.getInstance().blinkSection3(120, 30, 7, 1);
+                    LED.getInstance().blinkSection1(150, 30, 7, 1);
+                    LED.getInstance().blinkSection3(120, 30, 7, 1);
                 
             }
         }
@@ -327,16 +327,21 @@ public class NavigationController extends SubsystemBase {
             return;
         } else if (destination == DestinationState.PATHFINDING_TO_LEFT_OF_TAG) {
             // Navigate to the left side of the closest tag
-            boolean success = navigateToClosestTag(0.457, -0.145, null);  // 1.0m to the left
+            boolean success = navigateToClosestTag(0.513, -0.15, null);  // 1.0m to the left
             if (success) {
                 SmartDashboard.putString("Navigation/Status", "Navigating to left of closest tag");
-            } else {
+                // Check if we're at the correct distance
+                if (isAtTargetPosition(0.51, -0.16, 0.005)) {
+                    // Blink green when at correct position
+                    LED.getInstance().blinkSection1(0, 255, 0, 1.5);
+                }
+                                    } else {
                 SmartDashboard.putString("Navigation/Status", "No AprilTags visible");
             }
             return;
         } else if (destination == DestinationState.PATHFINDING_TO_RIGHT_OF_TAG) {
             // Navigate to the right side of the closest tag
-            boolean success = navigateToClosestTag(0.457, 0.178, null);  // -1.0m to the left (= right)
+                                boolean success = navigateToClosestTag(0.501, 0.18, null);  // -1.0m to the left (= right)
             if (success) {
                 SmartDashboard.putString("Navigation/Status", "Navigating to right of closest tag");
             } else {

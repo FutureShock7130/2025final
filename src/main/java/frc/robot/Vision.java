@@ -37,6 +37,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj.DriverStation;
 
 public class Vision extends SubsystemBase {
     private final Map<String, PhotonCamera> cameras;
@@ -61,11 +62,11 @@ public class Vision extends SubsystemBase {
         Map<String, Transform3d> robotToCamTransforms = new HashMap<>();
         robotToCamTransforms.put("CAM_1", new Transform3d(
                 new Translation3d(0.204506, -0.25855, 0.713104), // right camera
-                new Rotation3d(0.0, Math.toRadians(60), 0.0)));
+                new Rotation3d(0.0, Math.toRadians(70), 0.0)));
 
         robotToCamTransforms.put("WEB_CAM", new Transform3d(
                 new Translation3d(0.204506, 0.25855, 0.713104), // left camera
-                new Rotation3d(0.0, Math.toRadians(60), Math.toRadians(0))));
+                new Rotation3d(0.0, Math.toRadians(58), Math.toRadians(0))));
 
         robotToCamTransforms.put("CAM_2", new Transform3d(
                 new Translation3d(0.331964, 0.0, Units.inchesToMeters(7.875)), // mid cam
@@ -317,8 +318,8 @@ public class Vision extends SubsystemBase {
 
     @Override
     public void periodic() {
-        if (!processingEnabled) {
-            return; // Skip all vision processing
+        if (!processingEnabled || DriverStation.isDisabled()) {
+            return; // Skip all vision processing in disabled mode
         }
         // Regular vision processing...
         // We can still keep the camera selector for debug viewing,

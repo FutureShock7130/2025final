@@ -61,7 +61,7 @@ public class SuperStruct extends SubsystemBase {
     private final frc.robot.subsystems.superstructure.AlgaeRemover algaeRemover = frc.robot.subsystems.superstructure.AlgaeRemover
             .getInstance();
     private static final double ALGAE_SPEED = 0.5; // Speed for the algae remover
-    private static final double ALGAE_DURATION = 0.2; // Duration in seconds for the algae remover to run
+    private static final double ALGAE_DURATION = 0.1; // Duration in seconds for the algae remover to run
     private boolean algaeCommandSent = false; // Track if we've already sent the command
     private double algaeStartTime = 0; // Track when the algae command was sent
     private int algaeButtonPressCount = 0; // Counter for button presses
@@ -241,41 +241,41 @@ public class SuperStruct extends SubsystemBase {
     public void L1() {
         mElevator.setPosition(-0.0);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.227539);
+            mGrabber.setPosition(0.487793); // ok
         } else {
-            mGrabber.setPosition(0.396729);
+            mGrabber.setPosition(0.629912); // ok
         }
-        mIntake.setAngle(0.818359);
+        mIntake.setAngle(0.920410); // ok
     }
 
     public void L2() {
-        mElevator.setPosition(18.69420 * 0.6);
+        mElevator.setPosition(20 * 0.6);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.227539);
+            mGrabber.setPosition(0.487793); // ok
         } else {
-            mGrabber.setPosition(0.396729);
+            mGrabber.setPosition(0.629912); // ok
         }
-        mIntake.setAngle(0.818359);
+        mIntake.setAngle(0.920410); // ok
     }
 
     public void L3() {
-        mElevator.setPosition(69.420 * 0.6);
+        mElevator.setPosition(70 * 0.6);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.227539);
+            mGrabber.setPosition(0.487793); // ok
         } else {
-            mGrabber.setPosition(0.396729);
+            mGrabber.setPosition(0.629912); // ok
         }
-        mIntake.setAngle(0.818359);
+        mIntake.setAngle(0.920410); // ok
     }
 
     public void L4() {
         mElevator.setPosition(169 * 0.6);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.297539);
+            mGrabber.setPosition(0.55793); // ok
         } else {
-            mGrabber.setPosition(0.396729);
+            mGrabber.setPosition(0.629912); // ok
         }
-        mIntake.setAngle(0.818359);
+        mIntake.setAngle(0.920410); // ok
     }
 
     public void TRAVEL() {
@@ -294,12 +294,12 @@ public class SuperStruct extends SubsystemBase {
         mGrabber.intake();
         if (mElevator.atTargetPosition()) {
             if (!mGrabber.hasCoral()) {
-                mGrabber.setPosition(0.675162);
+                mGrabber.setPosition(0.930176); // ok
             } else if (mGrabber.hasCoral()) {
-                mGrabber.setPosition(0.396729);
+                mGrabber.setPosition(0.629912); // ok
             }
         }
-        mIntake.setAngle(0.818359);
+        mIntake.setAngle(0.920410); // ok
         // mIntake.setIntake(-0.2);
         // Check if coral is detected and update LEDs accordingly
         if (mGrabber.hasCoral()) {
@@ -314,7 +314,9 @@ public class SuperStruct extends SubsystemBase {
     public void PLACEMENT() {
         if (mPreviousState == SuperStructState.L1) {
             mGrabber.placeL1();
-        } else {
+        } else if(mPreviousState == SuperStructState.CS){
+            mGrabber.uuaaghhh();
+        }else{
             mGrabber.placeCoral();
         }
         mled.blinkSection1(255, 0, 255, 1.5);
@@ -366,10 +368,10 @@ public class SuperStruct extends SubsystemBase {
             if (!hasSetSafeHeight && !isMovingToDefault) {
                 // Only set target position once
                 savedElevatorPos = mElevator.getElevatorPosition();
-                int raiseDistance = mPreviousState == SuperStructState.L4 ? 30 : 69;
+                int raiseDistance = mPreviousState == SuperStructState.L4 ? 30 : 50;
                 targetUpPosition = savedElevatorPos + raiseDistance;
                 mElevator.setPosition(targetUpPosition);
-                mGrabber.setPosition(0.396729);
+                mGrabber.setPosition(0.629912); // ok
                 hasSetSafeHeight = true;
                 
                 SmartDashboard.putString("Movement Phase", "Moving Up");
@@ -393,34 +395,35 @@ public class SuperStruct extends SubsystemBase {
             // Direct to default if not from L-level
             hasSetSafeHeight = false;
             isMovingToDefault = false;
-            mGrabber.setPosition(0.396729);
+            mGrabber.setPosition(0.629912); // ok
             mElevator.setPosition(0);
             SmartDashboard.putString("Movement Phase", "Direct to Default");
         }
 
         // Common actions
         mGrabber.stop();
-        mIntake.setAngle(0.818359);
+        mIntake.setAngle(0.920410); // ok
         mIntake.setIntake(0.0);
         // mled.rainbowmarquee();
+        mAlgaeRemover.stop();
         mObjectDetection.stopFollowing();
     }
 
     public void grabberDefault() {
         mGrabber.stop();
-        mGrabber.setPosition(0.396729);
+        mGrabber.setPosition(0.629912); // ok
         // mGrabber.resetcounter();
     }
 
     public void ALGAE_STOWAGE() {
-        mIntake.setAngle(0.932861);
+        mIntake.setAngle(0.787842); // ok
         mIntake.setIntake(0.01);
         mObjectDetection.stopFollowing();
         // mAlgaeRemover.setSpeed(0.6);
     }
 
     public void ALGAE_INTAKE() {
-        mIntake.setAngle(0.932861);
+        mIntake.setAngle(0.787842); // ok
         mIntake.setIntake(0.3);
         // mObjectDetection.startFollowing();
 
@@ -429,7 +432,7 @@ public class SuperStruct extends SubsystemBase {
 
     public void ALGAE_PLACEMENT() {
 
-        mIntake.setAngle(0.818359);
+        mIntake.setAngle(0.920410);
         mIntake.setIntake(-0.2);
     }
 
@@ -440,7 +443,7 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void GENSHINIMPACT() {
-        mElevator.setPosition(132);
+        mElevator.setPosition(105);
     }
 
     public void ELEDROP() {
@@ -448,7 +451,7 @@ public class SuperStruct extends SubsystemBase {
     }
 
     public void SMACK_ALGAE() {
-        mGrabber.setPosition(0.396729);
+        // mGrabber.setPosition(0.406768); // ok
         // Determine direction based on button press count (odd = up, even = down)
         boolean directionUp = (algaeButtonPressCount % 2 == 1); // Odd = up, Even = down
         double speed = directionUp ? -ALGAE_SPEED : ALGAE_SPEED;

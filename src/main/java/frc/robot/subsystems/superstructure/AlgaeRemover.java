@@ -7,6 +7,7 @@ package frc.robot.subsystems.superstructure;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
@@ -61,7 +62,13 @@ public class AlgaeRemover extends SubsystemBase {
     // Initialize motors
     leftMotor = new WPI_TalonSRX(LEFT_MOTOR_CAN_ID);
     rightMotor = new WPI_TalonSRX(RIGHT_MOTOR_CAN_ID);
-    
+
+    leftMotor.configPeakCurrentLimit(30);
+    rightMotor.configPeakCurrentLimit(30);
+    leftMotor.configPeakCurrentDuration(300);
+    rightMotor.configPeakCurrentDuration(300);
+    leftMotor.enableCurrentLimit(true);
+    rightMotor.enableCurrentLimit(true);
     // Configure motors
     
     // configureNEO(leftMotor, true, true);

@@ -41,19 +41,19 @@ public class Elevator extends SubsystemBase {
   private final TrapezoidProfile.Constraints constraints = 
       new TrapezoidProfile.Constraints(
           150,   
-          275
+          500
       );
   
   private final ProfiledPIDController pidController = 
       new ProfiledPIDController(
-          0.08,   // P gain
-          0.00,   // I gain
-          0.00,   // D gain
+          0.08,   // P gain - increased for better position holding
+          0.0,  // I gain - small integral term to overcome static friction
+          0.001,  // D gain - increased for better damping
           constraints
       );
   
-  private final SimpleMotorFeedforward leftfeedforward = new SimpleMotorFeedforward(0.5, 2.307, 0.05);
-  private final SimpleMotorFeedforward rightfeedforward = new SimpleMotorFeedforward(0.4, 2.307, 0.05);
+  private final SimpleMotorFeedforward leftfeedforward = new SimpleMotorFeedforward(0.4, 2.307, 0.05);
+  private final SimpleMotorFeedforward rightfeedforward = new SimpleMotorFeedforward(0.3, 2.307, 0.05);
 
   private static Elevator mInstance = null;
 
