@@ -271,7 +271,7 @@ public class SuperStruct extends SubsystemBase {
     public void L4() {
         mElevator.setPosition(165 * 0.6);
         if (mElevator.atTargetPosition()) {
-            mGrabber.setPosition(0.517793); // ok
+            mGrabber.setPosition(0.55793); // ok
         } else {
             mGrabber.setPosition(0.629912); // ok
         }
@@ -314,7 +314,9 @@ public class SuperStruct extends SubsystemBase {
     public void PLACEMENT() {
         if (mPreviousState == SuperStructState.L1) {
             mGrabber.placeL1();
-        } else {
+        } else if(mPreviousState == SuperStructState.CS){
+            mGrabber.uuaaghhh();
+        }else{
             mGrabber.placeCoral();
         }
         mled.blinkSection1(255, 0, 255, 1.5);

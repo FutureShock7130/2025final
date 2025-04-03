@@ -141,7 +141,7 @@ public class Swerve implements ModuleIO {
 
     // BaseStatusSignal.setUpdateFrequencyForAll(100.0, drivePosition, turnPosition);
     BaseStatusSignal.setUpdateFrequencyForAll(
-        20.0, drivePosition);
+        100.0, drivePosition);
     // BaseStatusSignal.setUpdateFrequencyForAll(
     //     50.0,
     //     driveVelocity,
@@ -173,9 +173,9 @@ public class Swerve implements ModuleIO {
         drivePosition, driveVelocity, driveAppliedVolts, driveCurrent, turnAbsolutePosition);
 
     inputs.drivePositionRad =
-        Units.rotationsToRadians(drivePosition.getValueAsDouble()) * DRIVE_GEAR_RATIO;
+        Units.rotationsToRadians(drivePosition.getValueAsDouble()) / DRIVE_GEAR_RATIO;
     inputs.driveVelocityRadPerSec =
-        Units.rotationsToRadians(driveVelocity.getValueAsDouble()) * DRIVE_GEAR_RATIO;
+        Units.rotationsToRadians(driveVelocity.getValueAsDouble()) / DRIVE_GEAR_RATIO;
     inputs.driveAppliedVolts = driveAppliedVolts.getValueAsDouble();
     inputs.driveCurrentAmps = new double[] {driveCurrent.getValueAsDouble()};
 

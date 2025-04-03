@@ -224,6 +224,11 @@ public class Grabber extends SubsystemBase {
         leftIntake.set(0.4);
     }
 
+    public void uuaaghhh() {
+        rightIntake.set(-0.2);
+        leftIntake.set(0.2);
+    }
+
     public void hitAlgea() {
         rightIntake.set(0.3);
         leftIntake.set(-0.3);
